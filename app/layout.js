@@ -4,12 +4,55 @@ import SessionGuard from '@/components/SessionGuard';
 import { ToastProvider } from '@/components/Toast';
 
 export const metadata = {
-  title: 'Zona Geometry App',
-  description: 'Zona Geometry App — manajemen RAB dan monitoring konstruksi',
+  metadataBase: new URL('https://zonageometry.id'),
+  title: 'Zona Geometry - Aplikasi RAB Pro, AHSP 2026 & Monitoring Konstruksi',
+  description: 'Zona Geometry adalah aplikasi RAB Pro terbaik untuk penyusunan AHSP 2026, RAB BIM (IFC), dan laporan konstruksi digital secara online, akurat, dan terintegrasi.',
+  keywords: [
+    'aplikasi rab pro', 
+    'aplikasi rab ahsp 2026', 
+    'rab online', 
+    'rab BIM (ifc)', 
+    'pembuatan laporan rab',
+    'monitoring konstruksi digital',
+    'estimasi biaya proyek'
+  ],
+  authors: [{ name: 'Zona Geometry Team' }],
+  creator: 'Zona Geometry',
+  publisher: 'Zona Geometry',
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
     icon: '/logo.svg',
     shortcut: '/logo.svg',
     apple: '/logo.svg',
+  },
+  verification: {
+    google: 'Cauj6JOJucfu6SRppTlkJ9MpOxr8fxGTlCRc4pmtAe0',
+  },
+  openGraph: {
+    title: 'Zona Geometry - Aplikasi RAB Pro & Monitoring Konstruksi',
+    description: 'Kelola RAB, AHSP 2026, dan proyek konstruksi Anda secara digital dengan Zona Geometry.',
+    url: 'https://zonageometry.id',
+    siteName: 'Zona Geometry',
+    locale: 'id_ID',
+    type: 'website',
+    images: [
+      {
+        url: '/og-image.png',
+        width: 1200,
+        height: 630,
+        alt: 'Zona Geometry - Digital Construction Management',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Zona Geometry - Solusi Konstruksi Digital',
+    description: 'Penyusunan RAB dan AHSP 2026 jadi lebih cepat dan akurat.',
+    images: ['/og-image.png'],
   },
 };
 
