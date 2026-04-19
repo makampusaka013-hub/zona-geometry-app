@@ -200,17 +200,15 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
           {!loading && results.length === 0 && <div className="p-3 text-[10px] text-slate-400 italic">Data tidak ditemukan.</div>}
           {!loading && results.map((item, idx) => (
             <div key={idx} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" onClick={() => { setOpen(false); onSelect(item); }}>
-              <div className="flex justify-between items-start mb-0.5">
-                <div className="flex items-center gap-2">
-                  {item.is_custom && (
-                    <span className="text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-tighter">Custom</span>
-                  )}
+              <div className="flex items-start gap-2.5 mb-0.5">
+                {item.is_custom && (
+                  <span className="mt-1 text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-tighter flex-shrink-0">Custom</span>
+                )}
+                <div className="flex flex-col gap-0.5">
+                  <div className="text-[9px] font-mono font-bold text-indigo-500 dark:text-orange-400 opacity-80">{item.kode_ahsp}</div>
+                  <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.nama_pekerjaan}</div>
                 </div>
-              <div className="flex flex-col gap-0.5">
-                <div className="text-[9px] font-mono font-bold text-indigo-500 dark:text-orange-400 opacity-80">{item.kode_ahsp}</div>
-                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.nama_pekerjaan}</div>
               </div>
-            </div>
               <div className="flex gap-2 text-[9px] text-slate-400 mt-1">
                  <span>{formatIdr(parseFloat(item.total_subtotal || 0))}</span>
                  <span className="opacity-40">|</span>
