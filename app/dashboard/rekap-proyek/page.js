@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 
 import React, { useCallback, useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams, usePathname } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import {
@@ -109,6 +109,7 @@ function ProyekContent() {
   const [ahspCatalog, setAhspCatalog] = useState({});
   const [mpTargetDurasi, setMpTargetDurasi] = useState(0);
   const [itemWorkers, setItemWorkers] = useState({});
+  const pathname = usePathname();
   const [itemDurasi, setItemDurasi] = useState({});
   const [savingField, setSavingField] = useState(null);
   const [scheduleRange, setScheduleRange] = useState(60);
@@ -142,7 +143,36 @@ function ProyekContent() {
   const abortControllerRef = useRef(null);
 
   // ── Penambahan Logic Hub Informasi ──
-  const currentProjectObj = useMemo(() => projects.find(p => p.id === selectedProject), [projects, selectedProject]);
+  const currentProjectObj = useMemo(() => {
+    if (!projects || projects.length === 0) return null;
+    return projects.find(p => p.id === selectedProject) || null;
+  }, [projects, selectedProject]);
+
+  // Sync selectedProject with URL search params and localStorage for persistence
+  useEffect(() => {
+    const idParam = searchParams.get('id');
+    if (idParam) {
+      if (idParam !== selectedProject) setSelectedProject(idParam);
+      localStorage.setItem('bc_last_project', idParam);
+    } else {
+      // Auto-restore from localStorage if no ID in URL
+      const savedId = localStorage.getItem('bc_last_project');
+      if (savedId && projects.some(p => p.id === savedId)) {
+        const params = new URLSearchParams(searchParams.toString());
+        params.set('id', savedId);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      }
+    }
+  }, [searchParams, selectedProject, projects, pathname, router]);
+
+  useEffect(() => {
+    if (selectedProject && searchParams.get('id') !== selectedProject) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', selectedProject);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      localStorage.setItem('bc_last_project', selectedProject);
+    }
+  }, [selectedProject, router, pathname, searchParams]);
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
@@ -187,6 +217,9 @@ function ProyekContent() {
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
+    // PROTEKSI: Jangan reset form ke kosong jika data proyek sedang dimuat atau belum ada
+    if (loading) return; 
+
     if (currentProjectObj) {
       setIdentityForm({
         name: currentProjectObj.name || '',
@@ -209,8 +242,8 @@ function ProyekContent() {
         konsultan_supervisor: currentProjectObj.konsultan_supervisor || '',
         kontraktor_director: currentProjectObj.kontraktor_director || ''
       });
-    } else {
-      // Penting: Reset jika tidak ada proyek terpilih (mode buat baru)
+    } else if (!selectedProject) {
+      // Hanya reset jika user memang berniat membuat baru atau sudah tidak memilih apapun
       setIdentityForm({
         name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(), 
         contract_number: '', hsp_value: 0, ppn_percent: 12,
@@ -219,7 +252,7 @@ function ProyekContent() {
         konsultan_name: '', konsultan_supervisor: '', kontraktor_director: ''
       });
     }
-  }, [currentProjectObj]);
+  }, [currentProjectObj, loading, selectedProject]);
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
@@ -384,11 +417,15 @@ function ProyekContent() {
 
       setProjects(proj || []);
       if (proj && proj.length > 0 && !isCreating) {
-        let activeId = selectedProject;
-        if (!activeId) {
+        // Coba ambil dari URL dulu
+        const urlId = searchParams.get('id');
+        let activeId = urlId || selectedProject;
+        
+        if (!proj.some(p => p.id === activeId)) {
           activeId = proj[0].id;
-          setSelectedProject(activeId);
         }
+        
+        setSelectedProject(activeId);
         
         const p = proj.find(x => x.id === activeId) || proj[0];
         setProjectOwnerId(p.created_by);
@@ -625,6 +662,7 @@ function ProyekContent() {
   }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, loadTabData]);
 
   async function updateProjectStartDate(val) {
+    if (!selectedProject) return;
     setProjectStartDate(val);
     await supabase.from('projects').update({ start_date: val }).eq('id', selectedProject);
   }
