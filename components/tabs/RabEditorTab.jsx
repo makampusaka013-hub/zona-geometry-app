@@ -874,8 +874,12 @@ export default function RabEditorTab({
                           <input 
                             type="number" 
                             onFocus={(e) => e.target.select()} 
-                            value={projectMeta.ppn_percent} 
-                            onChange={e => setProjectMeta(prev => ({ ...prev, ppn_percent: parseNum(e.target.value) }))} 
+                            value={identity.ppn_percent} 
+                            onChange={e => {
+                              const val = parseNum(e.target.value);
+                              setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
+                              setIdentity(prev => ({ ...prev, ppn_percent: val }));
+                            }} 
                             className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1" 
                           />
                           <span className="text-[10px] font-bold text-slate-400">%</span>
