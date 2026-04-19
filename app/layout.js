@@ -86,6 +86,17 @@ export default function RootLayout({ children }) {
           enableSystem
           disableTransitionOnChange
         >
+          <script
+            type="application/ld+json"
+            dangerouslySetInnerHTML={{
+              __html: JSON.stringify({
+                "@context": "https://schema.org",
+                "@type": "WebSite",
+                "name": "Zona Geometry",
+                "url": "https://www.zonageometry.id"
+              })
+            }}
+          />
           <ToastProvider>
             <SessionGuard>
               {children}
