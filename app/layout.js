@@ -61,7 +61,7 @@ export const metadata = {
     type: 'website',
     images: [
       {
-        url: '/og-image.png',
+        url: '/images/og-zona-geometry.jpg',
         width: 1200,
         height: 630,
         alt: 'Zona Geometry - Digital Construction Management',
@@ -72,7 +72,7 @@ export const metadata = {
     card: 'summary_large_image',
     title: 'Zona Geometry - Solusi Konstruksi Digital',
     description: 'Penyusunan RAB dan AHSP 2026 jadi lebih cepat dan akurat.',
-    images: ['/og-image.png'],
+    images: ['/images/og-zona-geometry.jpg'],
   },
 };
 

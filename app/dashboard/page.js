@@ -782,97 +782,110 @@ function DashboardContent() {
                 </div>
               </div>
             </div>
-            <div className="h-[320px] w-full items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                <ComposedChart data={processedChartData}>
-                  <defs>
-                    <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="var(--chart-realisasi-bg)" stopOpacity={0.3} /><stop offset="95%" stopColor="var(--chart-realisasi-bg)" stopOpacity={0} />
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                  <XAxis
-                    dataKey="name"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }}
-                    minTickGap={20}
-                  />
-                  {/* Left Axis: Percentage (%) */}
-                  <YAxis
-                    yAxisId="left"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }}
-                    tickFormatter={(v) => `${v}%`}
-                    domain={[0, 100]}
-                    ticks={[0, 20, 40, 60, 80, 100]}
-                  />
-                  {/* Right Axis: Nominal (Rp) */}
-                  <YAxis
-                    yAxisId="right"
-                    orientation="right"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
-                    tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()}
-                  />
-
-                  <Tooltip
-                    contentStyle={{
-                      backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                      border: 'none',
-                      borderRadius: '16px',
-                      fontSize: '11px',
-                      color: isDark ? '#fff' : '#0f172a',
-                      boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                      zIndex: 50
-                    }}
-                    itemStyle={{ padding: '2px 0' }}
-                    labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 800, marginBottom: '8px' }}
-                    labelFormatter={(label, entries) => {
-                      const day = entries[0]?.payload?.day;
-                      if (!day || !selProject?.start_date) return label;
-                      const dt = new Date(selProject.start_date); dt.setDate(dt.getDate() + day - 1);
-                      return dt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                    }}
-                    formatter={(v, name, props) => {
-                      if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
-                      if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
-                      return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Upah (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
-                    }}
-                  />
-
-                  {/* Periodic Bars (Grouped) */}
-                  <Bar yAxisId="right" dataKey="dailyUpah" fill={isDark ? '#312e81' : '#818cf8'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
-                  <Bar yAxisId="right" dataKey="dailyBahan" fill={isDark ? '#92400e' : '#fbbf24'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
-                  <Bar yAxisId="right" dataKey="dailyAlat" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
-
-                  {/* Cumulative Lines (% on Left Axis) */}
-                  <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
-                  <Area yAxisId="left" type="monotone" dataKey="rencana" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth={3} strokeDasharray="5 5" fill="none" />
-
-                  {sCurveToday && todayPointName && (
-                    <ReferenceLine
+            {/* S-CURVE CHART CONTAINER with Guard */}
+            <div className="h-[450px] min-h-[400px] bg-slate-50/30 dark:bg-slate-800/20 rounded-[32px] p-6 relative">
+              {chartData.length === 0 ? (
+                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-40">
+                  <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
+                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Menunggu Data Grafik S-Curve...</p>
+                </div>
+              ) : (
+                <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                  <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
+                    <defs>
+                      <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3}/>
+                        <stop offset="95%" stopColor="var(--chart-realis-glow)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
+                    <CartesianGrid
+                      strokeDasharray="3 3"
+                      vertical={false}
+                      stroke={isDark ? '#1e293b' : '#e2e8f0'}
+                    />
+                    <XAxis
+                      dataKey="name"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
+                      interval={sCurveFreq === 'daily' ? 'preserveStartEnd' : 0}
+                    />
+                    {/* Left Axis: Percentage (%) */}
+                    <YAxis
                       yAxisId="left"
-                      x={todayPointName}
-                      stroke="#f97316"
-                      strokeWidth={2}
-                      strokeDasharray="10 5"
-                    >
-                      <Label
-                        value="HARI INI"
-                        position="top"
-                        fill="#f97316"
-                        fontSize={9}
-                        fontWeight={900}
-                        offset={10}
-                        className="tracking-widest"
-                      />
-                    </ReferenceLine>
-                  )}
-                </ComposedChart>
-              </ResponsiveContainer>
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }}
+                      tickFormatter={(v) => `${v}%`}
+                      domain={[0, 100]}
+                      ticks={[0, 20, 40, 60, 80, 100]}
+                    />
+                    {/* Right Axis: Nominal (Rp) */}
+                    <YAxis
+                      yAxisId="right"
+                      orientation="right"
+                      axisLine={false}
+                      tickLine={false}
+                      tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
+                      tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()}
+                    />
+
+                    <Tooltip
+                      contentStyle={{
+                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                        border: 'none',
+                        borderRadius: '16px',
+                        fontSize: '11px',
+                        color: isDark ? '#fff' : '#0f172a',
+                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                        zIndex: 50
+                      }}
+                      itemStyle={{ padding: '2px 0' }}
+                      labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 800, marginBottom: '8px' }}
+                      labelFormatter={(label, entries) => {
+                        const day = entries[0]?.payload?.day;
+                        if (!day || !selProject?.start_date) return label;
+                        const dt = new Date(selProject.start_date); dt.setDate(dt.getDate() + day - 1);
+                        return dt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                      }}
+                      formatter={(v, name, props) => {
+                        if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
+                        if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
+                        return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Upah (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
+                      }}
+                    />
+
+                    {/* Periodic Bars (Grouped) */}
+                    <Bar yAxisId="right" dataKey="dailyUpah" fill={isDark ? '#312e81' : '#818cf8'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
+                    <Bar yAxisId="right" dataKey="dailyBahan" fill={isDark ? '#92400e' : '#fbbf24'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
+                    <Bar yAxisId="right" dataKey="dailyAlat" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
+
+                    {/* Cumulative Lines (% on Left Axis) */}
+                    <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
+                    <Area yAxisId="left" type="monotone" dataKey="rencana" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth={3} strokeDasharray="5 5" fill="none" />
+
+                    {sCurveToday && todayPointName && (
+                      <ReferenceLine
+                        yAxisId="left"
+                        x={todayPointName}
+                        stroke="#f97316"
+                        strokeWidth={2}
+                        strokeDasharray="10 5"
+                      >
+                        <Label
+                          value="HARI INI"
+                          position="top"
+                          fill="#f97316"
+                          fontSize={9}
+                          fontWeight={900}
+                          offset={10}
+                          className="tracking-widest"
+                        />
+                      </ReferenceLine>
+                    )}
+                  </ComposedChart>
+                </ResponsiveContainer>
+              )}
             </div>
           </div>
 
@@ -889,39 +902,53 @@ function DashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Per Item (Rp)</h3></div>
-                <div className="h-80 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4">
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                    <BarChart data={processedItemData.visible} margin={{ bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                      <XAxis dataKey="displayName" tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} />
-                      <YAxis width={80} tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                        itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
-                        formatter={(v) => formatIdrFull(v)}
-                      />
-                      <Bar dataKey="progressRupiah" fill={isDark ? '#f97316' : '#4f46e5'} radius={[6, 6, 0, 0]} />
-                      <Bar dataKey="totalRupiah" fill={isDark ? '#334155' : '#cbd5e1'} radius={[6, 6, 0, 0]} opacity={0.3} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="h-80 min-h-[300px] bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                  {!processedItemData.visible || processedItemData.visible.length === 0 ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
+                      <BarChart2 className="w-8 h-8 text-slate-400" />
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pekerjaan Kosong</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                      <BarChart data={processedItemData.visible} margin={{ bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
+                        <XAxis dataKey="displayName" tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} />
+                        <YAxis width={80} tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                          itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
+                          formatter={(v) => formatIdrFull(v)}
+                        />
+                        <Bar dataKey="progressRupiah" fill={isDark ? '#f97316' : '#4f46e5'} radius={[6, 6, 0, 0]} />
+                        <Bar dataKey="totalRupiah" fill={isDark ? '#334155' : '#cbd5e1'} radius={[6, 6, 0, 0]} opacity={0.3} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Sumber Daya (Rp)</h3></div>
-                <div className="h-80 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4">
-                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                    <BarChart data={processedResourceData.visible} margin={{ bottom: 20 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                      <XAxis dataKey="uraian" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#475569' }} />
-                      <YAxis width={80} tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
-                      <Tooltip
-                        contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                        itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
-                        formatter={(v) => formatIdrFull(v)}
-                      />
-                      <Bar dataKey="kontribusi_nilai" radius={[6, 6, 0, 0]} fill={isDark ? '#f97316' : '#4f46e5'} />
-                    </BarChart>
-                  </ResponsiveContainer>
+                <div className="h-80 min-h-[300px] bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                  {!processedResourceData.visible || processedResourceData.visible.length === 0 ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
+                      <Zap className="w-8 h-8 text-slate-400" />
+                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sumber Daya Kosong</p>
+                    </div>
+                  ) : (
+                    <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                      <BarChart data={processedResourceData.visible} margin={{ bottom: 20 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
+                        <XAxis dataKey="uraian" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#475569' }} />
+                        <YAxis width={80} tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                          itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
+                          formatter={(v) => formatIdrFull(v)}
+                        />
+                        <Bar dataKey="kontribusi_nilai" radius={[6, 6, 0, 0]} fill={isDark ? '#f97316' : '#4f46e5'} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  )}
                 </div>
               </div>
             </div>

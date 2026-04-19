@@ -117,6 +117,30 @@ export default function PublicLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617]">
+      {/* JSON-LD Schema for SoftwareApplication */}
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "SoftwareApplication",
+            "name": "Zona Geometry App",
+            "operatingSystem": "Web",
+            "applicationCategory": "BusinessApplication",
+            "image": "https://zonageometry.id/images/og-zona-geometry.jpg",
+            "offers": {
+              "@type": "Offer",
+              "price": "0",
+              "priceCurrency": "IDR"
+            },
+            "aggregateRating": {
+              "@type": "AggregateRating",
+              "ratingValue": "4.9",
+              "ratingCount": "120"
+            }
+          })
+        }}
+      />
 
       {/* ── Nav ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
