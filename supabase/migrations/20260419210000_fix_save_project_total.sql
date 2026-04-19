@@ -1,11 +1,7 @@
 -- =============================================================================
--- Migration: Fix save_project_transactional (Total Variable Removal Version)
+-- Migration: Fix save_project_transactional (Robust ID Handling)
 -- =============================================================================
 
--- 1. Ensure the total_kontrak column exists
-ALTER TABLE public.projects ADD COLUMN IF NOT EXISTS total_kontrak NUMERIC;
-
--- 2. Update the RPC function
 CREATE OR REPLACE FUNCTION public.save_project_transactional(
   p_project_id UUID,
   p_project_data JSONB,
@@ -16,13 +12,15 @@ DECLARE
   v_calc_subtotal NUMERIC := 0;
   v_ppn_percent NUMERIC;
   v_final_total NUMERIC;
+  v_new_id UUID;
   r RECORD;
   v_existing_ids UUID[] := ARRAY[]::UUID[];
   v_line_item JSONB;
 BEGIN
-  -- SETUP SESSION CONTEXT DIRECTLY (No local variables for these IDs)
+  -- SETUP SESSION CONTEXT
   PERFORM set_config('app.cur_user_id', COALESCE(auth.uid(), (p_project_data->>'user_id')::UUID)::TEXT, true);
   
+  -- Handle Location Context
   PERFORM set_config('app.cur_loc_id', COALESCE(
     (p_project_data->>'location_id')::TEXT,
     (SELECT location_id::TEXT FROM public.projects WHERE id = p_project_id),
@@ -44,11 +42,10 @@ BEGIN
   v_final_total := CEIL(COALESCE(v_calc_subtotal, 0) * (1 + v_ppn_percent / 100) / 1000) * 1000;
 
   -- 2. Project Header Update/Insert
-  IF p_project_id IS NOT NULL THEN
+  IF p_project_id IS NOT NULL AND EXISTS (SELECT 1 FROM public.projects WHERE id = p_project_id) THEN
     PERFORM set_config('app.cur_proj_id', p_project_id::TEXT, true);
     
-    UPDATE public.projects
-    SET
+    UPDATE public.projects SET
       name = p_project_data->>'name',
       code = p_project_data->>'code',
       program_name = p_project_data->>'program_name',
@@ -76,8 +73,8 @@ BEGIN
       p_project_data->>'fiscal_year', p_project_data->>'contract_number', (p_project_data->>'hsp_value')::NUMERIC,
       v_ppn_percent, v_final_total
     )
-    RETURNING id INTO r;
-    PERFORM set_config('app.cur_proj_id', r.id::TEXT, true);
+    RETURNING id INTO v_new_id;
+    PERFORM set_config('app.cur_proj_id', v_new_id::TEXT, true);
   END IF;
 
   -- 3. Smart Sync Lines
@@ -85,7 +82,7 @@ BEGIN
   WHERE project_id = (current_setting('app.cur_proj_id', true))::UUID
   AND (id != ALL(v_existing_ids));
 
-  -- 4. Upsert Lines and snapshots
+  -- 4. Upsert Lines
   IF p_lines IS NOT NULL AND jsonb_array_length(p_lines) > 0 THEN
     FOR r IN SELECT * FROM jsonb_to_recordset(p_lines) AS x(
       id UUID,
@@ -122,11 +119,11 @@ BEGIN
         ) VALUES (
           (current_setting('app.cur_proj_id', true))::UUID, 
           r.master_ahsp_id, r.bab_pekerjaan, r.sort_order, r.uraian, r.uraian_custom, r.satuan, r.volume, r.harga_satuan, r.jumlah, r.analisa_custom
-        ) RETURNING id INTO r;
-        PERFORM set_config('app.cur_line_id', r.id::TEXT, true);
+        ) RETURNING id INTO v_new_id;
+        PERFORM set_config('app.cur_line_id', v_new_id::TEXT, true);
       END IF;
 
-      -- 5. Final Snapshots (Zero Local Variable References)
+      -- 5. Snapshots (Using r.master_ahsp_id which is NOT overwritten now)
       DELETE FROM public.ahsp_line_snapshots WHERE ahsp_line_id = (current_setting('app.cur_line_id', true))::UUID;
 
       IF r.master_ahsp_id IS NOT NULL THEN
