@@ -194,7 +194,8 @@ function ProyekContent() {
 
       // 2. Fallback to normal AHSP lines total or cached project total
       const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-      const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
+      const ppnPercent = currentProjectObj.ppn_percent ?? 12;
+      const ppn = subtotal * (ppnPercent / 100);
       let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
       
       // If we have no lines yet in tabData, use the cached total from the project object

@@ -232,7 +232,8 @@ export default function RabEditorTab({
   backupData = [],
   member,
   projectStartDate,
-  setProjectStartDate
+  setProjectStartDate,
+  onTotalChange
 }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -397,12 +398,14 @@ export default function RabEditorTab({
         total: sec.lines.reduce((s, r) => s + (parseNum(r.volume) * parseNum(r.hargaSatuan)), 0)
       }));
       const subtotal = sectionTotals.reduce((sum, s) => sum + s.total, 0);
-      const ppn = subtotal * (parseNum(projectMeta.ppn_percent) / 100);
+      const ppnPercent = parseNum(identity.ppn_percent);
+      const ppn = subtotal * (ppnPercent / 100);
       const total = subtotal + ppn;
       const rounded = Math.ceil(total / 1000) * 1000;
       setRecap({ subtotal, ppn, total, rounded, sectionTotals });
+      if (onTotalChange) onTotalChange(rounded);
     });
-  }, [sections, projectMeta.ppn_percent]);
+  }, [sections, identity.ppn_percent, onTotalChange]);
 
   const updateRow = (sId, rowKey, patch) => {
     setSections(prev => prev.map(s => s.id === sId ? { 
