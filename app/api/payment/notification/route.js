@@ -89,50 +89,51 @@ export async function POST(request) {
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       console.log(`[MIDTRANS WEBHOOK] PROCESSING SUCCESS: Role=${newRole} for User=${actualUserId} (${member.full_name})`);
       
-      // Calculate Expiry (Accumulative)
-      let baseDate = new Date();
-      if (member.expired_at) {
-        const currentExp = new Date(member.expired_at);
-        if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
-          baseDate = currentExp;
+      try {
+        // Calculate Expiry (Accumulative)
+        let baseDate = new Date();
+        if (member.expired_at) {
+          const currentExp = new Date(member.expired_at);
+          if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
+            baseDate = currentExp;
+          }
         }
-      }
-      baseDate.setDate(baseDate.getDate() + 30);
-      const finalExpiry = baseDate.toISOString();
+        baseDate.setDate(baseDate.getDate() + 30);
+        const finalExpiry = baseDate.toISOString();
 
-      const { error: updateError } = await supabaseAdmin
-        .from('members')
-        .update({
-          role: newRole,
-          is_paid: true,
-          expired_at: finalExpiry,
-          approval_status: 'active',
-          status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', actualUserId);
+        const { error: updateError } = await supabaseAdmin
+          .from('members')
+          .update({
+            role: newRole,
+            is_paid: true,
+            expired_at: finalExpiry,
+            approval_status: 'active',
+            status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', actualUserId);
 
-      if (updateError) {
-        console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${actualUserId}:`, updateError);
-        return NextResponse.json({ error: updateError.message }, { status: 500 });
-      }
-      
-      console.log(`[MIDTRANS WEBHOOK] SYNC SUCCESS! User ${actualUserId} is now ${newRole}`);
-      return NextResponse.json({ success: true, message: 'Notification processed' });
-    }
+        if (updateError) {
+          console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${actualUserId}:`, updateError);
+          return NextResponse.json({ error: updateError.message }, { status: 500 });
+        }
+        
+        console.log(`[MIDTRANS WEBHOOK] SYNC SUCCESS! User ${actualUserId} is now ${newRole}`);
+        return NextResponse.json({ success: true, message: 'Notification processed' });
 
       } catch (dbErr) {
         console.error('[MIDTRANS WEBHOOK] Internal Process Error:', dbErr);
         return NextResponse.json({ error: dbErr.message }, { status: 500 });
       }
     } else if (transaction_status === 'expire' || transaction_status === 'cancel') {
-      console.log(`Payment failed/expired for user: ${userId}`);
+      console.log(`[MIDTRANS WEBHOOK] Payment failed/expired for user: ${actualUserId}`);
+      return NextResponse.json({ status: 'handled_failure' });
     }
 
-    return NextResponse.json({ status: 'OK' });
+    return NextResponse.json({ status: 'pending/unhandled' });
 
   } catch (error) {
-    console.error('Midtrans Webhook Error:', error);
+    console.error('Midtrans Webhook Global Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
