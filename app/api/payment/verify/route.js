@@ -60,16 +60,15 @@ export async function POST(request) {
       console.log(`[VERIFY API] PROCESSING SUCCESS: User=${userId}, Plan=${plan}, OrderId=${order_id}`);
 
       try {
-        // Identify Plan
+        // Identify Plan (Primary Source: Order ID Prefix)
         let parsedPlan = plan;
         const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
         
-        if (!parsedPlan || !roleMap[parsedPlan]) {
-          if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
-          else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
-          else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-          else parsedPlan = 'normal';
-        }
+        if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
+        else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
+        else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
+        else if (!parsedPlan || !roleMap[parsedPlan]) parsedPlan = 'normal';
+        
         const newRole = roleMap[parsedPlan] || 'normal';
 
         // 3. Process Expiration & Update DB

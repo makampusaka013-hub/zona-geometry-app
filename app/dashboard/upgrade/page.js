@@ -66,11 +66,11 @@ export default function UpgradePage() {
             } catch (err) {
               console.error('Verify Fallback Error:', err);
             }
-            router.push('/dashboard?payment=success');
+            router.push(`/dashboard?payment=success&order_id=${result.order_id}`);
           },
           onPending: (result) => {
             console.log('Payment pending:', result);
-            router.push('/dashboard?payment=pending');
+            router.push(`/dashboard?payment=pending&order_id=${result.order_id}`);
           },
           onError: (result) => {
             console.log('Payment error:', result);

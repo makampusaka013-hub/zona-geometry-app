@@ -17,6 +17,11 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing user data' }, { status: 400 });
     }
 
+    // Deteksi URL dasar secara dinamis (penting untuk redirect yang benar)
+    const host = request.headers.get('host');
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    const siteUrl = `${protocol}://${host}`;
+
     // Tentukan harga berdasarkan plan
     const planConfig = {
       advance: { amount: 499000, name: 'Advance', id: 'ADVANCE-MONTHLY', prefix: 'ZPA' },
@@ -38,7 +43,7 @@ export async function POST(request) {
         gross_amount: config.amount,
       },
       custom_field1: userId,
-      custom_field2: plan, // Store the plan type so notification webhook knows which role to set
+      custom_field2: plan, 
       customer_details: {
         first_name: fullName || 'User',
         email: userEmail,
@@ -52,9 +57,9 @@ export async function POST(request) {
         name: `Zona Geometry ${config.name} - 30 Hari`,
       }],
       callbacks: {
-        finish: `${process.env.APP_URL}/dashboard?payment=success`,
-        error: `${process.env.APP_URL}/dashboard?payment=error`,
-        pending: `${process.env.APP_URL}/dashboard?payment=pending`,
+        finish: `${siteUrl}/dashboard?payment=success&order_id=${orderId}`,
+        error: `${siteUrl}/dashboard?payment=error`,
+        pending: `${siteUrl}/dashboard?payment=pending&order_id=${orderId}`,
       }
     };
 

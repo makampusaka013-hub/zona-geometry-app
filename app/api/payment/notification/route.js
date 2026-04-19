@@ -67,7 +67,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
-    // 4. Determine which role to assign based on plan and order_id fallback
+    // 4. Determine which role to assign (Primary Source of Truth: Order ID Prefix)
     let parsedPlan = plan;
     const roleMap = {
       advance: 'advance',
@@ -75,12 +75,11 @@ export async function POST(request) {
       normal: 'normal',
     };
     
-    if (!parsedPlan || !roleMap[parsedPlan]) {
-      if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
-      else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
-      else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-      else parsedPlan = 'normal';
-    }
+    // Always check prefix first to avoid metadata loss issues
+    if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
+    else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
+    else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
+    else if (!parsedPlan || !roleMap[parsedPlan]) parsedPlan = 'normal';
 
     const newRole = roleMap[parsedPlan] || 'normal';
 
