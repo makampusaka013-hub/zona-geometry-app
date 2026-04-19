@@ -22,14 +22,23 @@ export async function POST(request) {
 
     // 1. Verify Signature
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    
+    // Midtrans gross_amount can be tricky (sometimes has .00)
+    // We try to match what Midtrans sends exactly
     const combinedString = order_id + status_code + gross_amount + serverKey;
     const hash = crypto.createHash('sha512').update(combinedString).digest('hex');
 
     if (hash !== signature_key) {
-      console.error('[MIDTRANS WEBHOOK] Invalid Signature. Calculated:', hash, 'Received:', signature_key);
+      console.error('[MIDTRANS WEBHOOK] Signature Mismatch!');
+      console.log('[MIDTRANS WEBHOOK] OrderId:', order_id);
+      console.log('[MIDTRANS WEBHOOK] Status:', status_code);
+      console.log('[MIDTRANS WEBHOOK] Gross:', gross_amount);
+      // Don't log full server key, just first 4 chars for safety check
+      console.log('[MIDTRANS WEBHOOK] ServerKey Check:', serverKey ? serverKey.substring(0, 4) + '...' : 'MISSING');
+      
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
-    console.log('[MIDTRANS WEBHOOK] Signature valid.');
+    console.log('[MIDTRANS WEBHOOK] Signature valid for Order:', order_id);
 
     // 2. Get UserId and plan from custom fields
     let userId = body.custom_field1;
