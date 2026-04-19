@@ -71,11 +71,19 @@ export default function VerifyNoticePage() {
           fullName: user.user_metadata?.full_name
         })
       });
-      const result = await res.json();
+      
+      let result;
+      const rawText = await res.text();
+      try {
+        result = JSON.parse(rawText);
+      } catch (parseErr) {
+        console.error("Raw server response:", rawText);
+        throw new Error(\`Server tidak mengembalikan JSON yang valid. Response: \${rawText.substring(0, 50)}...\`);
+      }
+
       if (result.success) {
         setMessage({ type: 'success', text: 'Email verifikasi baru telah dikirim!' });
       } else {
-        // Jika ada debugLink (mode dev), tampilkan warning khusus
         if (result.debugLink) {
           setMessage({ 
             type: 'warning', 
@@ -88,6 +96,7 @@ export default function VerifyNoticePage() {
       }
     } catch (err) {
       setMessage({ type: 'error', text: 'Gagal mengirim email: ' + err.message });
+
     } finally {
       setLoading(false);
     }
