@@ -114,8 +114,9 @@ export default function IfcVolumeExtractor({
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
-      if (containerRef.current?.contains(renderer.domElement)) {
-        containerRef.current.removeChild(renderer.domElement);
+      const currentContainer = containerRef.current;
+      if (currentContainer?.contains(renderer.domElement)) {
+        currentContainer.removeChild(renderer.domElement);
       }
     };
   }, [modelLoaded]);
@@ -320,7 +321,7 @@ export default function IfcVolumeExtractor({
               <div className="space-y-3">
                 <h3 className="text-lg font-black text-slate-900 dark:text-white uppercase">Upload File IFC</h3>
                 <p className="text-xs text-slate-400 leading-relaxed font-bold uppercase tracking-widest px-8">
-                  Pilih file .ifc bangunan Anda. Pastikan opsi "Base Quantities" aktif saat ekspor dari BIM Software.
+                  Pilih file .ifc bangunan Anda. Pastikan opsi &quot;Base Quantities&quot; aktif saat ekspor dari BIM Software.
                 </p>
               </div>
 

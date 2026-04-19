@@ -296,7 +296,7 @@ export default function RabEditorTab({
     } catch (e) {
       console.error('Error fetching LS max:', e);
     }
-  }, [supabase]);
+  }, []);
 
   const loadRab = useCallback(async () => {
     if (!projectId) {
@@ -382,7 +382,7 @@ export default function RabEditorTab({
       setSections([createEmptySection('PEKERJAAN PERSIAPAN')]);
     }
     setLoading(false);
-  }, [projectId]);
+  }, [projectId, initialIdentity]);
 
   useEffect(() => { 
     loadRab();

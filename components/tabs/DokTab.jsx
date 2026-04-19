@@ -1,4 +1,5 @@
 import React from 'react';
+import Image from 'next/image';
 import Spinner from '../Spinner';
 import Empty from '../Empty';
 import { Camera, MapPin } from 'lucide-react';
@@ -49,7 +50,13 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
               {rep.project_photos?.map((photo) => (
                 <div key={photo.id} className="group relative aspect-square rounded-2xl overflow-hidden bg-slate-100 dark:bg-slate-900 shadow-sm border border-slate-200 dark:border-slate-700">
-                  <img src={photo.photo_url} alt={photo.caption || 'Foto'} className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110" />
+                  <Image 
+                    src={photo.photo_url} 
+                    alt={photo.caption || 'Foto'} 
+                    fill
+                    className="object-cover transition-transform duration-700 group-hover:scale-110" 
+                    sizes="(max-width: 768px) 50vw, 25vw"
+                  />
                   {photo.caption && (
                     <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 to-transparent p-3 text-white text-[9px] font-bold opacity-0 group-hover:opacity-100 transition-opacity">
                       {photo.caption}
