@@ -1303,12 +1303,12 @@ function ProyekContent() {
                         </td>
                         <td className="px-6 py-5 text-center">
                           {p.created_by === member?.user_id ?
-                            (member?.role === 'admin' || member?.role === 'pro' ? (
+                            (member?.role === 'admin' || member?.role === 'advance' ? (
                               <button onClick={() => setShowShareModal(p)} className="px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-all uppercase flex items-center gap-2 mx-auto">
                                 {p.unique_code} <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500 animate-pulse" />
                               </button>
                             ) : (
-                              <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest italic">Hanya Pro/Admin</span>
+                              <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest italic text-center block">Hanya Advance</span>
                             ))
                             : <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2 italic">🔒 Terproteksi</span>
                           }
