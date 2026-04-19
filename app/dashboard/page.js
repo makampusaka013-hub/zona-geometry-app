@@ -182,7 +182,7 @@ function DashboardContent() {
 
       // 1. Ambil data member saat ini
       const { data: row } = await supabase.from('members')
-        .select('user_id, full_name, role, expired_at, approval_status').eq('user_id', user.id).maybeSingle();
+        .select('user_id, full_name, role, expired_at, approval_status, is_paid').eq('user_id', user.id).maybeSingle();
 
       // [SAFETY NET: AKTIVASI OTOMATIS DI DASHBOARD]
       // [SAFETY NET: AKTIVASI OTOMATIS DI DASHBOARD]

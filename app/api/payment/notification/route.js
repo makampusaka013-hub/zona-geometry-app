@@ -16,8 +16,7 @@ export async function POST(request) {
       status_code,
       gross_amount,
       order_id,
-      signature_key,
-    } = body;
+    console.log('[MIDTRANS WEBHOOK] Received payload:', JSON.stringify(body, null, 2));
 
     // 1. Verify Signature
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
@@ -25,9 +24,10 @@ export async function POST(request) {
     const hash = crypto.createHash('sha512').update(combinedString).digest('hex');
 
     if (hash !== signature_key) {
-      console.error('Invalid Midtrans Signature');
+      console.error('[MIDTRANS WEBHOOK] Invalid Signature. Calculated:', hash, 'Received:', signature_key);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
+    console.log('[MIDTRANS WEBHOOK] Signature valid.');
 
     // 2. Get UserId and plan from custom fields
     const userId = body.custom_field1;

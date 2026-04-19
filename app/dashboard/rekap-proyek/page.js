@@ -339,7 +339,7 @@ function ProyekContent() {
 
       // Parallel fetch for initial user and project list data
       const [memberRes, slotsRes] = await Promise.all([
-        supabase.from('members').select('user_id, full_name, role, expired_at').eq('user_id', user.id).maybeSingle(),
+        supabase.from('members').select('user_id, full_name, role, expired_at, is_paid').eq('user_id', user.id).maybeSingle(),
         supabase.from('project_members').select('project_id, slot_role').eq('user_id', user.id)
       ]);
 
