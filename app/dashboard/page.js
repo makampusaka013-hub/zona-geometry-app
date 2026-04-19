@@ -890,7 +890,7 @@ function DashboardContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Per Item (Rp)</h3></div>
                 <div className="h-80 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
                     <BarChart data={processedItemData.visible} margin={{ bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
                       <XAxis dataKey="displayName" tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} />
@@ -909,7 +909,7 @@ function DashboardContent() {
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Sumber Daya (Rp)</h3></div>
                 <div className="h-80 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4">
-                  <ResponsiveContainer width="100%" height="100%">
+                  <ResponsiveContainer width="100%" height="100%" debounce={1}>
                     <BarChart data={processedResourceData.visible} margin={{ bottom: 20 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
                       <XAxis dataKey="uraian" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#475569' }} />

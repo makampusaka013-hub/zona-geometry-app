@@ -135,19 +135,24 @@ function ProyekContent() {
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
-    
-    // Jika ada CCO yang disetujui, gunakan total dari CCO
-    if (activeCcoVersion?.total > 0) {
-      const subtotal = activeCcoVersion.total;
+    try {
+      // 1. If there's an approved CCO, use its total
+      if (activeCcoVersion?.total > 0) {
+        const subtotal = activeCcoVersion.total;
+        const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
+        const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+        return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
+      }
+
+      // 2. Fallback to normal AHSP lines total
+      const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
       const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
       const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-      return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
+      return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
+    } catch (e) {
+      console.error('Metrics calc error:', e);
+      return { total: 0, duration: 0 };
     }
-
-    const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (line.jumlah || 0), 0);
-    const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
-    const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-    return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
   }, [currentProjectObj, tabData.ahsp, activeCcoVersion]);
 
   const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
@@ -627,12 +632,18 @@ function ProyekContent() {
   }
 
   const manpowerItems = useMemo(() => {
-    const { lines } = tabData.schedule;
-    if (!lines.length) return [];
-    // Include all items that have volume, even if they don't have labor analysis yet.
-    // This allows Lumpsum items to appear so the user can manually set their duration.
-    return computeManpower(lines, ahspCatalog, laborSettings, itemWorkers, itemDurasi);
-  }, [tabData.schedule, ahspCatalog, laborSettings, itemWorkers, itemDurasi]);
+    try {
+      const { lines } = tabData.schedule;
+      if (!lines?.length || !ahspCatalog) return [];
+      const laborSettings = currentProjectObj?.labor_settings || {};
+      const itemWorkers = currentProjectObj?.item_workers || {};
+      const itemDurasi = currentProjectObj?.item_durasi || {};
+      return computeManpower(lines, ahspCatalog, laborSettings, itemWorkers, itemDurasi) || [];
+    } catch (e) {
+      console.error('Manpower compute error:', e);
+      return [];
+    }
+  }, [tabData.schedule, ahspCatalog, currentProjectObj]);
 
   const globalLaborRoles = useMemo(() => {
     const roles = new Set();
@@ -1194,14 +1205,15 @@ function ProyekContent() {
                     </tr>
                   ) : (
                     projects.map(p => {
+                      if (!p) return null;
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
 
                     // Calculate Total for this project
-                    const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (line.jumlah || 0), 0);
+                    const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
                     const ppn = subtotal * ((p.ppn_percent || 12) / 100);
                     const total = subtotal + ppn;
-                    const rounded = Math.ceil(total / 1000) * 1000;
+                    const rounded = Math.ceil((total || 0) / 1000) * 1000;
 
                     return (
                       <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">

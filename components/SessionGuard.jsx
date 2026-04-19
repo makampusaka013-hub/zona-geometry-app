@@ -17,16 +17,27 @@ export default function SessionGuard({ children }) {
 
       const clientType = getClientType();
 
-      // 1. Initial heartbeat
-      const { data: isValidFirst } = await supabase.rpc('update_user_heartbeat', { 
-        p_session_id: session.access_token,
-        p_client_type: clientType
-      });
+      // 1. Sent heartbeat (RPC update_user_heartbeat)
+      try {
+        const { data: isValidFirst, error: hbError } = await supabase.rpc('update_user_heartbeat', { 
+          p_session_id: session.access_token,
+          p_client_type: clientType
+        });
+        
+        if (hbError) {
+          console.warn('Heartbeat RPC error (safe fallback):', hbError);
+          // Don't crash or redirect if RPC fails, just log it as a warning
+          return;
+        }
 
-      if (isValidFirst === false) {
-        await supabase.auth.signOut();
-        window.location.href = '/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.';
-        return;
+        if (isValidFirst === false) {
+          console.error('Session invalidated by heartbeat check');
+          await supabase.auth.signOut();
+          router.push('/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.');
+          return;
+        }
+      } catch (err) {
+        console.error('Heartbeat fetch failed (network level):', err);
       }
 
       // 2. Set interval to update every 60 seconds

@@ -37,6 +37,7 @@ export default function ProgressTab({
   canApproveFinal,
   savingStatus,
   setSavingStatus,
+  onUpdateStatus,
   isOwner,
   isModeNormal
 }) {
