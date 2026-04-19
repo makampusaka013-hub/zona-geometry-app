@@ -339,8 +339,8 @@ export default function RabEditorTab({
       const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
       let masterPrices = {};
       if (ahspIds.length > 0) {
-        const { data: masters } = await supabase.from('view_analisa_ahsp').select('ahsp_id, total_subtotal').in('ahsp_id', ahspIds);
-        (masters || []).forEach(m => { masterPrices[m.ahsp_id] = m.total_subtotal; });
+        const { data: masters } = await supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id, total_subtotal').in('master_ahsp_id', ahspIds);
+        (masters || []).forEach(m => { masterPrices[m.master_ahsp_id] = m.total_subtotal; });
       }
 
       const grouped = {};
