@@ -32,16 +32,33 @@ export async function POST(request) {
     console.log('[MIDTRANS WEBHOOK] Signature valid.');
 
     // 2. Get UserId and plan from custom fields
-    const userId = body.custom_field1;
-    const plan = body.custom_field2; // 'advance', 'pro', or 'normal'
+    let userId = body.custom_field1;
+    let plan = body.custom_field2; // 'advance', 'pro', or 'normal'
+
+    // 3. RECOVERY LOGIC: If custom fields are missing (Midtrans Sandbox bug), 
+    // try to recover them from the order_id: ZP[X]-USERID-TIME
+    if ((!userId || !plan) && order_id) {
+      console.log('[MIDTRANS WEBHOOK] Attempting recovery from order_id:', order_id);
+      const parts = order_id.split('-');
+      if (parts.length >= 6) { // ZPX (1) + UUID (5) + TIME (1) = 7 parts
+        const prefix = parts[0];
+        // userId is between the prefix and the last part
+        userId = parts.slice(1, -1).join('-');
+        
+        if (prefix === 'ZPA') plan = 'advance';
+        else if (prefix === 'ZPP') plan = 'pro';
+        else if (prefix === 'ZPN') plan = 'normal';
+        
+        console.log('[MIDTRANS WEBHOOK] Recovered data:', { userId, plan });
+      }
+    }
 
     if (!userId) {
-      console.error('UserId missing in webhook payload');
+      console.error('UserId missing in webhook payload after recovery attempt');
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
-    // 3. Determine which role to assign based on plan and order_id fallback
-    // Fallback: parse plan from order_id if custom_field2 is missing or unreliable
+    // 4. Determine which role to assign based on plan and order_id fallback
     let parsedPlan = plan;
     const roleMap = {
       advance: 'advance',
@@ -50,17 +67,17 @@ export async function POST(request) {
     };
     
     if (!parsedPlan || !roleMap[parsedPlan]) {
-      if (order_id.includes('ADVANCE')) parsedPlan = 'advance';
-      else if (order_id.includes('PRO')) parsedPlan = 'pro';
-      else if (order_id.includes('NORMAL')) parsedPlan = 'normal';
-      else parsedPlan = 'normal'; // default
+      if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
+      else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
+      else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
+      else parsedPlan = 'normal';
     }
 
     const newRole = roleMap[parsedPlan] || 'normal';
 
-    // 4. Process Payment Status
+    // 5. Process Payment Status
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`Payment success for user: ${userId}, plan: ${plan}`);
+      console.log(`Payment success for user: ${userId}, plan: ${parsedPlan}`);
 
       // Get current expiration
       const { data: member, error: fetchError } = await supabaseAdmin
@@ -86,6 +103,7 @@ export async function POST(request) {
           is_paid: true,
           expired_at: baseDate.toISOString(),
           status: 'active',
+          approval_status: 'active',
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);

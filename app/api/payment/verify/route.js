@@ -33,8 +33,22 @@ export async function POST(request) {
     } = statusResponse;
 
     // Gunakan userId dari midtrans, jika tidak ada (sandbox bug) gunakan dari client-side fallback
-    const userId = midtransUserId || fallbackUserId;
-    const plan = midtransPlan || fallbackPlan;
+    let userId = midtransUserId || fallbackUserId;
+    let plan = midtransPlan || fallbackPlan;
+
+    // RECOVERY LOGIC: Parse from order_id if still missing
+    if ((!userId || !plan) && order_id) {
+      console.log('[VERIFY] Attempting recovery from order_id:', order_id);
+      const parts = order_id.split('-');
+      if (parts.length >= 6) {
+        const prefix = parts[0];
+        userId = parts.slice(1, -1).join('-');
+        if (prefix === 'ZPA') plan = 'advance';
+        else if (prefix === 'ZPP') plan = 'pro';
+        else if (prefix === 'ZPN') plan = 'normal';
+        console.log('[VERIFY] Recovered:', { userId, plan });
+      }
+    }
 
     console.log(`[VERIFY] Midtrans Status: ${transaction_status}, User: ${userId}, Plan: ${plan}`);
 
@@ -81,6 +95,7 @@ export async function POST(request) {
           is_paid: true,
           expired_at: baseDate.toISOString(),
           status: 'active',
+          approval_status: 'active',
           updated_at: new Date().toISOString()
         })
         .eq('user_id', userId);

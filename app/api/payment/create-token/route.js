@@ -19,17 +19,22 @@ export async function POST(request) {
 
     // Tentukan harga berdasarkan plan
     const planConfig = {
-      advance: { amount: 499000, name: 'Advance', id: 'ADVANCE-MONTHLY', prefix: 'ADVANCE' },
-      pro:     { amount: 299000, name: 'Pro',     id: 'PRO-MONTHLY',     prefix: 'PRO'     },
-      normal:  { amount: 29000,  name: 'Normal',  id: 'NORMAL-MONTHLY',  prefix: 'NORMAL'  },
+      advance: { amount: 499000, name: 'Advance', id: 'ADVANCE-MONTHLY', prefix: 'ZPA' },
+      pro:     { amount: 299000, name: 'Pro',     id: 'PRO-MONTHLY',     prefix: 'ZPP' },
+      normal:  { amount: 29000,  name: 'Normal',  id: 'NORMAL-MONTHLY',  prefix: 'ZPN' },
     };
 
     const config = planConfig[plan] || planConfig.normal;
 
+    // Build a secure order_id that includes the userId (UUID is 36 chars)
+    // Format: PRE-USERID-TIME (approx 48 chars)
+    const shortTime = Math.floor(Date.now() / 1000).toString().slice(-6);
+    const orderId = `${config.prefix}-${userId}-${shortTime}`;
+
     // Parameters for Midtrans Snap
     const parameter = {
       transaction_details: {
-        order_id: `${config.prefix}-${Date.now()}`,
+        order_id: orderId,
         gross_amount: config.amount,
       },
       custom_field1: userId,

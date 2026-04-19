@@ -254,33 +254,33 @@ function DashboardContent() {
     let isMounted = true;
     
     async function handlePaymentSuccess() {
-      if (paymentStatus === 'success' || (orderId && searchParams.get('transaction_status') === 'settlement')) {
-        console.log('Payment success detected, running aggressive verification...');
+      // Deteksi keberhasilan dari parameter URL (Midtrans redirect)
+      const isActuallySuccess = paymentStatus === 'success' || 
+                                 (orderId && searchParams.get('transaction_status') === 'settlement') ||
+                                 (orderId && orderId.includes('-') && pathname.includes('dashboard'));
+
+      if (isActuallySuccess && orderId && member?.user_id) {
+        console.log('[PAYMENT] Success detected in URL, triggering proactive verification for:', orderId);
         
         try {
-          // Selalu tembak verify manual untuk berjaga-jaga jika webhook belum diproses atau gagal
-          if (orderId && member?.user_id) {
-            await fetch('/api/payment/verify', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                order_id: orderId, 
-                userId: member.user_id 
-              })
-            });
-          } else {
-             // Jika orderId tidak diekspos di URL tapi statusnya success, kita bisa hit API general
-             // Namun tanpa order_id API verify tidak akan bisa, jadi kita panggil loadData biasa saja
-             await loadData();
-             return;
-          }
-
-          // Paksa reload penuh agar Sidebar dan Layout terupdate total dari Supabase
-          if (isMounted) {
+          // Tembak API verify secara manual untuk memastikan DB terupdate detik ini juga
+          const res = await fetch('/api/payment/verify', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              order_id: orderId, 
+              userId: member.user_id 
+            })
+          });
+          
+          const result = await res.json();
+          if (result.success) {
+            console.log('[PAYMENT] Proactive verification successful!');
+            // Paksa reload penuh agar UI (Sidebar, dll) langsung berubah tanpa cache
             window.location.href = '/dashboard';
           }
         } catch (e) {
-          console.error("Verification callback failed:", e);
+          console.error("[PAYMENT] Proactive verification failed:", e);
         }
       }
     }
