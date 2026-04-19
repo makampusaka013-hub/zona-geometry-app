@@ -784,7 +784,7 @@ function DashboardContent() {
               </div>
             </div>
             {/* S-CURVE CHART CONTAINER with Guard */}
-            <div className="h-[450px] min-h-[400px] bg-slate-50/30 dark:bg-slate-800/20 rounded-[32px] p-6 relative">
+            <div className="h-[450px] min-h-[400px] min-w-0 bg-slate-50/30 dark:bg-slate-800/20 rounded-[32px] p-6 relative">
               {chartData.length === 0 ? (
                 <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-40">
                   <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
@@ -903,7 +903,7 @@ function DashboardContent() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Per Item (Rp)</h3></div>
-                <div className="h-80 min-h-[300px] bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
                   {!processedItemData.visible || processedItemData.visible.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
                       <BarChart2 className="w-8 h-8 text-slate-400" />
@@ -929,7 +929,7 @@ function DashboardContent() {
               </div>
               <div className="space-y-4">
                 <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Sumber Daya (Rp)</h3></div>
-                <div className="h-80 min-h-[300px] bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
                   {!processedResourceData.visible || processedResourceData.visible.length === 0 ? (
                     <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
                       <Zap className="w-8 h-8 text-slate-400" />
