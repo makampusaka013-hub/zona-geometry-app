@@ -40,104 +40,86 @@ export async function POST(request) {
     }
     console.log('[MIDTRANS WEBHOOK] Signature valid for Order:', order_id);
 
-    // 2. Get UserId and plan from custom fields
+    // 2. Get identifying metadata (with fallbacks)
     let userId = body.custom_field1;
-    let plan = body.custom_field2; // 'advance', 'pro', or 'normal'
+    let plan = body.custom_field2;
+    let userEmail = body.custom_field3; // Fallback cadangan
 
-    // 3. RECOVERY LOGIC: If custom fields are missing (Midtrans Sandbox bug), 
-    // try to recover them from the order_id: ZP[X]-USERID-TIME
-    if ((!userId || !plan) && order_id) {
-      console.log('[MIDTRANS WEBHOOK] Attempting recovery from order_id:', order_id);
-      const parts = order_id.split('-');
-      if (parts.length >= 6) { // ZPX (1) + UUID (5) + TIME (1) = 7 parts
-        const prefix = parts[0];
-        // userId is between the prefix and the last part
+    // 3. RECOVERY LOGIC: ID & Plan extraction from order_id prefix
+    const parts = order_id.split('-');
+    if (parts.length >= 6) { 
+      if (!userId) {
         userId = parts.slice(1, -1).join('-');
-        
-        if (prefix === 'ZPA') plan = 'advance';
-        else if (prefix === 'ZPP') plan = 'pro';
-        else if (prefix === 'ZPN') plan = 'normal';
-        
-        console.log('[MIDTRANS WEBHOOK] Recovered data:', { userId, plan });
+        console.log('[MIDTRANS WEBHOOK] userId recovered from order_id:', userId);
       }
+      
+      const prefix = parts[0];
+      if (prefix === 'ZPA') plan = 'advance';
+      else if (prefix === 'ZPP') plan = 'pro';
+      else if (prefix === 'ZPN') plan = 'normal';
     }
 
-    if (!userId) {
-      console.error('UserId missing in webhook payload after recovery attempt');
-      return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
-    }
-
-    // 4. Determine which role to assign (Primary Source: Order ID Prefix)
+    // Determine target role (normalize casing)
     let parsedPlan = (plan || '').toLowerCase();
-    const roleMap = {
-      advance: 'advance',
-      pro: 'pro',
-      normal: 'normal',
-    };
-    
-    // Always check prefix first (Immutable source)
+    const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
     if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
     else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
     else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-    
     const newRole = roleMap[parsedPlan] || 'normal';
+
+    // 4. FIND USER (Primary: userId, Fallback: Email)
+    let member = null;
+    const { data: memberById } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
+    member = memberById;
+
+    if (!member && userEmail) {
+      console.log(`[MIDTRANS WEBHOOK] User ID ${userId} not found. Trying fallback to Email: ${userEmail}`);
+      const { data: memberByEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
+      member = memberByEmail;
+    }
+
+    if (!member) {
+      console.error(`[MIDTRANS WEBHOOK] User NOT FOUND (ID: ${userId}, Email: ${userEmail}). Cannot process payment.`);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    const actualUserId = member.user_id;
 
     // 5. Process Payment Status
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`[MIDTRANS WEBHOOK] PROCESSING SUCCESS: User=${userId}, Plan=${parsedPlan}, OrderId=${order_id}`);
-
-      try {
-        // Get current expiration
-        const { data: member, error: fetchError } = await supabaseAdmin
-          .from('members')
-          .select('expired_at, role')
-          .eq('user_id', userId)
-          .single();
-
-        if (fetchError) {
-          console.error(`[MIDTRANS WEBHOOK] DB Fetch Error for user ${userId}:`, fetchError);
-          return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+      console.log(`[MIDTRANS WEBHOOK] PROCESSING SUCCESS: Role=${newRole} for User=${actualUserId} (${member.full_name})`);
+      
+      // Calculate Expiry (Accumulative)
+      let baseDate = new Date();
+      if (member.expired_at) {
+        const currentExp = new Date(member.expired_at);
+        if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
+          baseDate = currentExp;
         }
+      }
+      baseDate.setDate(baseDate.getDate() + 30);
+      const finalExpiry = baseDate.toISOString();
 
-        console.log(`[MIDTRANS WEBHOOK] Current DB State: Role=${member.role}, ExpiredAt=${member.expired_at}`);
+      const { error: updateError } = await supabaseAdmin
+        .from('members')
+        .update({
+          role: newRole,
+          is_paid: true,
+          expired_at: finalExpiry,
+          approval_status: 'active',
+          status: 'active',
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', actualUserId);
 
-        // Safe Date Calculation
-        let baseDate = new Date();
-        if (member.expired_at) {
-          const currentExp = new Date(member.expired_at);
-          // Jika masa aktif masih di masa depan, tambahkan dari sana. Jika sudah lewat, tambahkan dari hari ini.
-          if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
-            baseDate = currentExp;
-          }
-        }
-        
-        console.log(`[MIDTRANS WEBHOOK] Base date for calculation:`, baseDate.toISOString());
-        
-        // Add 30 days
-        baseDate.setDate(baseDate.getDate() + 30);
-        const finalExpiry = baseDate.toISOString();
-
-        console.log(`[MIDTRANS WEBHOOK] Updating user ${userId} to Role=${newRole}, Expiry=${finalExpiry}`);
-
-        const { error: updateError } = await supabaseAdmin
-          .from('members')
-          .update({
-            role: newRole,
-            is_paid: true,
-            expired_at: finalExpiry,
-            status: 'active',
-            approval_status: 'active',
-            updated_at: new Date().toISOString()
-          })
-          .eq('user_id', userId);
-
-        if (updateError) {
-          console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${userId}:`, updateError);
-          throw updateError;
-        }
-        
-        console.log(`[MIDTRANS WEBHOOK] DB Update SUCCESS for user: ${userId}`);
-        return NextResponse.json({ success: true, message: 'Notification processed' });
+      if (updateError) {
+        console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${actualUserId}:`, updateError);
+        return NextResponse.json({ error: updateError.message }, { status: 500 });
+      }
+      
+      console.log(`[MIDTRANS WEBHOOK] SYNC SUCCESS! User ${actualUserId} is now ${newRole}`);
+      return NextResponse.json({ success: true, message: 'Notification processed' });
+    }
 
       } catch (dbErr) {
         console.error('[MIDTRANS WEBHOOK] Internal Process Error:', dbErr);

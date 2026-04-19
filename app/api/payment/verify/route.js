@@ -35,6 +35,7 @@ export async function POST(request) {
     // Gunakan userId dari midtrans, jika tidak ada (sandbox bug) gunakan dari client-side fallback
     let userId = midtransUserId || fallbackUserId;
     let plan = midtransPlan || fallbackPlan;
+    let userEmail = statusResponse.custom_field3;
 
     // RECOVERY LOGIC: Parse from order_id if still missing
     if ((!userId || !plan) && order_id) {
@@ -42,7 +43,9 @@ export async function POST(request) {
       const parts = order_id.split('-');
       if (parts.length >= 6) {
         const prefix = parts[0];
-        userId = parts.slice(1, -1).join('-');
+        if (!userId) {
+          userId = parts.slice(1, -1).join('-');
+        }
         if (prefix === 'ZPA') plan = 'advance';
         else if (prefix === 'ZPP') plan = 'pro';
         else if (prefix === 'ZPN') plan = 'normal';
@@ -50,40 +53,38 @@ export async function POST(request) {
       }
     }
 
-    console.log(`[VERIFY] Midtrans Status: ${transaction_status}, User: ${userId}, Plan: ${plan}`);
+    // Identify Plan
+    let parsedPlan = (plan || '').toLowerCase();
+    const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
+    if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
+    else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
+    else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
+    const newRole = roleMap[parsedPlan] || 'normal';
 
-    if (!userId) {
-      return NextResponse.json({ error: 'No userId found in transaction or fallback' }, { status: 400 });
-    }
+    console.log(`[VERIFY] Midtrans Status: ${transaction_status}, User: ${userId}, Plan: ${newRole}`);
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`[VERIFY API] PROCESSING SUCCESS: User=${userId}, Plan=${plan}, OrderId=${order_id}`);
-
       try {
-        // Identify Plan (Primary Source: Order ID Prefix)
-        let parsedPlan = (plan || '').toLowerCase();
-        const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
-        
-        if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
-        else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
-        else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-        
-        const newRole = roleMap[parsedPlan] || 'normal';
+        // 4. FIND USER (Primary: userId, Fallback: Email)
+        let member = null;
+        const { data: memberById } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
+        member = memberById;
 
-        // 3. Process Expiration & Update DB
-        const { data: member, error: fetchError } = await supabaseAdmin
-          .from('members')
-          .select('expired_at, is_paid, role')
-          .eq('user_id', userId)
-          .single();
+        if (!member && userEmail) {
+          console.log(`[VERIFY] User ID ${userId} not found. Trying fallback to Email: ${userEmail}`);
+          const { data: memberByEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
+          member = memberByEmail;
+        }
 
-        if (fetchError) {
-          console.error(`[VERIFY API] DB Fetch Error for user ${userId}:`, fetchError);
+        if (!member) {
+          console.error(`[VERIFY] User NOT FOUND (ID: ${userId}, Email: ${userEmail}). Cannot verify.`);
           return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
         }
 
-        console.log(`[VERIFY API] Current DB State: Role=${member.role}, ExpiredAt=${member.expired_at}`);
+        const actualUserId = member.user_id;
+        console.log(`[VERIFY API] SUCCESS for ${actualUserId} (${member.full_name})`);
 
+        // 3. Process Expiration & Update DB
         // Safe Date Calculation
         let baseDate = new Date();
         if (member.expired_at) {
@@ -93,13 +94,8 @@ export async function POST(request) {
           }
         }
         
-        console.log(`[VERIFY API] Base date for calculation:`, baseDate.toISOString());
-        
-        // Add 30 days
         baseDate.setDate(baseDate.getDate() + 30);
         const finalExpiry = baseDate.toISOString();
-
-        console.log(`[VERIFY API] Updating user ${userId} to Role=${newRole}, Expiry=${finalExpiry}`);
 
         const { error: updateError } = await supabaseAdmin
           .from('members')
@@ -111,7 +107,7 @@ export async function POST(request) {
             approval_status: 'active',
             updated_at: new Date().toISOString()
           })
-          .eq('user_id', userId);
+          .eq('user_id', actualUserId);
 
         if (updateError) {
           console.error(`[VERIFY API] DB Update Error for user ${userId}:`, updateError);

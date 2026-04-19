@@ -44,6 +44,7 @@ export async function POST(request) {
       },
       custom_field1: userId,
       custom_field2: plan, 
+      custom_field3: userEmail, // Cadangan jika userId berubah/terhapus saat testing
       customer_details: {
         first_name: fullName || 'User',
         email: userEmail,
