@@ -405,6 +405,28 @@ function ProyekContent() {
     }
   }, [router, isCreating, selectedProject]);
 
+  const handleNewProject = useCallback(() => {
+    if (ownedLimitReached) {
+      const limitInfo = member?.role === 'advance' ? 5 : (member?.role === 'pro' ? 3 : 1);
+      toast.warning(`Batas maksimal ${limitInfo} proyek tercapai. Silakan upgrade atau hapus proyek lama.`);
+      return;
+    }
+    setCreateForm({
+      name: '',
+      code: '',
+      program_name: '',
+      activity_name: '',
+      work_name: '',
+      location: '',
+      location_id: member?.selected_location_id || '',
+      fiscal_year: new Date().getFullYear().toString(),
+      contract_number: '',
+      hsp_value: 0,
+      ppn_percent: 12
+    });
+    setIsCreateModalOpen(true);
+  }, [ownedLimitReached, member?.role, member?.selected_location_id]);
+
   // Initial Load
   useEffect(() => {
     loadData();
@@ -853,27 +875,6 @@ function ProyekContent() {
     }
   }
 
-  const handleNewProject = useCallback(() => {
-    if (ownedLimitReached) {
-      const limitInfo = member?.role === 'advance' ? 5 : (member?.role === 'pro' ? 3 : 1);
-      toast.warning(`Batas maksimal ${limitInfo} proyek tercapai. Silakan upgrade atau hapus proyek lama.`);
-      return;
-    }
-    setCreateForm({
-      name: '',
-      code: '',
-      program_name: '',
-      activity_name: '',
-      work_name: '',
-      location: '',
-      location_id: member?.selected_location_id || '',
-      fiscal_year: new Date().getFullYear().toString(),
-      contract_number: '',
-      hsp_value: 0,
-      ppn_percent: 12
-    });
-    setIsCreateModalOpen(true);
-  }, [ownedLimitReached, member?.role, member?.selected_location_id]);
   
 
   const handleDeleteProject = async (id) => {
