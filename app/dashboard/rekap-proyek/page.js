@@ -1,8 +1,8 @@
 'use client';
 
-// Trigger recompile
+export const dynamic = 'force-dynamic';
 
-import React, { useCallback, useEffect, useMemo, useState, useRef } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
@@ -76,7 +76,7 @@ const TABS = [
   { id: 'export', label: 'Export / Import', icon: FileSpreadsheet, desc: 'Ekspor laporan RAB atau Impor dari format Excel' },
 ];
 
-export default function ProyekPage() {
+function ProyekContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -831,7 +831,7 @@ export default function ProyekPage() {
     }
   }
 
-  const handleNewProject = () => {
+  const handleNewProject = useCallback(() => {
     if (ownedLimitReached) {
       const limitInfo = member?.role === 'advance' ? 5 : (member?.role === 'pro' ? 3 : 1);
       toast.warning(`Batas maksimal ${limitInfo} proyek tercapai. Silakan upgrade atau hapus proyek lama.`);
@@ -851,7 +851,7 @@ export default function ProyekPage() {
       ppn_percent: 12
     });
     setIsCreateModalOpen(true);
-  };
+  }, [ownedLimitReached, member?.role, member?.selected_location_id]);
   
 
   const handleDeleteProject = async (id) => {
@@ -2003,5 +2003,13 @@ export default function ProyekPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function ProyekPage() {
+  return (
+    <Suspense fallback={<Spinner full />}>
+      <ProyekContent />
+    </Suspense>
   );
 }

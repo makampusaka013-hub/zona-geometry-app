@@ -1,9 +1,11 @@
 'use client';
 
+export const dynamic = 'force-dynamic';
+
 import { Logo } from '@/components/Logo';
 import { LogoMark } from '@/components/LogoMark';
 
-import { useCallback, useEffect, useState, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useState, useMemo, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { supabase, safeGetSession } from '@/lib/supabase';
@@ -123,7 +125,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
   );
 }
 
-export default function DashboardPage() {
+function DashboardContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
@@ -1001,5 +1003,17 @@ export default function DashboardPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#0f172a]">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 dark:border-slate-800 border-t-indigo-600 dark:border-t-orange-500" />
+      </div>
+    }>
+      <DashboardContent />
+    </Suspense>
   );
 }
