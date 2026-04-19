@@ -185,10 +185,14 @@ function DashboardContent() {
         .select('user_id, full_name, role, expired_at, approval_status, is_paid').eq('user_id', user.id).maybeSingle();
 
       // [SAFETY NET: AKTIVASI OTOMATIS DI DASHBOARD]
-      // [SAFETY NET: AKTIVASI OTOMATIS DI DASHBOARD]
       let finalRow = row;
+      
+      // Ambil sinyal pembayaran dari URL
+      const hasPaymentSignal = searchParams.get('payment') === 'success' || !!searchParams.get('order_id');
+
       // Aktifkan atau beri trial jika: 1. Data belum ada, 2. Masih pending, ATAU 3. Masa aktif kosong (null)
-      if (!row || row.approval_status === 'pending' || !row.expired_at) {
+      // TAPI: JANGAN lakukan ini jika ada sinyal pembayaran sukses di URL untuk menghindari tabrakan data (Race Condition).
+      if ((!row || row.approval_status === 'pending' || !row.expired_at) && !hasPaymentSignal) {
         try {
           const res = await fetch('/api/auth/activate', {
             method: 'POST',
@@ -208,6 +212,8 @@ function DashboardContent() {
         } catch (err) {
           console.error('Safety Net Activation failed via API:', err);
         }
+      } else if (hasPaymentSignal) {
+        console.log('[DASHBOARD] Payment signal detected. Skipping safety net activation to prevent race condition.');
       }
 
       let isExp = false;

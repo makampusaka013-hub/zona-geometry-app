@@ -26,7 +26,12 @@ export async function POST(request) {
       .maybeSingle();
 
     if (existingUser) {
-      // Jika pengguna sudah ada, JANGAN TIMPA DENGAN PAKSA role atau tanggal expired nya.
+      // PROTEKSI MUTLAK: Jika user sudah bayar, jangan pernah ubah statusnya di sini!
+      if (existingUser.is_paid) {
+        console.log(`[ACTIVATE] User ${userId} is already PAID. Blocking trial overwrite.`);
+        return NextResponse.json({ success: true, member: existingUser });
+      }
+
       const updateData = {};
       
       // Jika masih pending, ubah jadi active agar bisa login
@@ -34,9 +39,12 @@ export async function POST(request) {
         updateData.approval_status = 'active';
       }
       
-      // Safety net: Jika benar-benar belum punya masa aktif, berikan masa percobaan 7 hari
+      // Safety net: Jika benar-benar belum punya masa aktif, berikan masa percobaan 8 hari
       if (!existingUser.expired_at) {
+        const trialExpiry = new Date();
+        trialExpiry.setDate(trialExpiry.getDate() + 8);
         updateData.expired_at = trialExpiry.toISOString();
+        console.log(`[ACTIVATE] Assigning trial to user ${userId} until ${updateData.expired_at}`);
       }
 
       if (Object.keys(updateData).length > 0) {
