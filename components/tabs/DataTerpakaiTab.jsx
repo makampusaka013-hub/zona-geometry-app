@@ -1,0 +1,384 @@
+import React, { useState, useMemo } from 'react';
+import Spinner from '../Spinner';
+import Empty from '../Empty';
+import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
+
+export default function DataTerpakaiTab({ 
+  activeTab, 
+  tabLoading, 
+  tabData, 
+  formatIdr, 
+  onRefresh,
+  subTab,
+  setSubTab,
+  resFilter,
+  setResFilter,
+  readOnly = false
+}) {
+  const ahspRows = tabData?.ahsp || [];
+  const hargaRows = tabData?.harga || [];
+
+  const filteredHargaRows = useMemo(() => {
+    if (resFilter === 'all') return hargaRows;
+    return hargaRows.filter(r => {
+      const j = (r.jenis_komponen || '').toLowerCase();
+      if (resFilter === 'upah') return j === 'upah' || j === 'tenaga' || j === 'worker';
+      if (resFilter === 'bahan') return j === 'bahan' || j === 'material' || j === 'barang';
+      if (resFilter === 'alat') return j === 'alat' || j === 'peralatan' || j === 'mesin';
+      return j === resFilter;
+    });
+  }, [hargaRows, resFilter]);
+
+  if (activeTab !== 'terpakai') return null;
+  if (tabLoading) return <Spinner />;
+
+
+  return (
+    <div className="w-full h-full">
+
+      {subTab === 'ahsp' ? (
+        <AhspSubView rows={ahspRows} formatIdr={formatIdr} />
+      ) : (
+        <HargaSubView rows={filteredHargaRows} formatIdr={formatIdr} onRefresh={onRefresh} readOnly={readOnly} />
+      )}
+    </div>
+  );
+}
+
+function AhspSubView({ rows, formatIdr }) {
+  if (rows.length === 0) {
+    return <Empty icon={<ClipboardList className="w-10 h-10" />} msg="Tidak ada rincian AHSP di RAB ini." />;
+  }
+
+  return (
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl bg-white dark:bg-[#1e293b]">
+      <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 relative">
+        <table className="w-full text-sm border-separate border-spacing-0">
+          <thead className="sticky top-0 z-30">
+            <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] uppercase font-black tracking-widest shadow-sm">
+              <th className="px-6 py-4 text-left border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">URAIAN PEKERJAAN</th>
+              <th className="px-6 py-4 text-center border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">SATUAN</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">VOLUME</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">HARGA SATUAN</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">TOTAL JUMLAH</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+            {rows.map((item, i) => (
+              <tr key={item.id || i} className="hover:bg-indigo-50/30 dark:hover:bg-orange-900/20 transition-colors">
+                <td className="px-6 py-4">
+                  <div className="text-[10px] text-indigo-600 dark:text-orange-400 font-black font-mono">
+                    {item.master_ahsp?.kode_ahsp || `AHSP ${i + 1}`}
+                  </div>
+                  <div className="font-bold text-slate-800 dark:text-slate-100 leading-snug">{item.uraian_custom || item.uraian}</div>
+                  <div className="text-[10px] text-slate-400 mt-1 uppercase font-semibold">{item.bab_pekerjaan || 'Tanpa Kategori'}</div>
+                </td>
+                <td className="px-6 py-4 text-slate-500 font-bold">{item.satuan || '-'}</td>
+                <td className="px-6 py-4 text-right font-mono text-xs font-bold">{Number(item.volume || 0).toLocaleString('id-ID')}</td>
+                <td className="px-6 py-4 text-right font-mono text-xs font-medium text-slate-500 dark:text-slate-300">
+                  {formatIdr(item.harga_satuan)}
+                </td>
+                <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-900 dark:text-white">{formatIdr(item.jumlah)}</td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  );
+}
+
+// ─── Modal Override Harga ───────────────────────────────────────────────
+function OverrideModal({ item, formatIdr, onClose, onSaved }) {
+  const isOverrideActive = item.source_table === 'master_harga_custom';
+  
+  const [harga, setHarga] = useState(String(Math.round(item.harga_snapshot || 0)));
+  const [tkdn, setTkdn] = useState(String(Number(item.tkdn_percent || 0).toFixed(2)));
+  const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
+
+  const handleSave = async () => {
+    setSaving(true);
+    try {
+      const newPrice = parseFloat(harga || 0);
+      const newTkdn = parseFloat(tkdn || 0);
+
+      if (item.source_table === 'master_harga_dasar') {
+        const { error } = await supabase.from('master_harga_custom').upsert({
+          overrides_harga_dasar_id: item.item_dasar_id,
+          nama_item: item.uraian,
+          satuan: item.satuan,
+          harga_satuan: newPrice,
+          tkdn_percent: newTkdn,
+          kategori_item: item.jenis_komponen,
+          kode_item: item.key_item,
+        }, { onConflict: 'user_id,overrides_harga_dasar_id' });
+        if (error) { alert(error.message); return; }
+      } else {
+        // Item custom — update langsung
+        const targetId = item.overrides_id || item.item_dasar_id;
+        const { error } = await supabase.from('master_harga_custom')
+          .update({ harga_satuan: newPrice, tkdn_percent: newTkdn })
+          .eq('id', targetId);
+        if (error) { alert(error.message); return; }
+      }
+
+      onSaved();
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const handleReset = async () => {
+    if (!confirm('Reset harga ke nilai PUPR resmi? Override Anda akan dihapus.')) return;
+    setResetting(true);
+    try {
+      const targetId = item.source_table === 'master_harga_custom'
+        ? item.item_dasar_id
+        : null;
+
+      if (targetId) {
+        const { error } = await supabase.from('master_harga_custom')
+          .delete()
+          .eq('id', targetId);
+        if (error) { alert(error.message); return; }
+      } else if (item.overrides_id) {
+        // hapus berdasarkan overrides_harga_dasar_id milik user ini
+        const { error } = await supabase.from('master_harga_custom')
+          .delete()
+          .eq('overrides_harga_dasar_id', item.item_dasar_id);
+        if (error) { alert(error.message); return; }
+      }
+
+      onSaved();
+    } finally {
+      setResetting(false);
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[200] flex items-center justify-center p-4 bg-slate-900/70 backdrop-blur-sm animate-in fade-in">
+      <div className="bg-white dark:bg-slate-900 rounded-3xl w-full max-w-md shadow-2xl border border-slate-200 dark:border-slate-700 overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 pt-6 pb-4 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center gap-3">
+            <div className="p-2 bg-indigo-100 dark:bg-orange-900/40 rounded-xl">
+              <Wrench className="w-4 h-4 text-indigo-600 dark:text-orange-400" />
+            </div>
+            <div>
+              <h3 className="text-sm font-black text-slate-900 dark:text-white">Set Override Harga</h3>
+              <p className="text-[10px] text-slate-400 mt-0.5 max-w-[280px] truncate">{item.uraian}</p>
+            </div>
+          </div>
+          <button onClick={onClose} className="p-2 rounded-xl hover:bg-slate-100 dark:hover:bg-slate-800 transition-all">
+            <X className="w-4 h-4 text-slate-400" />
+          </button>
+        </div>
+
+        {/* Body */}
+        <div className="px-6 py-5 space-y-5">
+          {/* Info Panel PUPR */}
+          <div className="bg-slate-50 dark:bg-slate-800/60 rounded-2xl p-4 space-y-2 border border-slate-100 dark:border-slate-700">
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400 font-semibold">Harga PUPR:</span>
+              <span className="text-xs font-black text-slate-700 dark:text-slate-200 font-mono">{formatIdr(item.harga_snapshot)}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-xs text-slate-400 font-semibold">TKDN PUPR:</span>
+              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{Number(item.tkdn_percent || 0).toFixed(2)}%</span>
+            </div>
+            {isOverrideActive && (
+              <div className="flex items-center gap-1.5 pt-1">
+                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 dark:bg-orange-900/50 text-orange-600 dark:text-orange-400 text-[9px] font-black rounded-lg uppercase tracking-wider">
+                  <span className="w-1.5 h-1.5 bg-orange-500 rounded-full animate-pulse"></span>
+                  Override aktif
+                </span>
+              </div>
+            )}
+          </div>
+
+          {/* Input Override Harga */}
+          <div>
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2">
+              Harga Override (Anda) <span className="text-red-500">*</span>
+            </label>
+            <input
+              type="number"
+              value={harga}
+              onFocus={e => e.target.select()}
+              onChange={e => setHarga(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-indigo-400 dark:border-orange-500 rounded-xl px-4 py-3 font-mono text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-indigo-300 dark:focus:ring-orange-500/50 transition-all"
+              placeholder="Masukkan harga pasar..."
+            />
+          </div>
+
+          {/* Input TKDN */}
+          <div>
+            <label className="block text-xs font-black text-slate-700 dark:text-slate-300 mb-2">
+              TKDN Override % <span className="text-slate-400 font-normal">(0–100)</span>
+            </label>
+            <input
+              type="number"
+              min="0"
+              max="100"
+              step="0.01"
+              value={tkdn}
+              onFocus={e => e.target.select()}
+              onChange={e => setTkdn(e.target.value)}
+              className="w-full bg-slate-50 dark:bg-slate-800 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl px-4 py-3 font-mono text-sm font-black text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-300 dark:focus:ring-emerald-500/50 transition-all"
+              placeholder="Masukkan persentase TKDN..."
+            />
+          </div>
+
+          {/* Catatan */}
+          <p className="text-[10px] text-slate-400 dark:text-slate-500 leading-relaxed">
+            <span className="font-black text-indigo-500 dark:text-orange-400">ℹ</span>{' '}
+            Harga ini akan <strong>otomatis diterapkan</strong> ke seluruh AHSP yang menggunakan item ini. User lain tidak terpengaruh.
+          </p>
+        </div>
+
+        {/* Footer Buttons */}
+        <div className="flex items-center gap-3 px-6 pb-6">
+          {isOverrideActive && (
+            <button
+              onClick={handleReset}
+              disabled={resetting}
+              className="flex items-center gap-2 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-black transition-all border border-slate-200 dark:border-slate-600"
+            >
+              {resetting ? <div className="w-3.5 h-3.5 border-2 border-slate-400/30 border-t-slate-400 animate-spin rounded-full" /> : <RotateCcw className="w-3.5 h-3.5" />}
+              Reset PUPR
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="flex-1 px-4 py-3 rounded-xl bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 text-xs font-black transition-all"
+          >
+            Batal
+          </button>
+          <button
+            onClick={handleSave}
+            disabled={saving}
+            className="flex-1 flex items-center justify-center gap-2 px-4 py-3 rounded-xl bg-orange-500 hover:bg-orange-600 text-white text-xs font-black transition-all shadow-lg shadow-orange-200 dark:shadow-orange-900/30"
+          >
+            {saving ? <div className="w-4 h-4 border-2 border-white/30 border-t-white animate-spin rounded-full" /> : '✓ Set Override'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// ─── Tabel Komponen Terpakai ────────────────────────────────────────────
+function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
+  const [overrideItem, setOverrideItem] = useState(null);
+
+  if (rows.length === 0) {
+    return <Empty icon={<Package className="w-10 h-10" />} msg="Belum ada data harga satuan terpakai." />;
+  }
+
+  return (
+    <>
+      <div className="space-y-6">
+        <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl bg-white dark:bg-[#1e293b]">
+          <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 relative">
+            <table className="min-w-full w-full text-sm border-separate border-spacing-0">
+              <thead className="sticky top-0 z-[60]">
+                <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] uppercase font-black tracking-widest shadow-sm">
+                  <th className="px-6 py-4 text-left border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">KATALOG KOMPONEN</th>
+                  <th className="px-6 py-4 text-center border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">JENIS</th>
+                  <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">VOL. TERPAKAI</th>
+                  <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">HARGA SATUAN</th>
+                  <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">SKOR TKDN</th>
+                  <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">CONTRIBUTION VALUE</th>
+                  <th className="px-6 py-4 text-center border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">AKSI</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                {rows.map((item, i) => {
+                  // Heuristik: Jika jenis_komponen ambigu, tentukan berdasarkan karakter pertama kode_item
+                  const rawJ = (item.jenis_komponen || '').toLowerCase();
+                  const code = (item.key_item || '').trim().toUpperCase();
+                  
+                  let j = rawJ;
+                  if (rawJ === 'bahan_upah_alat' || !['upah', 'bahan', 'alat'].includes(rawJ)) {
+                    if (code.startsWith('L')) j = 'upah';
+                    else if (code.startsWith('M')) j = 'alat';
+                    else j = 'bahan';
+                  }
+
+                  const isOverridden = item.source_table === 'master_harga_custom';
+                  const jBadge = {
+                    upah: 'bg-blue-100 text-blue-700 dark:bg-orange-900/40 dark:text-orange-400',
+                    bahan: 'bg-indigo-100 text-indigo-700 dark:bg-amber-900/30 dark:text-amber-400',
+                    alat: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
+                  }[j] || 'bg-slate-100 text-slate-500';
+
+                  return (
+                    <tr key={i} className="hover:bg-indigo-50/20 dark:hover:bg-orange-500/10 transition-colors">
+                      <td className="px-6 py-4">
+                        <div className="flex items-start gap-2">
+                          <div>
+                            <div className="text-[11px] font-black text-slate-800 dark:text-slate-100 leading-tight">{item.uraian}</div>
+                            <div className="text-[9px] font-mono text-slate-400 mt-1 uppercase tracking-tighter">{item.key_item || 'NO-REF'} · {item.satuan}</div>
+                          </div>
+                          {isOverridden && (
+                            <span className="shrink-0 mt-0.5 text-[8px] font-black px-1.5 py-0.5 bg-orange-100 dark:bg-orange-900/40 text-orange-600 dark:text-orange-400 rounded-md uppercase tracking-wider border border-orange-200 dark:border-orange-700">
+                              Override
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-6 py-4 text-center">
+                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${jBadge}`}>{j || '-'}</span>
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-700 dark:text-slate-200">
+                        {Number(item.total_volume_terpakai || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}
+                      </td>
+                      <td className={`px-6 py-4 text-right font-mono text-xs font-bold ${isOverridden ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'}`}>
+                        {formatIdr(item.harga_snapshot)}
+                      </td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{Number(item.tkdn_percent || 0).toFixed(2)}%</td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-900 dark:text-white">{formatIdr(item.kontribusi_nilai)}</td>
+                      <td className="px-6 py-4 text-center">
+                        {!readOnly ? (
+                          <button
+                            onClick={() => setOverrideItem(item)}
+                            className={`p-2 rounded-xl transition-all ${
+                              isOverridden
+                                ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
+                                : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 hover:bg-indigo-50 dark:hover:bg-orange-500/10'
+                            }`}
+                          >
+                            <Edit3 className="w-4 h-4" />
+                          </button>
+                        ) : (
+                          <div className="p-2 text-slate-300 dark:text-slate-700 cursor-not-allowed" title="Update Pro untuk edit">
+                            <Edit3 className="w-4 h-4 opacity-50" />
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
+      {overrideItem && (
+        <OverrideModal
+          item={overrideItem}
+          formatIdr={formatIdr}
+          onClose={() => setOverrideItem(null)}
+          onSaved={() => {
+            setOverrideItem(null);
+            if (onRefresh) onRefresh();
+          }}
+        />
+      )}
+    </>
+  );
+}
+

@@ -1,0 +1,84 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* ── Chart Variables ──────────────────────────────────── */
+:root {
+  --chart-realisasi: #4f46e5;
+  --chart-realisasi-bg: #4f46e5;
+
+  /* Slot Role Glow – Light Mode defaults (Kontraktor) */
+  --role-glow-color: 99 102 241;   /* indigo-500 */
+  --role-accent: #6366f1;
+  --role-accent-bg: #eef2ff;
+  --role-accent-text: #4338ca;
+  --role-accent-border: #c7d2fe;
+}
+
+.dark {
+  --chart-realisasi: #f97316;
+  --chart-realisasi-bg: #f97316;
+}
+
+/* ── Role Glow Classes ─────────────────────────────────────────
+   Apply one of these to the dashboard root or sidebar
+   depending on the active project's slot_role.
+   ────────────────────────────────────────────────────────────── */
+
+/* Kontraktor: Indigo — Energi & Kerja */
+.role-kontraktor {
+  --role-glow-color: 99 102 241;
+  --role-accent: #6366f1;
+  --role-accent-bg: #eef2ff;
+  --role-accent-text: #4338ca;
+  --role-accent-border: #c7d2fe;
+}
+
+/* Konsultan: Emerald — Akurasi & Verifikasi */
+.role-konsultan {
+  --role-glow-color: 16 185 129;
+  --role-accent: #10b981;
+  --role-accent-bg: #ecfdf5;
+  --role-accent-text: #065f46;
+  --role-accent-border: #a7f3d0;
+}
+
+/* Instansi/PUPR: Amber — Otoritas & Keputusan */
+.role-instansi {
+  --role-glow-color: 245 158 11;
+  --role-accent: #f59e0b;
+  --role-accent-bg: #fffbeb;
+  --role-accent-text: #92400e;
+  --role-accent-border: #fde68a;
+}
+
+/* Glow effect applied on sidebar or card */
+@layer utilities {
+  .role-glow {
+    box-shadow: 0 0 0 1px rgba(var(--role-glow-color) / 0.2),
+                0 0 20px 4px rgba(var(--role-glow-color) / 0.12),
+                0 0 60px 8px rgba(var(--role-glow-color) / 0.06);
+  }
+  .role-glow-sm {
+    box-shadow: 0 0 0 1px rgba(var(--role-glow-color) / 0.3),
+                0 0 10px 2px rgba(var(--role-glow-color) / 0.15);
+  }
+  .role-badge {
+    background-color: var(--role-accent-bg);
+    color: var(--role-accent-text);
+    border: 1px solid var(--role-accent-border);
+  }
+  .role-accent-dot {
+    background-color: var(--role-accent);
+  }
+}

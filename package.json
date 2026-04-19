@@ -1,0 +1,35 @@
+{
+  "name": "buildcalc-app",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@supabase/ssr": "^0.10.2",
+    "@supabase/supabase-js": "^2.49.1",
+    "exceljs": "^4.4.0",
+    "lucide-react": "^1.8.0",
+    "midtrans-client": "^1.4.3",
+    "next": "^15.2.4",
+    "next-themes": "^0.4.6",
+    "papaparse": "^5.5.3",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.8.1",
+    "resend": "^6.12.0",
+    "three": "^0.184.0",
+    "web-ifc": "^0.0.77",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "autoprefixer": "^10.4.21",
+    "eslint": "^9.23.0",
+    "eslint-config-next": "^15.2.4",
+    "postcss": "^8.5.3",
+    "tailwindcss": "^3.4.17"
+  }
+}
