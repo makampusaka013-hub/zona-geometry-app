@@ -15,10 +15,9 @@ import {
   BarChart, Bar, Cell, ReferenceLine, Label, ComposedChart, Line
 } from 'recharts';
 import {
-  TrendingUp, Users, Package, Factory,
-  Plus, AlertCircle, Calendar, MapPin, Wrench, Layers,
   ChevronRight, ArrowUpRight, LayoutDashboard, Clock,
-  Wallet, HardHat, ClipboardList, Hammer, Construction
+  Wallet, HardHat, ClipboardList, Hammer, Construction,
+  Activity, BarChart2, Zap
 } from 'lucide-react';
 import { computeManpower, getSequencedSchedule } from '@/lib/manpower';
 
@@ -248,7 +247,7 @@ function DashboardContent() {
     } finally {
       loadingDataRef.current = false;
     }
-  }, [router]);
+  }, [router, searchParams]);
 
   useEffect(() => { loadData(); }, [loadData]);
   
@@ -296,7 +295,7 @@ function DashboardContent() {
     handlePaymentSuccess();
     
     return () => { isMounted = false; };
-  }, [paymentStatus, orderId, member]); // Tambahkan 'member' agar re-run saat data user siap
+  }, [paymentStatus, orderId, member, router, searchParams]); // Tambahkan 'member' agar re-run saat data user siap
 
   // Real-time Glow Sync based on role in active project
   const activeProjectSlot = useMemo(() => {

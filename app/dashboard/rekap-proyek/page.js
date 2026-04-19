@@ -440,7 +440,7 @@ function ProyekContent() {
         setLoading(false);
       }
     }
-  }, [router, isCreating, selectedProject]);
+  }, [router, isCreating, selectedProject, searchParams]);
 
   const handleNewProject = useCallback(() => {
     if (ownedLimitReached) {

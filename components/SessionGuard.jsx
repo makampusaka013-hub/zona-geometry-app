@@ -68,7 +68,7 @@ export default function SessionGuard({ children }) {
     return () => {
       if (interval) clearInterval(interval);
     };
-  }, []);
+  }, [router]);
 
   // Listen for Auth State Changes (e.g. Invalidate session if needed)
   useEffect(() => {
