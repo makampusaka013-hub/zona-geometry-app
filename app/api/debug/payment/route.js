@@ -6,6 +6,7 @@ export async function GET(request) {
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
     const forceUpgrade = searchParams.get('force') === 'true';
+    const forceAdvance = searchParams.get('forceAdvance') === 'true';
 
     if (!userId) {
       return NextResponse.json({ error: 'userId parameter is required' }, { status: 400 });
@@ -16,17 +17,18 @@ export async function GET(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // --- EMERGENCY FORCE UPGRADE ---
+    // --- EMERGENCY FORCE UPGRADE / ADVANCE ---
     let forceResult = null;
-    if (forceUpgrade) {
-      console.log(`[DEBUG] Emergency Force Upgrade triggered for: ${userId}`);
+    if (forceUpgrade || forceAdvance) {
+      const targetRole = forceAdvance ? 'advance' : 'pro';
+      console.log(`[DEBUG] Emergency Force ${targetRole} triggered for: ${userId}`);
       const newExpiry = new Date();
       newExpiry.setDate(newExpiry.getDate() + 30);
       
       const { data: updated, error: updError } = await supabaseAdmin
         .from('members')
         .update({
-          role: 'pro',
+          role: targetRole,
           is_paid: true,
           expired_at: newExpiry.toISOString(),
           approval_status: 'active',
