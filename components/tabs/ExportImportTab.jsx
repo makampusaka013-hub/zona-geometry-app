@@ -616,7 +616,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                               { id: 'RAB', label: 'RAB & Rekapitulasi', desc: 'Detail volume & harga per bab' },
                               { id: 'AHSP', label: 'Analisa AHSP Proyek', desc: 'Rincian koefisien Tenaga/Bahan/Alat' },
                               { id: 'HSP', label: 'HSP Proyek (Summary)', desc: 'Harga satuan pekerjaan tanpa rincian' },
-                              { id: 'HARGA SATUAN', label: 'Harga Satuan Terpakai', desc: 'Daftar komplit material & upah' },
+                              { id: 'HARGA SATUAN', label: 'Harga Satuan Terpakai', desc: 'Daftar komplit material & Tenaga' },
                               { id: 'SCHEDULE', label: 'Schedule & Gantt', desc: 'Visual bar & Kurva-S mingguan' },
                             ] : [
                               { id: 'AHSP', label: 'AHSP Master (Full)', desc: 'Database seluruh analisa SNI' },
@@ -771,7 +771,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                     <Wallet className="w-6 h-6 text-cyan-600 dark:text-cyan-400" />
                   </div>
                   <h4 className="text-sm font-black text-slate-900 dark:text-white mb-1">Harga Satuan Terpakai</h4>
-                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-4">Material/Upah di Proyek</p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider mb-4">Material/Tenaga di Proyek</p>
                   <div className="text-[10px] font-black text-cyan-600 dark:text-cyan-400 flex items-center gap-2">
                      UNDUH HARGA (.XLSX)
                      <ChevronRight className="w-3 h-3" />

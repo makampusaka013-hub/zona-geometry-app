@@ -35,16 +35,20 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
         </div>
         <div className="rounded-[32px] bg-slate-50/80 backdrop-blur-md dark:bg-slate-900/80 p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Realisasi TKDN (RP)</div>
-          <div className="text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 truncate">{formatIdr(tabData.tkdn.total_tkdn_nilai)}</div>
+          <div className="text-xl md:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 break-all leading-tight">
+            {formatIdr(tabData.tkdn.total_tkdn_nilai)}
+          </div>
           <p className="text-[10px] font-bold text-slate-400 mt-3 flex items-start gap-1.5 opacity-60 leading-tight">
             <Info className="w-3.5 h-3.5 shrink-0" /> Nilai ekonomi lokal yang terserap ke dalam proyek.
           </p>
         </div>
         <div className="rounded-[32px] bg-slate-50/80 backdrop-blur-md dark:bg-slate-900/80 p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Basis Perhitungan (Total)</div>
-          <div className="text-2xl font-black font-mono text-slate-800 dark:text-slate-100 truncate">{formatIdr(tabData.tkdn.total_nilai)}</div>
+          <div className="text-xl md:text-2xl font-black font-mono text-slate-800 dark:text-slate-100 break-all leading-tight">
+            {formatIdr(tabData.tkdn.total_nilai)}
+          </div>
           <p className="text-[10px] font-bold text-slate-400 mt-3 flex items-start gap-1.5 opacity-60 leading-tight">
-            <Info className="w-3.5 h-3.5 shrink-0" /> Dihitung dari seluruh komponen Upah, Bahan, dan Alat.
+            <Info className="w-3.5 h-3.5 shrink-0" /> Dihitung dari seluruh komponen Tenaga, Bahan, dan Alat.
           </p>
         </div>
       </div>
@@ -73,7 +77,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
                 return (
                   <tr key={jenis} className="hover:bg-slate-50 dark:hover:bg-slate-800/20 transition-colors">
                     <td className="px-8 py-5 text-slate-800 dark:text-slate-200 uppercase text-[10px] font-black">
-                      {jenis === 'upah' && '👷 Upah Tenaga Kerja'}
+                      {jenis === 'tenaga' && '👷 Tenaga Kerja'}
                       {jenis === 'bahan' && '🧱 Material & Bahan'}
                       {jenis === 'alat' && '⚙️ Peralatan'}
                     </td>
@@ -116,12 +120,36 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {items.map((item, i) => {
-                  const j = (item.jenis || '').toLowerCase();
+                  const rawJ = (item.jenis_komponen || item.jenis || '').toLowerCase();
+                  const code = (item.kode_item || '').trim().toUpperCase();
+                  
+                  // Heuristic: Using strict prefix rules (A/B=Bahan, L=Tenaga, M=Alat)
+                  let j = rawJ;
+                  const unit = (item.satuan || '').toUpperCase();
+                  const name = (item.uraian || '').toLowerCase();
+
+                  if (!j || j === 'bahan_upah_alat' || j === 'upah') {
+                    if (code.startsWith('A') || code.startsWith('B')) {
+                      j = 'bahan';
+                    } else if (code.startsWith('L')) {
+                      j = 'tenaga';
+                    } else if (code.startsWith('M')) {
+                      j = 'alat';
+                    } else if (unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang') || name.includes('mandor')) {
+                      // fallback for NO-REF items
+                      j = 'tenaga';
+                    } else if (unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+                      j = 'alat';
+                    } else {
+                      j = 'bahan';
+                    }
+                  }
+
                   const jBadge = {
-                    upah: 'bg-indigo-100 text-indigo-700 dark:bg-orange-900/30 dark:text-orange-400',
-                    bahan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400',
-                    alat: 'bg-blue-100 text-blue-700 dark:bg-amber-900/30 dark:text-amber-400',
-                  }[j] || 'bg-slate-100 text-slate-500';
+                    tenaga: 'bg-indigo-100 text-indigo-700 dark:bg-orange-900/40 dark:text-orange-400 border border-indigo-200 dark:border-orange-500/20',
+                    bahan: 'bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20',
+                    alat: 'bg-blue-100 text-blue-700 dark:bg-amber-900/30 dark:text-amber-400 border border-blue-200 dark:border-amber-500/20',
+                  }[j] || 'bg-slate-100 text-slate-500 border border-slate-200';
 
                   return (
                     <tr key={i} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors">
@@ -130,7 +158,9 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
                         <div className="text-[10px] font-mono text-slate-400 mt-1 uppercase font-bold">{item.kode_item || 'NO-REF'} · {item.satuan}</div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase ${jBadge}`}>{j}</span>
+                        <span className={`text-[8px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${jBadge}`}>
+                          {j === 'tenaga' ? '👷 Tenaga' : j === 'bahan' ? '🧱 Bahan' : '⚙️ Alat'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right">
                         <div className="inline-flex items-center gap-1.5 font-mono text-xs font-black text-indigo-600 dark:text-orange-400">

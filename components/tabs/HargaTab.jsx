@@ -15,12 +15,12 @@ export default function HargaTab({ activeTab, tabLoading, tabData, formatIdr }) 
   return (
     <div className="space-y-6">
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        {['upah','bahan','alat'].map(j => {
+        {['tenaga','bahan','alat'].map(j => {
           const rows = tabData.harga.filter(r => r.jenis === j);
           const total = rows.reduce((s,r) => s + (r.total_nilai||0), 0);
-          const icons = { upah:'👷', bahan:'🧱', alat:'⚙️' };
+          const icons = { tenaga:'👷', bahan:'🧱', alat:'⚙️' };
           const cls = { 
-            upah: 'bg-indigo-600 dark:bg-orange-600', 
+            tenaga: 'bg-indigo-600 dark:bg-orange-600', 
             bahan: 'bg-blue-600 dark:bg-amber-600', 
             alat: 'bg-slate-700 dark:bg-slate-800' 
           };
@@ -57,7 +57,7 @@ export default function HargaTab({ activeTab, tabLoading, tabData, formatIdr }) 
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {tabData.harga.map((item, i) => {
                 const jBadge = { 
-                  upah: 'bg-indigo-500/10 text-indigo-500 dark:text-orange-400 dark:bg-orange-400/10', 
+                  tenaga: 'bg-indigo-500/10 text-indigo-500 dark:text-orange-400 dark:bg-orange-400/10', 
                   bahan: 'bg-blue-500/10 text-blue-500 dark:text-amber-400 dark:bg-amber-400/10', 
                   alat: 'bg-slate-500/10 text-slate-500 dark:text-slate-400 dark:bg-slate-400/10' 
                 }[item.jenis] || 'bg-slate-100 text-slate-500';

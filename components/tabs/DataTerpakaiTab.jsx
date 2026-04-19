@@ -24,7 +24,7 @@ export default function DataTerpakaiTab({
     if (resFilter === 'all') return rows;
     return rows.filter(r => {
       const j = (r.jenis_komponen || '').toLowerCase();
-      if (resFilter === 'upah') return j === 'upah' || j === 'tenaga' || j === 'worker';
+      if (resFilter === 'tenaga') return j === 'upah' || j === 'tenaga' || j === 'worker';
       if (resFilter === 'bahan') return j === 'bahan' || j === 'material' || j === 'barang';
       if (resFilter === 'alat') return j === 'alat' || j === 'peralatan' || j === 'mesin';
       return j === resFilter;
@@ -297,20 +297,33 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
               </thead>
               <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                 {rows.map((item, i) => {
-                  // Heuristik: Jika jenis_komponen ambigu, tentukan berdasarkan karakter pertama kode_item
+                  // Heuristic: Using strict prefix rules (A/B=Bahan, L=Tenaga, M=Alat)
                   const rawJ = (item.jenis_komponen || '').toLowerCase();
                   const code = (item.key_item || '').trim().toUpperCase();
+                  const unit = (item.satuan || '').toUpperCase();
+                  const name = (item.uraian || '').toLowerCase();
                   
                   let j = rawJ;
-                  if (rawJ === 'bahan_upah_alat' || !['upah', 'bahan', 'alat'].includes(rawJ)) {
-                    if (code.startsWith('L')) j = 'upah';
-                    else if (code.startsWith('M')) j = 'alat';
-                    else j = 'bahan';
+                  if (!rawJ || rawJ === 'bahan_upah_alat' || rawJ === 'upah') {
+                    if (code.startsWith('A') || code.startsWith('B')) {
+                      j = 'bahan';
+                    } else if (code.startsWith('L')) {
+                      j = 'tenaga';
+                    } else if (code.startsWith('M')) {
+                      j = 'alat';
+                    } else if (unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang') || name.includes('mandor')) {
+                      // fallback for NO-REF items
+                      j = 'tenaga';
+                    } else if (unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+                      j = 'alat';
+                    } else {
+                      j = 'bahan';
+                    }
                   }
 
                   const isOverridden = item.source_table === 'master_harga_custom';
                   const jBadge = {
-                    upah: 'bg-blue-100 text-blue-700 dark:bg-orange-900/40 dark:text-orange-400',
+                    tenaga: 'bg-blue-100 text-blue-700 dark:bg-orange-900/40 dark:text-orange-400',
                     bahan: 'bg-indigo-100 text-indigo-700 dark:bg-amber-900/30 dark:text-amber-400',
                     alat: 'bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-300',
                   }[j] || 'bg-slate-100 text-slate-500';
@@ -331,7 +344,9 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                         </div>
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider ${jBadge}`}>{j || '-'}</span>
+                        <span className={`text-[9px] font-black px-2.5 py-1 rounded-lg uppercase tracking-wider border ${jBadge}`}>
+                          {j === 'tenaga' ? '👷 Tenaga' : j === 'bahan' ? '🧱 Bahan' : '⚙️ Alat'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-700 dark:text-slate-200">
                         {Number(item.total_volume_terpakai || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}

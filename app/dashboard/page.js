@@ -758,7 +758,7 @@ function DashboardContent() {
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard icon={HardHat} label="Upah" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
+            <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
             <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
             <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
           </div>
@@ -853,7 +853,7 @@ function DashboardContent() {
                       formatter={(v, name, props) => {
                         if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
                         if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
-                        return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Upah (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
+                        return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Tenaga Kerja (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
                       }}
                     />
 
@@ -897,7 +897,7 @@ function DashboardContent() {
               <div className="flex flex-wrap items-center gap-3">
                 <input type="text" placeholder="Cari..." className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold w-48 focus:ring-2 ring-indigo-500" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
                 <select className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                  <option value="all">Semua Tipe</option><option value="bahan">🧱 Material</option><option value="alat">⚙️ Peralatan</option><option value="upah">👷 Tenaga</option>
+                  <option value="all">Semua Tipe</option><option value="bahan">🧱 Material</option><option value="alat">⚙️ Peralatan</option><option value="tenaga">👷 Tenaga</option>
                 </select>
               </div>
             </div>

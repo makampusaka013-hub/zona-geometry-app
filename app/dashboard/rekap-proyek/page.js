@@ -120,7 +120,7 @@ function ProyekContent() {
   const [progressTimeRange, setProgressTimeRange] = useState(90); // 90, 180, 365
 
   const [terpakaiSubTab, setTerpakaiSubTab] = useState('ahsp'); // ahsp | harga
-  const [terpakaiResFilter, setTerpakaiResFilter] = useState('all'); // all | upah | bahan | alat
+  const [terpakaiResFilter, setTerpakaiResFilter] = useState('all'); // all | tenaga | bahan | alat
   const [perubahanSubTab, setPerubahanSubTab] = useState('cco'); // cco | mc
   const [activeCcoVersion, setActiveCcoVersion] = useState(null); // { type, total }
   const [statusSimpan, setStatusSimpan] = useState('ready'); // saving, saved, ready
@@ -1222,7 +1222,7 @@ function ProyekContent() {
                     <th className="px-8 py-5 text-left w-1/3">PROYEK</th>
                     <th className="px-6 py-5 text-center w-24">ROLE</th>
                     <th className="px-6 py-5 text-center">TOTAL KONTRAK</th>
-                    <th className="px-6 py-5 text-center">DURASI</th>
+                    <th className="px-6 py-5 text-center">DURASI / REALISASI</th>
                     <th className="px-6 py-5 text-center">KODE BERBAGI</th>
                     <th className="px-8 py-5 text-right">AKSI</th>
                   </tr>
@@ -1288,7 +1288,10 @@ function ProyekContent() {
                         <td className="px-6 py-5 text-center">
                           {p.manual_duration > 0 ? (
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-black text-sm text-slate-800 dark:text-white">{p.manual_duration} <span className="text-[10px] font-semibold text-slate-400">hari</span></span>
+                              <span className="font-black text-sm text-slate-800 dark:text-white">
+                                {p.manual_duration} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0} 
+                                <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
+                              </span>
                               {p.start_date ? (
                                 <span className="text-[9px] text-slate-400 font-mono">
                                   {safeFormatDate(p.start_date)}
