@@ -107,8 +107,7 @@ export async function POST(request) {
             is_paid: true,
             expired_at: baseDate.toISOString(),
             status: 'active',
-            approval_status: 'active',
-            updated_at: new Date().toISOString()
+            approval_status: 'active'
           })
           .eq('user_id', actualUserId);
 

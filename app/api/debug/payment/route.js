@@ -97,7 +97,8 @@ export async function GET(request) {
       forceUpgradeResult: forceResult,
       configCheck,
       dbSchemaCheck: {
-        rolesInEnum: enumValues || ["Gagal mengambil enum via RPC (Ini normal jika RPC belum dibuat)"]
+        rolesInEnum: enumValues || ["Gagal mengambil enum via RPC (Ini normal jika RPC belum dibuat)"],
+        memberColumns: member && typeof member === 'object' ? Object.keys(member) : "No member data to inspect columns"
       },
       memberData: member || 'Not found',
       memberError: memberError || null,
