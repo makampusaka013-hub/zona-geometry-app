@@ -16,6 +16,8 @@ export async function POST(request) {
       status_code,
       gross_amount,
       order_id,
+      signature_key,
+    } = body;
     console.log('[MIDTRANS WEBHOOK] Received payload:', JSON.stringify(body, null, 2));
 
     // 1. Verify Signature
