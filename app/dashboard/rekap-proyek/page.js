@@ -383,9 +383,11 @@ export default function ProyekPage() {
       }
     } finally {
       isCheckingAuth.current = false;
-      if (version === dataVersionRef.current) setLoading(false);
+      if (version === dataVersionRef.current) {
+        setLoading(false);
+      }
     }
-  }, [router]);
+  }, [router, isCreating, selectedProject]);
 
   // Initial Load
   useEffect(() => {
@@ -409,7 +411,7 @@ export default function ProyekPage() {
       // Bersihkan param agar tidak trigger ulang jika page refresh/navigate
       router.replace('/dashboard/rekap-proyek'); 
     }
-  }, [searchParams, loading]);
+  }, [searchParams, loading, handleNewProject, router]);
 
 
   // Auto-sync location context for regional pricing
@@ -577,12 +579,12 @@ export default function ProyekPage() {
     } finally {
       if (version === tabVersionRef.current) setTabLoading(false);
     }
-  }, []);
+  }, [tabData.ahsp?.length, tabData.backup?.length, tabData.cco?.length, tabData.dok?.length, tabData.harga?.length, tabData.mc?.length, tabData.tkdn]);
 
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
     loadTabData(activeTab, selectedProject, selectedBab);
-  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab]);
+  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, loadTabData]);
 
   async function updateProjectStartDate(val) {
     setProjectStartDate(val);

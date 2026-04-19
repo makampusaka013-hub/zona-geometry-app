@@ -103,8 +103,8 @@ export default function IfcVolumeExtractor({
 
     // Resize Handler
     const handleResize = () => {
-      const newWidth = containerRef.current.clientWidth;
-      const newHeight = containerRef.current.clientHeight;
+      const newWidth = currentContainer.clientWidth;
+      const newHeight = currentContainer.clientHeight;
       camera.aspect = newWidth / newHeight;
       camera.updateProjectionMatrix();
       renderer.setSize(newWidth, newHeight);
@@ -114,7 +114,6 @@ export default function IfcVolumeExtractor({
     return () => {
       window.removeEventListener('resize', handleResize);
       renderer.dispose();
-      const currentContainer = containerRef.current;
       if (currentContainer?.contains(renderer.domElement)) {
         currentContainer.removeChild(renderer.domElement);
       }

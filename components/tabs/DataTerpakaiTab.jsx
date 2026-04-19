@@ -20,15 +20,16 @@ export default function DataTerpakaiTab({
   const hargaRows = tabData?.harga || [];
 
   const filteredHargaRows = useMemo(() => {
-    if (resFilter === 'all') return hargaRows;
-    return hargaRows.filter(r => {
+    const rows = tabData?.harga || [];
+    if (resFilter === 'all') return rows;
+    return rows.filter(r => {
       const j = (r.jenis_komponen || '').toLowerCase();
       if (resFilter === 'upah') return j === 'upah' || j === 'tenaga' || j === 'worker';
       if (resFilter === 'bahan') return j === 'bahan' || j === 'material' || j === 'barang';
       if (resFilter === 'alat') return j === 'alat' || j === 'peralatan' || j === 'mesin';
       return j === resFilter;
     });
-  }, [hargaRows, resFilter]);
+  }, [tabData?.harga, resFilter]);
 
   if (activeTab !== 'terpakai') return null;
   if (tabLoading) return <Spinner />;
