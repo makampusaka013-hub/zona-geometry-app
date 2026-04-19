@@ -124,22 +124,27 @@ export async function POST(request) {
           return NextResponse.json({ success: true, message: 'Order already processed' });
         }
 
-        // 5. Update Status and Expiry
+        // 5. Update Status and Expiry (Non-Accumulative for Upgrades/Trials)
         let baseDate = new Date();
-        if (member.expired_at) {
+
+        // JIKA perpanjangan paket yang SAMA, baru kita akumulasikan waktunya
+        // JIKA pindah paket (Normal -> Pro) atau baru pertama bayar (Trial -> Paid), reset dari HARI INI
+        if (member.is_paid && member.role === newRole && member.expired_at) {
           const currentExp = new Date(member.expired_at);
           if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
             baseDate = currentExp;
           }
         }
+        
         baseDate.setDate(baseDate.getDate() + 30);
+        const finalExpiry = baseDate.toISOString();
         
         const { error: updateError } = await supabaseAdmin
           .from('members')
           .update({
             role: newRole,
             is_paid: true,
-            expired_at: baseDate.toISOString(),
+            expired_at: finalExpiry,
             status: 'active',
             approval_status: 'active',
             last_order_id: order_id // Kunci idempotensi
