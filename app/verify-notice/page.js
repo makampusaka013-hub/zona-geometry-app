@@ -78,7 +78,7 @@ export default function VerifyNoticePage() {
         result = JSON.parse(rawText);
       } catch (parseErr) {
         console.error("Raw server response:", rawText);
-        throw new Error(\`Server tidak mengembalikan JSON yang valid. Response: \${rawText.substring(0, 50)}...\`);
+        throw new Error(`Server tidak mengembalikan JSON yang valid. Response: ${rawText.substring(0, 50)}...`);
       }
 
       if (result.success) {
