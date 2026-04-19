@@ -118,7 +118,11 @@ export async function POST(request) {
           return NextResponse.json({ error: 'User does not exist in our database. Sync failed.' }, { status: 404 });
         }
 
-        const actualUserId = member.user_id;
+        // 4.5. IDEMPOTENCY CHECK (Anti Double-Count)
+        if (member.last_order_id === order_id) {
+          console.log(`[VERIFY API] Order ${order_id} already processed for user ${actualUserId}. Skipping.`);
+          return NextResponse.json({ success: true, message: 'Order already processed' });
+        }
 
         // 5. Update Status and Expiry
         let baseDate = new Date();
@@ -137,7 +141,8 @@ export async function POST(request) {
             is_paid: true,
             expired_at: baseDate.toISOString(),
             status: 'active',
-            approval_status: 'active'
+            approval_status: 'active',
+            last_order_id: order_id // Kunci idempotensi
           })
           .eq('user_id', actualUserId);
 
