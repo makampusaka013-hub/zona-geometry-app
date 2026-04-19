@@ -1403,8 +1403,10 @@ function ProyekContent() {
                   initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
                   backupData={tabData.backup}
                   member={member}
+                  onTotalChange={setLocalTotalKontrak}
                   onRefresh={(newId) => {
                     setIsCreating(false);
+                    setLocalTotalKontrak(null); // Reset status lokal setelah berhasil simpan
                     const targetId = newId || selectedProject;
                     if (newId) setSelectedProject(newId);
                     
