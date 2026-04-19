@@ -89,7 +89,7 @@ export async function GET(request) {
       },
       memberData: member || 'Not found',
       memberError: memberError || null,
-      instruction: forceUpgrade ? "Account should be PRO now. Check your Dashboard!" : "To manually bypass the payment bug for this user, add '&force=true' to this URL."
+      instruction: "Halaman ini digunakan untuk memantau sinkronisasi database secara LIVE. Silakan refresh setelah melakukan pembayaran di Midtrans."
     });
 
   } catch (error) {
