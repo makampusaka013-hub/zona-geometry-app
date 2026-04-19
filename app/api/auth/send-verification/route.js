@@ -8,10 +8,9 @@ import path from 'path';
 const resend = new Resend(process.env.RESEND_API_KEY);
 
 function logDebug(message) {
-  const logPath = path.join(process.cwd(), 'resend_debug.log');
-  const timestamp = new Date().toISOString();
-  fs.appendFileSync(logPath, `[${timestamp}] ${message}\n`);
+  console.log(`[VERIFICATION-EMAIL] ${message}`);
 }
+
 
 export async function POST(request) {
   try {
