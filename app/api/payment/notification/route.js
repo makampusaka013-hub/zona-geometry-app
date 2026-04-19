@@ -77,40 +77,65 @@ export async function POST(request) {
 
     // 5. Process Payment Status
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`Payment success for user: ${userId}, plan: ${parsedPlan}`);
+      console.log(`[MIDTRANS WEBHOOK] PROCESSING SUCCESS: User=${userId}, Plan=${parsedPlan}, OrderId=${order_id}`);
 
-      // Get current expiration
-      const { data: member, error: fetchError } = await supabaseAdmin
-        .from('members')
-        .select('expired_at, role')
-        .eq('user_id', userId)
-        .single();
+      try {
+        // Get current expiration
+        const { data: member, error: fetchError } = await supabaseAdmin
+          .from('members')
+          .select('expired_at, role')
+          .eq('user_id', userId)
+          .single();
 
-      if (fetchError) throw fetchError;
+        if (fetchError) {
+          console.error(`[MIDTRANS WEBHOOK] DB Fetch Error for user ${userId}:`, fetchError);
+          return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+        }
 
-      // Calculate new expiration (stacks if already active)
-      let baseDate = new Date();
-      if (member.expired_at && new Date(member.expired_at) > new Date()) {
-        baseDate = new Date(member.expired_at);
+        console.log(`[MIDTRANS WEBHOOK] Current DB State: Role=${member.role}, ExpiredAt=${member.expired_at}`);
+
+        // Safe Date Calculation
+        let baseDate = new Date();
+        if (member.expired_at) {
+          const currentExp = new Date(member.expired_at);
+          // Jika masa aktif masih di masa depan, tambahkan dari sana. Jika sudah lewat, tambahkan dari hari ini.
+          if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
+            baseDate = currentExp;
+          }
+        }
+        
+        console.log(`[MIDTRANS WEBHOOK] Base date for calculation:`, baseDate.toISOString());
+        
+        // Add 30 days
+        baseDate.setDate(baseDate.getDate() + 30);
+        const finalExpiry = baseDate.toISOString();
+
+        console.log(`[MIDTRANS WEBHOOK] Updating user ${userId} to Role=${newRole}, Expiry=${finalExpiry}`);
+
+        const { error: updateError } = await supabaseAdmin
+          .from('members')
+          .update({
+            role: newRole,
+            is_paid: true,
+            expired_at: finalExpiry,
+            status: 'active',
+            approval_status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${userId}:`, updateError);
+          throw updateError;
+        }
+        
+        console.log(`[MIDTRANS WEBHOOK] DB Update SUCCESS for user: ${userId}`);
+        return NextResponse.json({ success: true, message: 'Notification processed' });
+
+      } catch (dbErr) {
+        console.error('[MIDTRANS WEBHOOK] Internal Process Error:', dbErr);
+        return NextResponse.json({ error: dbErr.message }, { status: 500 });
       }
-      baseDate.setDate(baseDate.getDate() + 30);
-
-      // Update Member to the correct role
-      const { error: updateError } = await supabaseAdmin
-        .from('members')
-        .update({
-          role: newRole,
-          is_paid: true,
-          expired_at: baseDate.toISOString(),
-          status: 'active',
-          approval_status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) throw updateError;
-      
-      console.log(`User ${userId} upgraded to ${newRole} until ${baseDate.toISOString()}`);
     } else if (transaction_status === 'expire' || transaction_status === 'cancel') {
       console.log(`Payment failed/expired for user: ${userId}`);
     }

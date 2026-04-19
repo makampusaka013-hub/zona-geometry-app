@@ -57,52 +57,76 @@ export async function POST(request) {
     }
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      // 2. Identify Plan
-      let parsedPlan = plan;
-      const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
-      
-      if (!parsedPlan || !roleMap[parsedPlan]) {
-        if (order_id.includes('ADVANCE')) parsedPlan = 'advance';
-        else if (order_id.includes('PRO')) parsedPlan = 'pro';
-        else if (order_id.includes('NORMAL')) parsedPlan = 'normal';
-        else parsedPlan = 'normal';
+      console.log(`[VERIFY API] PROCESSING SUCCESS: User=${userId}, Plan=${plan}, OrderId=${order_id}`);
+
+      try {
+        // Identify Plan
+        let parsedPlan = plan;
+        const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
+        
+        if (!parsedPlan || !roleMap[parsedPlan]) {
+          if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
+          else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
+          else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
+          else parsedPlan = 'normal';
+        }
+        const newRole = roleMap[parsedPlan] || 'normal';
+
+        // 3. Process Expiration & Update DB
+        const { data: member, error: fetchError } = await supabaseAdmin
+          .from('members')
+          .select('expired_at, is_paid, role')
+          .eq('user_id', userId)
+          .single();
+
+        if (fetchError) {
+          console.error(`[VERIFY API] DB Fetch Error for user ${userId}:`, fetchError);
+          return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
+        }
+
+        console.log(`[VERIFY API] Current DB State: Role=${member.role}, ExpiredAt=${member.expired_at}`);
+
+        // Safe Date Calculation
+        let baseDate = new Date();
+        if (member.expired_at) {
+          const currentExp = new Date(member.expired_at);
+          if (!isNaN(currentExp.getTime()) && currentExp > new Date()) {
+            baseDate = currentExp;
+          }
+        }
+        
+        console.log(`[VERIFY API] Base date for calculation:`, baseDate.toISOString());
+        
+        // Add 30 days
+        baseDate.setDate(baseDate.getDate() + 30);
+        const finalExpiry = baseDate.toISOString();
+
+        console.log(`[VERIFY API] Updating user ${userId} to Role=${newRole}, Expiry=${finalExpiry}`);
+
+        const { error: updateError } = await supabaseAdmin
+          .from('members')
+          .update({
+            role: newRole,
+            is_paid: true,
+            expired_at: finalExpiry,
+            status: 'active',
+            approval_status: 'active',
+            updated_at: new Date().toISOString()
+          })
+          .eq('user_id', userId);
+
+        if (updateError) {
+          console.error(`[VERIFY API] DB Update Error for user ${userId}:`, updateError);
+          throw updateError;
+        }
+        
+        console.log(`[VERIFY API] DB Update SUCCESS for user: ${userId}`);
+        return NextResponse.json({ success: true, message: 'Payment verified and DB updated' });
+
+      } catch (dbErr) {
+        console.error('[VERIFY API] Internal Process Error:', dbErr);
+        return NextResponse.json({ success: false, error: dbErr.message }, { status: 500 });
       }
-      const newRole = roleMap[parsedPlan] || 'normal';
-
-      // 3. Process Expiration & Update DB
-      const { data: member, error: fetchError } = await supabaseAdmin
-        .from('members')
-        .select('expired_at, is_paid')
-        .eq('user_id', userId)
-        .single();
-
-      if (fetchError) throw fetchError;
-
-      // Jika sudah is_paid di waktu yang sama, mungkin webhook sudah lari. Kita pastikan tetap benar.
-      let baseDate = new Date();
-      if (member.expired_at && new Date(member.expired_at) > new Date()) {
-        baseDate = new Date(member.expired_at);
-      }
-      
-      // Karena trial 8 hari masih ada, jika kita asumsikan langganan 30 hari
-      // Kita tambahkan 30 hari ke sisa masa aktif
-      baseDate.setDate(baseDate.getDate() + 30);
-
-      const { error: updateError } = await supabaseAdmin
-        .from('members')
-        .update({
-          role: newRole,
-          is_paid: true,
-          expired_at: baseDate.toISOString(),
-          status: 'active',
-          approval_status: 'active',
-          updated_at: new Date().toISOString()
-        })
-        .eq('user_id', userId);
-
-      if (updateError) throw updateError;
-      
-      return NextResponse.json({ success: true, message: 'Payment verified and DB updated' });
     }
 
     return NextResponse.json({ 
