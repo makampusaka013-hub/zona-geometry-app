@@ -15,6 +15,8 @@ import {
   BarChart, Bar, Cell, ReferenceLine, Label, ComposedChart, Line
 } from 'recharts';
 import {
+  TrendingUp, Users, Package, Factory,
+  Plus, AlertCircle, Calendar, MapPin, Wrench, Layers,
   ChevronRight, ArrowUpRight, LayoutDashboard, Clock,
   Wallet, HardHat, ClipboardList, Hammer, Construction,
   Activity, BarChart2, Zap
