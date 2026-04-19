@@ -67,20 +67,19 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing userId' }, { status: 400 });
     }
 
-    // 4. Determine which role to assign (Primary Source of Truth: Order ID Prefix)
-    let parsedPlan = plan;
+    // 4. Determine which role to assign (Primary Source: Order ID Prefix)
+    let parsedPlan = (plan || '').toLowerCase();
     const roleMap = {
       advance: 'advance',
       pro: 'pro',
       normal: 'normal',
     };
     
-    // Always check prefix first to avoid metadata loss issues
+    // Always check prefix first (Immutable source)
     if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
     else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
     else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-    else if (!parsedPlan || !roleMap[parsedPlan]) parsedPlan = 'normal';
-
+    
     const newRole = roleMap[parsedPlan] || 'normal';
 
     // 5. Process Payment Status

@@ -75,11 +75,18 @@ export async function GET(request) {
       appUrlValue: process.env.APP_URL
     };
 
+    // Check Valid Roles in DB
+    const { data: enumValues } = await supabaseAdmin.rpc('get_enum_values', { enum_name: 'member_role' });
+    // Fallback logic if RPC doesn't exist - try to get columns
+    
     return NextResponse.json({
       timestamp: new Date().toISOString(),
       userId,
       forceUpgradeResult: forceResult,
       configCheck,
+      dbSchemaCheck: {
+        rolesInEnum: enumValues || ["Gagal mengambil enum via RPC (Ini normal jika RPC belum dibuat)"]
+      },
       memberData: member || 'Not found',
       memberError: memberError || null,
       instruction: forceUpgrade ? "Account should be PRO now. Check your Dashboard!" : "To manually bypass the payment bug for this user, add '&force=true' to this URL."

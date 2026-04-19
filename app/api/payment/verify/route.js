@@ -61,13 +61,12 @@ export async function POST(request) {
 
       try {
         // Identify Plan (Primary Source: Order ID Prefix)
-        let parsedPlan = plan;
+        let parsedPlan = (plan || '').toLowerCase();
         const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
         
         if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
         else if (order_id.startsWith('ZPP')) parsedPlan = 'pro';
         else if (order_id.startsWith('ZPN')) parsedPlan = 'normal';
-        else if (!parsedPlan || !roleMap[parsedPlan]) parsedPlan = 'normal';
         
         const newRole = roleMap[parsedPlan] || 'normal';
 
