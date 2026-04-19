@@ -185,10 +185,16 @@ function ProyekContent() {
         return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
 
-      // 2. Fallback to normal AHSP lines total
+      // 2. Fallback to normal AHSP lines total or cached project total
       const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
       const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
-      const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+      let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+      
+      // If we have no lines yet in tabData, use the cached total from the project object
+      if (total === 0 && currentProjectObj.total_kontrak) {
+        total = currentProjectObj.total_kontrak;
+      }
+
       return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
     } catch (e) {
       console.error('Metrics calc error:', e);
@@ -1192,7 +1198,9 @@ function ProyekContent() {
               </div>
             )}
             <div className="flex flex-col items-end">
-              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total Kontrak</span>
+              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
+                {projectMetrics.isCco ? `Total Kontrak (${projectMetrics.version})` : 'Total Kontrak'}
+              </span>
               <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-orange-500">{formatIdr(projectMetrics.total)}</span>
             </div>
             <div className="flex flex-col items-end pl-4 border-l border-slate-200 dark:border-slate-800">

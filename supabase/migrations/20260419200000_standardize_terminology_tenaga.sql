@@ -72,8 +72,9 @@ SELECT
        ELSE 0 
   END AS total_tkdn_percent,
 
-  json_agg(
-    json_build_object(
+  -- FIXED: Using jsonb_agg and jsonb_build_object to match jsonb_to_recordset
+  jsonb_agg(
+    jsonb_build_object(
       'uraian', detail_uraian,
       'kode_item', detail_kode_item,
       'satuan', detail_satuan,
@@ -153,6 +154,8 @@ GROUP BY
 GRANT SELECT ON public.view_project_resource_summary TO authenticated;
 
 -- 3. Update get_project_resource_aggregation RPC
+DROP FUNCTION IF EXISTS public.get_project_resource_aggregation(uuid);
+
 CREATE OR REPLACE FUNCTION public.get_project_resource_aggregation(p_project_id uuid)
 RETURNS TABLE(
   uraian text,
