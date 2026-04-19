@@ -138,6 +138,7 @@ function ProyekContent() {
   const [modalStatus, setModalStatus] = useState(null); // { type: 'success'|'error', msg: string }
 
   // Refs for performance & stale request prevention
+  const [localTotalKontrak, setLocalTotalKontrak] = useState(null);
   const dataVersionRef = useRef(0);
   const tabVersionRef = useRef(0);
   const abortControllerRef = useRef(null);
@@ -176,6 +177,12 @@ function ProyekContent() {
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
+    
+    // GUC: Jika ada perubahan lokal (unsaved), gunakan itu untuk display header
+    if (localTotalKontrak !== null) {
+      return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
+    }
+
     try {
       // 1. If there's an approved CCO, use its total
       if (activeCcoVersion?.total > 0) {
@@ -200,7 +207,7 @@ function ProyekContent() {
       console.error('Metrics calc error:', e);
       return { total: 0, duration: 0 };
     }
-  }, [currentProjectObj, tabData.ahsp, activeCcoVersion]);
+  }, [currentProjectObj, tabData.ahsp, activeCcoVersion, localTotalKontrak]);
 
   const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
 
@@ -1393,7 +1400,7 @@ function ProyekContent() {
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab 
                   projectId={selectedProject} 
-                  initialIdentity={isCreating && !selectedProject ? createForm : null}
+                  initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
                   backupData={tabData.backup}
                   member={member}
                   onRefresh={(newId) => {
