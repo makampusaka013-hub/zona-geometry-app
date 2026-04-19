@@ -177,7 +177,7 @@ function ProyekContent() {
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
-    
+
     // GUC: Jika ada perubahan lokal (unsaved), gunakan itu untuk display header
     if (localTotalKontrak !== null) {
       return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
@@ -197,7 +197,7 @@ function ProyekContent() {
       const ppnPercent = currentProjectObj.ppn_percent ?? 12;
       const ppn = subtotal * (ppnPercent / 100);
       let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-      
+
       // If we have no lines yet in tabData, use the cached total from the project object
       if (total === 0 && currentProjectObj.total_kontrak) {
         total = currentProjectObj.total_kontrak;
@@ -224,7 +224,7 @@ function ProyekContent() {
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: ''
   });
   const [createForm, setCreateForm] = useState({
-    name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(), 
+    name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: ''
   });
@@ -232,7 +232,7 @@ function ProyekContent() {
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
     // PROTEKSI: Jangan reset form ke kosong jika data proyek sedang dimuat atau belum ada
-    if (loading) return; 
+    if (loading) return;
 
     if (currentProjectObj) {
       setIdentityForm({
@@ -259,7 +259,7 @@ function ProyekContent() {
     } else if (!selectedProject) {
       // Hanya reset jika user memang berniat membuat baru atau sudah tidak memilih apapun
       setIdentityForm({
-        name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(), 
+        name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
         contract_number: '', hsp_value: 0, ppn_percent: 12,
         program_name: '', activity_name: '', work_name: '',
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
@@ -326,7 +326,7 @@ function ProyekContent() {
         .from('project_members')
         .select('*, members!project_members_user_id_fkey(full_name, email)')
         .eq('project_id', projectId);
-      
+
       if (error) throw error;
       if (data) {
         setProjectMembers(data);
@@ -394,7 +394,7 @@ function ProyekContent() {
     if (isCheckingAuth.current) return;
     isCheckingAuth.current = true;
     const version = ++dataVersionRef.current;
-    
+
     try {
       const { data: { session } } = await supabase.auth.getSession();
       const user = session?.user;
@@ -409,7 +409,7 @@ function ProyekContent() {
       if (version !== dataVersionRef.current) return;
 
       const row = memberRes.data;
-      let isExp = false; 
+      let isExp = false;
       let role = row?.role ?? 'normal';
       if (row?.expired_at && new Date(row.expired_at) < new Date()) { isExp = true; }
       setMember(row ? { ...row, role, isExpired: isExp, approval_status: 'approved' } : { user_id: user.id, role: 'normal', isExpired: false, approval_status: 'pending' });
@@ -417,8 +417,8 @@ function ProyekContent() {
       const userMemberSlots = slotsRes.data;
       const accessibleProjIds = (userMemberSlots || []).map(m => m.project_id);
       const roleMap = {};
-      (userMemberSlots || []).forEach(m => { 
-        roleMap[m.project_id] = m.slot_role?.startsWith('pembuat') ? 'pembuat' : m.slot_role; 
+      (userMemberSlots || []).forEach(m => {
+        roleMap[m.project_id] = m.slot_role?.startsWith('pembuat') ? 'pembuat' : m.slot_role;
       });
       setAllRoles(roleMap);
 
@@ -434,13 +434,13 @@ function ProyekContent() {
         // Coba ambil dari URL dulu
         const urlId = searchParams.get('id');
         let activeId = urlId || selectedProject;
-        
+
         if (!proj.some(p => p.id === activeId)) {
           activeId = proj[0].id;
         }
-        
+
         setSelectedProject(activeId);
-        
+
         const p = proj.find(x => x.id === activeId) || proj[0];
         setProjectOwnerId(p.created_by);
         setMpTargetDurasi(p.manual_duration || 0);
@@ -498,7 +498,7 @@ function ProyekContent() {
     if (action === 'new' && !loading) {
       handleNewProject();
       // Bersihkan param agar tidak trigger ulang jika page refresh/navigate
-      router.replace('/dashboard/rekap-proyek'); 
+      router.replace('/dashboard/rekap-proyek');
     }
   }, [searchParams, loading, handleNewProject, router]);
 
@@ -529,7 +529,7 @@ function ProyekContent() {
     // SWR-style: only show spinner if we have no data yet for this data type
     // This prevents the UI from flickering/blocking when switching between known tabs
     const hasExistingData = (() => {
-      switch(tab) {
+      switch (tab) {
         case 'proyek': case 'progress': case 'schedule': return tabData.ahsp?.length > 0;
         case 'terpakai': return tabData.harga?.length > 0;
         case 'perubahan': return tabData.cco?.length > 0 || tabData.mc?.length > 0;
@@ -578,9 +578,9 @@ function ProyekContent() {
           setActiveCcoVersion(null);
         }
 
-        setTabData(prev => ({ 
-          ...prev, 
-          schedule: { lines: processedLines, resources: resources || [] }, 
+        setTabData(prev => ({
+          ...prev,
+          schedule: { lines: processedLines, resources: resources || [] },
           ahsp: processedLines,
           backup: backup || []
         }));
@@ -593,18 +593,18 @@ function ProyekContent() {
           (catalogData || []).forEach(item => { catalog[item.master_ahsp_id] = item.details || []; });
         }
         setAhspCatalog(catalog);
-      } 
+      }
       else if (tab === 'ahsp') {
         const { data } = await supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan');
         if (version !== tabVersionRef.current) return;
         setTabData(prev => ({ ...prev, ahsp: data || [] }));
-      } 
+      }
       else if (tab === 'terpakai') {
         const [ahspRes, resourceSumRes] = await Promise.all([
           supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan'),
           supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId)
         ]);
-        
+
         if (version !== tabVersionRef.current) return;
 
         const ahsp = ahspRes.data;
@@ -631,7 +631,7 @@ function ProyekContent() {
             return (a.uraian || '').localeCompare(b.uraian || '');
           })
         }));
-      } 
+      }
       else if (tab === 'perubahan') {
         const [ccoRes, mcRes] = await Promise.all([
           supabase.from('project_cco').select('*').eq('project_id', projectId).order('revision_number'),
@@ -639,7 +639,7 @@ function ProyekContent() {
         ]);
         if (version !== tabVersionRef.current) return;
         setTabData(prev => ({ ...prev, cco: ccoRes.data || [], mc: mcRes.data || [] }));
-      } 
+      }
       else if (tab === 'tkdn') {
         const { data: resSum } = await supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId);
         if (version !== tabVersionRef.current) return;
@@ -656,7 +656,7 @@ function ProyekContent() {
         });
         const total_tkdn_pct = total_nilai > 0 ? (total_tkdn_nilai / total_nilai) * 100 : 0;
         setTabData(prev => ({ ...prev, harga: list, tkdn: { total_nilai, total_tkdn_nilai, total_tkdn_pct, byJenis } }));
-      } 
+      }
       else if (tab === 'backup') {
         const [ahspRes, backupRes] = await Promise.all([
           supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan'),
@@ -736,7 +736,7 @@ function ProyekContent() {
       const type = (d.jenis_komponen || d.jenis || '').toLowerCase();
       const kode = (d.kode_item || d.kode || '').toUpperCase();
       const uraian = (d.uraian || '').toLowerCase();
-      
+
       // Prioritas 1: Kode Item dimulai dengan L.
       if (kode.startsWith('L.')) return true;
 
@@ -774,7 +774,7 @@ function ProyekContent() {
         .select('id, name')
         .eq('unique_code', joinCode.toUpperCase())
         .maybeSingle();
-      
+
       if (pErr) throw pErr;
       if (!p) {
         setModalStatus({ type: 'error', msg: 'Kode proyek tidak valid.' });
@@ -797,7 +797,7 @@ function ProyekContent() {
         .from('project_members')
         .select('id', { count: 'exact', head: true })
         .eq('project_id', p.id);
-      
+
       if (count >= 3) {
         setModalStatus({ type: 'error', msg: 'Proyek ini sudah penuh (Batas 3 User).' });
         return;
@@ -870,24 +870,24 @@ function ProyekContent() {
     setAssigning(true);
     setModalStatus(null);
     try {
-      const { data, error } = await supabase.rpc('assign_project_slot', { 
-        p_project_id: projectId, 
-        p_user_id: userId, 
-        p_slot_role: slotRole 
+      const { data, error } = await supabase.rpc('assign_project_slot', {
+        p_project_id: projectId,
+        p_user_id: userId,
+        p_slot_role: slotRole
       });
       if (error) throw error;
       if (data.error) {
         setModalStatus({ type: 'error', msg: data.error });
-      } else { 
+      } else {
         await fetchMembersForProject(projectId);
         setModalStatus({ type: 'success', msg: 'Peran berhasil ditetapkan.' });
         setTimeout(() => setModalStatus(null), 2000);
-        loadData(); 
+        loadData();
       }
-    } catch (err) { 
+    } catch (err) {
       setModalStatus({ type: 'error', msg: err.message });
-    } finally { 
-      setAssigning(false); 
+    } finally {
+      setAssigning(false);
     }
   }
 
@@ -920,14 +920,14 @@ function ProyekContent() {
         await fetchMembersForProject(projectId);
         setModalStatus({ type: 'success', msg: 'Member berhasil dikeluarkan dari proyek.' });
         setTimeout(() => setModalStatus(null), 2000);
-        loadData(); 
+        loadData();
       }
     } catch (err) {
       setModalStatus({ type: 'error', msg: err.message });
     }
   }
 
-  
+
 
   const handleDeleteProject = async (id) => {
     setConfirmDeleteId(id);
@@ -1055,28 +1055,26 @@ function ProyekContent() {
           </div>
           <div className="flex items-center gap-2 flex-wrap">
 
-            <button 
+            <button
               onClick={handleNewProject}
               disabled={ownedLimitReached}
-              className={`text-xs border px-4 py-2 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 ${
-                ownedLimitReached 
-                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none' 
+              className={`text-xs border px-4 py-2 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 ${ownedLimitReached
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none'
                   : 'border-indigo-100 dark:border-slate-700 bg-indigo-600 dark:bg-orange-600 text-white hover:scale-105 active:scale-95'
-              }`}
+                }`}
             >
               <Plus className="w-4 h-4" /> Proyek Baru {ownedLimitReached && <span className="text-[8px] opacity-70">({isModeNormal ? 'BATAS 1 TERCAPAI' : 'BATAS 3 TERCAPAI'})</span>}
             </button>
 
             {/* Gabung Proyek: Pro=join only, Advance/Admin=full join */}
             {!isModeNormal && (
-              <button 
-                onClick={() => !joinedLimitReached && setShowJoinModal(true)} 
+              <button
+                onClick={() => !joinedLimitReached && setShowJoinModal(true)}
                 disabled={joinedLimitReached}
-                className={`text-xs border px-4 py-2 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 ${
-                  joinedLimitReached 
-                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none' 
+                className={`text-xs border px-4 py-2 rounded-xl font-bold transition-all shadow-sm flex items-center gap-2 ${joinedLimitReached
+                    ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed shadow-none'
                     : 'border-indigo-100 dark:border-slate-700 bg-indigo-50/50 dark:bg-slate-800 text-indigo-700 dark:text-orange-400 hover:bg-white'
-                }`}
+                  }`}
               >
                 <Users className="w-4 h-4" /> Gabung Proyek {joinedLimitReached && <span className="text-[8px] opacity-70">(BATAS 7 TERCAPAI)</span>}
               </button>
@@ -1216,7 +1214,7 @@ function ProyekContent() {
               <span className="text-[10px] font-black text-slate-900 dark:text-white">{projectMetrics.duration || manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span></span>
             </div>
 
-            <button 
+            <button
               onClick={() => setIsIdentityModalOpen(true)}
               className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-orange-600 text-slate-600 dark:text-slate-300 hover:text-white rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:scale-105 active:scale-95 group ml-2"
             >
@@ -1254,14 +1252,13 @@ function ProyekContent() {
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Silakan buat proyek baru atau gabung proyek rekan Anda</p>
                           </div>
                           {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                            <button 
+                            <button
                               onClick={handleNewProject}
                               disabled={ownedLimitReached}
-                              className={`mt-4 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${
-                                ownedLimitReached 
-                                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' 
+                              className={`mt-4 px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${ownedLimitReached
+                                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
                                   : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-xl hover:scale-105 active:scale-95'
-                              }`}
+                                }`}
                             >
                               {ownedLimitReached ? (isModeNormal ? 'Batas 1 Proyek (Trial) Tercapai' : 'Batas 3 Proyek Tercapai') : '+ Buat Proyek Pertama'}
                             </button>
@@ -1275,90 +1272,89 @@ function ProyekContent() {
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
 
-                    // Calculate Total for this project
-                    const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-                    const ppn = subtotal * ((p.ppn_percent || 12) / 100);
-                    const total = subtotal + ppn;
-                    const rounded = Math.ceil((total || 0) / 1000) * 1000;
+                      // Calculate Total for this project
+                      const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
+                      const ppn = subtotal * ((p.ppn_percent || 12) / 100);
+                      const total = subtotal + ppn;
+                      const rounded = Math.ceil((total || 0) / 1000) * 1000;
 
-                    return (
-                      <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">
-                        <td className="px-8 py-5 font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 dark:text-orange-500 shrink-0 shadow-inner">
-                            <LayoutGrid className="w-5 h-5" />
-                          </div>
-                          <div className="truncate">{p.name || p.activity_name || 'Tanpa Nama'}</div>
-                        </td>
-                        <td className="px-6 py-5 text-center">
-                          <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${
-                            myRole === 'Owner' 
-                              ? 'bg-indigo-600 text-white shadow-sm' 
-                              : (myRole ? 'bg-indigo-50 text-indigo-700 dark:bg-orange-500/10 dark:text-orange-400 border border-indigo-100 dark:border-orange-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700')
-                            }`}>
-                            {myRole || 'Pending'}
-                          </span>
-                        </td>
-                        <td className="px-6 py-5 text-center font-mono font-black text-slate-900 dark:text-white">
-                          {formatIdr(rounded)}
-                        </td>
-                        <td className="px-6 py-5 text-center">
-                          {p.manual_duration > 0 ? (
-                            <div className="flex flex-col items-center gap-1">
-                              <span className="font-black text-sm text-slate-800 dark:text-white">
-                                {p.manual_duration} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0} 
-                                <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
-                              </span>
-                              {p.start_date ? (
-                                <span className="text-[9px] text-slate-400 font-mono">
-                                  {safeFormatDate(p.start_date)}
+                      return (
+                        <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">
+                          <td className="px-8 py-5 font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
+                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 dark:text-orange-500 shrink-0 shadow-inner">
+                              <LayoutGrid className="w-5 h-5" />
+                            </div>
+                            <div className="truncate">{p.name || p.activity_name || 'Tanpa Nama'}</div>
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${myRole === 'Owner'
+                                ? 'bg-indigo-600 text-white shadow-sm'
+                                : (myRole ? 'bg-indigo-50 text-indigo-700 dark:bg-orange-500/10 dark:text-orange-400 border border-indigo-100 dark:border-orange-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700')
+                              }`}>
+                              {myRole || 'Pending'}
+                            </span>
+                          </td>
+                          <td className="px-6 py-5 text-center font-mono font-black text-slate-900 dark:text-white">
+                            {formatIdr(rounded)}
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            {p.manual_duration > 0 ? (
+                              <div className="flex flex-col items-center gap-1">
+                                <span className="font-black text-sm text-slate-800 dark:text-white">
+                                  {p.manual_duration} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0}
+                                  <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
                                 </span>
+                                {p.start_date ? (
+                                  <span className="text-[9px] text-slate-400 font-mono">
+                                    {safeFormatDate(p.start_date)}
+                                  </span>
+                                ) : (
+                                  <span className="text-[9px] text-amber-500 font-semibold">Tgl mulai belum diset</span>
+                                )}
+                              </div>
+                            ) : (
+                              <span className="text-[9px] text-slate-400 italic">— Belum diset —</span>
+                            )}
+                          </td>
+                          <td className="px-6 py-5 text-center">
+                            {p.created_by === member?.user_id ?
+                              (member?.role === 'admin' || member?.role === 'advance' ? (
+                                <button onClick={() => setShowShareModal(p)} className="px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-all uppercase flex items-center gap-2 mx-auto">
+                                  {p.unique_code} <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500 animate-pulse" />
+                                </button>
                               ) : (
-                                <span className="text-[9px] text-amber-500 font-semibold">Tgl mulai belum diset</span>
+                                <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest italic text-center block">Hanya Advance</span>
+                              ))
+                              : <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2 italic">🔒 Terproteksi</span>
+                            }
+                          </td>
+                          <td className="px-8 py-5 text-right">
+                            <div className="flex justify-end items-center gap-3">
+                              <button
+                                onClick={() => { setSelectedProject(p.id); setActiveTab('proyek'); }}
+                                className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:scale-[1.05] active:scale-95 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
+                              >
+                                Buka
+                              </button>
+                              {p.created_by === member?.user_id ? (
+                                <button
+                                  onClick={() => handleDeleteProject(p.id)}
+                                  className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
+                                  title="Hapus Proyek"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              ) : (
+                                <button
+                                  onClick={() => handleLeaveProject(p.id)}
+                                  className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-2xl transition-all"
+                                  title="Keluar dari Proyek"
+                                >
+                                  <LogOut className="w-4 h-4" />
+                                </button>
                               )}
                             </div>
-                          ) : (
-                            <span className="text-[9px] text-slate-400 italic">— Belum diset —</span>
-                          )}
-                        </td>
-                        <td className="px-6 py-5 text-center">
-                          {p.created_by === member?.user_id ?
-                            (member?.role === 'admin' || member?.role === 'advance' ? (
-                              <button onClick={() => setShowShareModal(p)} className="px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-all uppercase flex items-center gap-2 mx-auto">
-                                {p.unique_code} <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500 animate-pulse" />
-                              </button>
-                            ) : (
-                              <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest italic text-center block">Hanya Advance</span>
-                            ))
-                            : <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2 italic">🔒 Terproteksi</span>
-                          }
-                        </td>
-                        <td className="px-8 py-5 text-right">
-                          <div className="flex justify-end items-center gap-3">
-                            <button
-                              onClick={() => { setSelectedProject(p.id); setActiveTab('proyek'); }}
-                              className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:scale-[1.05] active:scale-95 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
-                            >
-                              Buka
-                            </button>
-                            {p.created_by === member?.user_id ? (
-                              <button
-                                onClick={() => handleDeleteProject(p.id)}
-                                className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
-                                title="Hapus Proyek"
-                              >
-                                <Trash2 className="w-4 h-4" />
-                              </button>
-                            ) : (
-                              <button
-                                onClick={() => handleLeaveProject(p.id)}
-                                className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-2xl transition-all"
-                                title="Keluar dari Proyek"
-                              >
-                                <LogOut className="w-4 h-4" />
-                              </button>
-                            )}
-                          </div>
-                        </td>
+                          </td>
                         </tr>
                       )
                     })
@@ -1384,14 +1380,13 @@ function ProyekContent() {
                       Kembali Ke Daftar
                     </button>
                     {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                      <button 
+                      <button
                         onClick={handleNewProject}
                         disabled={ownedLimitReached}
-                        className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${
-                          ownedLimitReached 
-                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none' 
+                        className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${ownedLimitReached
+                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
                             : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-xl hover:scale-105 active:scale-95'
-                        }`}
+                          }`}
                       >
                         {ownedLimitReached ? 'Batas 3 Proyek Tercapai' : '+ Buat Proyek Baru'}
                       </button>
@@ -1399,8 +1394,8 @@ function ProyekContent() {
                   </div>
                 </div>
               ) : subTabProyek === 'rab' ? (
-                <RabEditorTab 
-                  projectId={selectedProject} 
+                <RabEditorTab
+                  projectId={selectedProject}
                   initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
                   backupData={tabData.backup}
                   member={member}
@@ -1410,24 +1405,24 @@ function ProyekContent() {
                     setLocalTotalKontrak(null); // Reset status lokal setelah berhasil simpan
                     const targetId = newId || selectedProject;
                     if (newId) setSelectedProject(newId);
-                    
+
                     // Force refresh both project overview and current tab details
                     loadData();
                     loadTabData(activeTab, targetId, selectedBab);
-                  }} 
+                  }}
                   onEditIdentity={() => setIsIdentityModalOpen(true)}
                   ownerId={projectOwnerId || member?.user_id}
                   projectStartDate={projectStartDate}
                   setProjectStartDate={updateProjectStartDate}
                 />
               ) : subTabProyek === 'backup' ? (
-                <BackupVolumeTab {...{ 
-                  activeTab, tabLoading, tabData, projectId: selectedProject, 
-                  onRefresh: () => loadTabData(activeTab, selectedProject), 
+                <BackupVolumeTab {...{
+                  activeTab, tabLoading, tabData, projectId: selectedProject,
+                  onRefresh: () => loadTabData(activeTab, selectedProject),
                   userSlotRole, isAdmin, isOwner,
                   memberRole: member?.role,
-                  selectedLineId: selectedBackupLineId, 
-                  onSelectLineId: setSelectedBackupLineId 
+                  selectedLineId: selectedBackupLineId,
+                  onSelectLineId: setSelectedBackupLineId
                 }} />
               ) : (
                 <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin }} />
@@ -1444,7 +1439,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
-          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin, subTab: perubahanSubTab, setSubTab: setPerubahanSubTab }} />}
+          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab }} />}
           {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} />}
@@ -1465,16 +1460,16 @@ function ProyekContent() {
                 <Plus className="w-5 h-5 rotate-45 text-slate-400" />
               </button>
             </div>
-            
+
             <div className="space-y-6">
-              <input 
-                type="text" 
-                placeholder="KODE PROYEK" 
-                value={joinCode} 
-                onChange={e => setJoinCode(e.target.value.toUpperCase())} 
-                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-lg font-black tracking-widest outline-none uppercase text-center" 
+              <input
+                type="text"
+                placeholder="KODE PROYEK"
+                value={joinCode}
+                onChange={e => setJoinCode(e.target.value.toUpperCase())}
+                className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-lg font-black tracking-widest outline-none uppercase text-center"
               />
-              
+
               <div className="bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest text-center leading-relaxed">
                   Setelah bergabung, pemilik proyek akan menentukan peran Anda sebagai Kontraktor, Konsultan, atau Instansi.
@@ -1482,15 +1477,15 @@ function ProyekContent() {
               </div>
 
               <div className="flex gap-3">
-                <button 
-                  onClick={() => setShowJoinModal(false)} 
+                <button
+                  onClick={() => setShowJoinModal(false)}
                   className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase"
                 >
                   Batal
                 </button>
-                <button 
-                  onClick={handleJoinProject} 
-                  disabled={joining || !joinCode} 
+                <button
+                  onClick={handleJoinProject}
+                  disabled={joining || !joinCode}
                   className="flex-[2] py-4 bg-indigo-600 dark:bg-orange-600 text-white font-black rounded-2xl shadow-xl uppercase tracking-widest text-xs disabled:opacity-50 active:scale-95 transition-all"
                 >
                   {joining ? 'Memproses...' : 'Gabung'}
@@ -1498,9 +1493,8 @@ function ProyekContent() {
               </div>
 
               {modalStatus && (
-                <div className={`p-4 rounded-xl text-[10px] font-bold text-center animate-in slide-in-from-top-2 duration-300 ${
-                  modalStatus.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
-                }`}>
+                <div className={`p-4 rounded-xl text-[10px] font-bold text-center animate-in slide-in-from-top-2 duration-300 ${modalStatus.type === 'success' ? 'bg-green-50 dark:bg-green-900/20 text-green-600 dark:text-green-400' : 'bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400'
+                  }`}>
                   {modalStatus.msg}
                 </div>
               )}
@@ -1517,8 +1511,8 @@ function ProyekContent() {
                 <h3 className="text-xs font-black text-slate-900 dark:text-white tracking-tight uppercase">Kolaborasi Proyek</h3>
                 <p className="text-[7px] font-black text-slate-400 uppercase tracking-widest mt-0.5">Manajemen Slot Personil (3-Pihak)</p>
               </div>
-              <button 
-                onClick={() => { setShowShareModal(null); setCopied(false); setModalStatus(null); }} 
+              <button
+                onClick={() => { setShowShareModal(null); setCopied(false); setModalStatus(null); }}
                 className="p-2 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors"
                 title="Tutup"
               >
@@ -1537,7 +1531,7 @@ function ProyekContent() {
                     <span className="text-[6px] font-black text-white/70 uppercase tracking-[0.2em] mb-0.5">Kode Berbagi</span>
                     <span className="text-lg font-mono font-black text-white tracking-[0.1em]">{showShareModal.unique_code}</span>
                   </div>
-                  <button 
+                  <button
                     onClick={() => {
                       navigator.clipboard.writeText(showShareModal.unique_code);
                       setCopied(true);
@@ -1553,34 +1547,32 @@ function ProyekContent() {
 
               {/* Status Message Internal */}
               {modalStatus && (
-                <div className={`p-3 rounded-xl border text-center animate-in slide-in-from-top-1 duration-200 ${
-                  modalStatus.type === 'success' 
-                    ? 'bg-green-50 border-green-100 text-green-600 dark:bg-green-900/10 dark:border-green-900/30 dark:text-green-400' 
+                <div className={`p-3 rounded-xl border text-center animate-in slide-in-from-top-1 duration-200 ${modalStatus.type === 'success'
+                    ? 'bg-green-50 border-green-100 text-green-600 dark:bg-green-900/10 dark:border-green-900/30 dark:text-green-400'
                     : 'bg-red-50 border-red-100 text-red-600 dark:bg-red-900/10 dark:border-red-900/30 dark:text-red-400'
-                }`}>
+                  }`}>
                   <p className="text-[9px] font-bold">{modalStatus.msg}</p>
                 </div>
               )}
-              
+
               <div className="space-y-3">
                 {['pembuat_1', 'pembuat_2', 'pengecek'].map((slot) => {
                   const holder = projectMembers.find(m => m.slot_role === slot);
                   const isUserSelf = holder?.user_id === member?.user_id;
                   const isOwner = showShareModal.created_by === member?.user_id;
                   const unassignedMembers = projectMembers.filter(m => !m.slot_role);
-                  
+
                   // Label visualisasi untuk masing-masing slot
                   const slotLabel = slot === 'pembuat_1' ? 'Editor 1' : slot === 'pembuat_2' ? 'Editor 2' : 'Pengecek';
                   const slotDesc = slot.startsWith('pembuat') ? 'Bisa Merubah Data' : 'Hanya Ceklist / Read-Only';
                   const slotIconChar = slot === 'pembuat_1' ? 'E1' : slot === 'pembuat_2' ? 'E2' : 'C';
-                  
+
                   return (
                     <div key={slot} className="group relative flex flex-col p-3 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-800/50 hover:border-indigo-100 dark:hover:border-orange-500/20 transition-all">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-2.5 w-full">
-                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[9px] uppercase shadow-sm ${
-                            holder ? 'bg-indigo-600 dark:bg-orange-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
-                          }`}>
+                          <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-black text-[9px] uppercase shadow-sm ${holder ? 'bg-indigo-600 dark:bg-orange-600 text-white' : 'bg-slate-200 dark:bg-slate-700 text-slate-400'
+                            }`}>
                             {slotIconChar}
                           </div>
                           <div className="flex flex-col min-w-0 flex-1">
@@ -1593,7 +1585,7 @@ function ProyekContent() {
                                   <span className="text-[7.5px] text-slate-400 truncate leading-tight">{holder.members?.email}</span>
                                 </div>
                                 {(isOwner || isUserSelf) && (
-                                  <button 
+                                  <button
                                     onClick={() => handleResetSlot(showShareModal.id, slot)}
                                     className="p-1.5 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition-all active:scale-95"
                                     title="Reset"
@@ -1606,7 +1598,7 @@ function ProyekContent() {
                               <div className="flex flex-col gap-1">
                                 <span className="text-[10px] font-bold text-slate-300 italic">Belum Terisi</span>
                                 {isOwner && unassignedMembers.length > 0 && (
-                                  <select 
+                                  <select
                                     onChange={(e) => handleAssignSlot(showShareModal.id, e.target.value, slot)}
                                     disabled={assigning}
                                     className="w-full mt-1 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-[9px] font-bold py-1 px-1.5 outline-none focus:border-indigo-500 transition-all cursor-pointer"
@@ -1639,9 +1631,8 @@ function ProyekContent() {
                     return (
                       <div key={m.user_id} className="flex items-center justify-between p-2 bg-white dark:bg-slate-900/30 rounded-xl border border-slate-100 dark:border-slate-800/50">
                         <div className="flex items-center gap-2.5">
-                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black ${
-                            isMembOwner ? 'bg-indigo-100 dark:bg-orange-500/10 text-indigo-600 dark:text-orange-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
-                          }`}>
+                          <div className={`w-7 h-7 rounded-full flex items-center justify-center text-[9px] font-black ${isMembOwner ? 'bg-indigo-100 dark:bg-orange-500/10 text-indigo-600 dark:text-orange-400' : 'bg-slate-100 dark:bg-slate-800 text-slate-500'
+                            }`}>
                             {m.members?.full_name?.charAt(0) || 'U'}
                           </div>
                           <div className="flex flex-col min-w-0">
@@ -1661,7 +1652,7 @@ function ProyekContent() {
                             <span className="px-1.5 py-0.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 text-[6px] font-black uppercase rounded-md border border-amber-100 dark:border-amber-900/40 animate-pulse tracking-tighter">PENDING</span>
                           )}
                           {!isMembOwner && member?.user_id === showShareModal.created_by && (
-                            <button 
+                            <button
                               onClick={() => handleRemoveMember(showShareModal.id, m.user_id)}
                               className="p-1.5 bg-red-50 dark:bg-red-900/10 text-red-600 dark:text-red-400 rounded-lg hover:bg-red-100 transition-all active:scale-95 ml-1"
                               title="Keluarkan dari Proyek"
@@ -1683,8 +1674,8 @@ function ProyekContent() {
             </div>
 
             <div className="p-6 bg-white dark:bg-slate-900 border-t border-slate-50 dark:border-slate-800 shrink-0 sticky bottom-0 z-10 transition-all">
-              <button 
-                onClick={() => { setShowShareModal(null); setCopied(false); setModalStatus(null); }} 
+              <button
+                onClick={() => { setShowShareModal(null); setCopied(false); setModalStatus(null); }}
                 className="w-full py-3 bg-slate-900 dark:bg-white text-white dark:text-slate-900 text-[9px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:scale-[1.02] active:scale-95 transition-all outline-none"
               >
                 Selesai
@@ -1707,8 +1698,8 @@ function ProyekContent() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Lengkapi informasi untuk mulai menyusun RAB</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsCreateModalOpen(false)} 
+              <button
+                onClick={() => setIsCreateModalOpen(false)}
                 className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90"
               >
                 <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -1727,27 +1718,27 @@ function ProyekContent() {
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                         Nama Proyek <span className="text-rose-500">*</span>
                       </label>
-                      <input 
+                      <input
                         required
-                        value={createForm.name} 
-                        onChange={e => setCreateForm({...createForm, name: e.target.value})}
+                        value={createForm.name}
+                        onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         placeholder="Contoh: Gedung Sebaguna"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
-                      <input 
-                        value={createForm.program_name} 
-                        onChange={e => setCreateForm({...createForm, program_name: e.target.value})}
+                      <input
+                        value={createForm.program_name}
+                        onChange={e => setCreateForm({ ...createForm, program_name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
-                      <input 
-                        value={createForm.activity_name} 
-                        onChange={e => setCreateForm({...createForm, activity_name: e.target.value})}
+                      <input
+                        value={createForm.activity_name}
+                        onChange={e => setCreateForm({ ...createForm, activity_name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
@@ -1762,9 +1753,9 @@ function ProyekContent() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
-                      <input 
-                        value={createForm.contract_number} 
-                        onChange={e => setCreateForm({...createForm, contract_number: e.target.value})}
+                      <input
+                        value={createForm.contract_number}
+                        onChange={e => setCreateForm({ ...createForm, contract_number: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
@@ -1773,10 +1764,10 @@ function ProyekContent() {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Thn Anggaran <span className="text-rose-500">*</span>
                         </label>
-                        <input 
+                        <input
                           required
-                          value={createForm.fiscal_year} 
-                          onChange={e => setCreateForm({...createForm, fiscal_year: e.target.value})}
+                          value={createForm.fiscal_year}
+                          onChange={e => setCreateForm({ ...createForm, fiscal_year: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1784,10 +1775,10 @@ function ProyekContent() {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Pagu (HSP)
                         </label>
-                        <input 
+                        <input
                           type="number"
-                          value={createForm.hsp_value} 
-                          onChange={e => setCreateForm({...createForm, hsp_value: e.target.value})}
+                          value={createForm.hsp_value}
+                          onChange={e => setCreateForm({ ...createForm, hsp_value: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1795,22 +1786,22 @@ function ProyekContent() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
-                        <input 
+                        <input
                           type="number"
-                          value={createForm.manual_duration} 
-                          onChange={e => setCreateForm({...createForm, manual_duration: e.target.value})}
+                          value={createForm.manual_duration}
+                          onChange={e => setCreateForm({ ...createForm, manual_duration: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                       <div className="space-y-2">
-                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Wilayah / Regional <span className="text-rose-500">*</span>
                         </label>
-                        <LocationSelect 
+                        <LocationSelect
                           value={createForm.location}
                           locationId={createForm.location_id}
                           locations={locations}
-                          onChange={(id, name) => setCreateForm({...createForm, location_id: id, location: name})}
+                          onChange={(id, name) => setCreateForm({ ...createForm, location_id: id, location: name })}
                         />
                       </div>
                     </div>
@@ -1820,14 +1811,13 @@ function ProyekContent() {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200">Batal</button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!createForm.name?.trim() || !createForm.fiscal_year?.trim() || !createForm.location?.trim()}
-                  className={`flex-[2] py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-xs transition-all ${
-                    (!createForm.name?.trim() || !createForm.fiscal_year?.trim() || !createForm.location?.trim())
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
-                    : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-[1.02] active:scale-95'
-                  }`}
+                  className={`flex-[2] py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-xs transition-all ${(!createForm.name?.trim() || !createForm.fiscal_year?.trim() || !createForm.location?.trim())
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
+                      : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-[1.02] active:scale-95'
+                    }`}
                 >
                   Mulai Menyusun RAB
                 </button>
@@ -1851,8 +1841,8 @@ function ProyekContent() {
                   <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Perbarui meta-data dan detail administratif</p>
                 </div>
               </div>
-              <button 
-                onClick={() => setIsIdentityModalOpen(false)} 
+              <button
+                onClick={() => setIsIdentityModalOpen(false)}
                 className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90"
               >
                 <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -1871,26 +1861,26 @@ function ProyekContent() {
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                         Nama Proyek <span className="text-rose-500">*</span>
                       </label>
-                      <input 
+                      <input
                         required
-                        value={identityForm.name} 
-                        onChange={e => setIdentityForm({...identityForm, name: e.target.value})}
+                        value={identityForm.name}
+                        onChange={e => setIdentityForm({ ...identityForm, name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
-                      <input 
-                        value={identityForm.program_name} 
-                        onChange={e => setIdentityForm({...identityForm, program_name: e.target.value})}
+                      <input
+                        value={identityForm.program_name}
+                        onChange={e => setIdentityForm({ ...identityForm, program_name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
-                      <input 
-                        value={identityForm.activity_name} 
-                        onChange={e => setIdentityForm({...identityForm, activity_name: e.target.value})}
+                      <input
+                        value={identityForm.activity_name}
+                        onChange={e => setIdentityForm({ ...identityForm, activity_name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
@@ -1905,9 +1895,9 @@ function ProyekContent() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
-                      <input 
-                        value={identityForm.contract_number} 
-                        onChange={e => setIdentityForm({...identityForm, contract_number: e.target.value})}
+                      <input
+                        value={identityForm.contract_number}
+                        onChange={e => setIdentityForm({ ...identityForm, contract_number: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
@@ -1916,10 +1906,10 @@ function ProyekContent() {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Thn Anggaran <span className="text-rose-500">*</span>
                         </label>
-                        <input 
+                        <input
                           required
-                          value={identityForm.fiscal_year} 
-                          onChange={e => setIdentityForm({...identityForm, fiscal_year: e.target.value})}
+                          value={identityForm.fiscal_year}
+                          onChange={e => setIdentityForm({ ...identityForm, fiscal_year: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1927,10 +1917,10 @@ function ProyekContent() {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Pagu (HSP)
                         </label>
-                        <input 
+                        <input
                           type="number"
-                          value={identityForm.hsp_value} 
-                          onChange={e => setIdentityForm({...identityForm, hsp_value: e.target.value})}
+                          value={identityForm.hsp_value}
+                          onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1938,10 +1928,10 @@ function ProyekContent() {
                     <div className="grid grid-cols-2 gap-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
-                        <input 
+                        <input
                           type="number"
-                          value={identityForm.manual_duration} 
-                          onChange={e => setIdentityForm({...identityForm, manual_duration: e.target.value})}
+                          value={identityForm.manual_duration}
+                          onChange={e => setIdentityForm({ ...identityForm, manual_duration: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1949,11 +1939,11 @@ function ProyekContent() {
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                           Wilayah / Regional <span className="text-rose-500">*</span>
                         </label>
-                        <LocationSelect 
+                        <LocationSelect
                           value={identityForm.location}
                           locationId={identityForm.location_id}
                           locations={locations}
-                          onChange={(id, name) => setIdentityForm({...identityForm, location_id: id, location: name})}
+                          onChange={(id, name) => setIdentityForm({ ...identityForm, location_id: id, location: name })}
                         />
                       </div>
                     </div>
@@ -1967,33 +1957,33 @@ function ProyekContent() {
                   <Users className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
                   <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder & Tanda Tangan Laporan</span>
                 </div>
-                
+
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                   {/* PPK & PPTK */}
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPK</label>
-                      <input 
-                        value={identityForm.ppk_name} 
-                        onChange={e => setIdentityForm({...identityForm, ppk_name: e.target.value})}
+                      <input
+                        value={identityForm.ppk_name}
+                        onChange={e => setIdentityForm({ ...identityForm, ppk_name: e.target.value })}
                         placeholder="Pejabat Pembuat Komitmen"
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">NIP PPK</label>
-                      <input 
-                        value={identityForm.ppk_nip} 
-                        onChange={e => setIdentityForm({...identityForm, ppk_nip: e.target.value})}
+                      <input
+                        value={identityForm.ppk_nip}
+                        onChange={e => setIdentityForm({ ...identityForm, ppk_nip: e.target.value })}
                         placeholder="NIP: 19..."
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPTK</label>
-                      <input 
-                        value={identityForm.pptk_name} 
-                        onChange={e => setIdentityForm({...identityForm, pptk_name: e.target.value})}
+                      <input
+                        value={identityForm.pptk_name}
+                        onChange={e => setIdentityForm({ ...identityForm, pptk_name: e.target.value })}
                         placeholder="Pejabat Pelaksana Teknis"
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
@@ -2004,18 +1994,18 @@ function ProyekContent() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Perusahaan Konsultan</label>
-                      <input 
-                        value={identityForm.konsultan_name} 
-                        onChange={e => setIdentityForm({...identityForm, konsultan_name: e.target.value})}
+                      <input
+                        value={identityForm.konsultan_name}
+                        onChange={e => setIdentityForm({ ...identityForm, konsultan_name: e.target.value })}
                         placeholder="PT. / CV. ..."
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Pengawas/Direktur</label>
-                      <input 
-                        value={identityForm.konsultan_supervisor} 
-                        onChange={e => setIdentityForm({...identityForm, konsultan_supervisor: e.target.value})}
+                      <input
+                        value={identityForm.konsultan_supervisor}
+                        onChange={e => setIdentityForm({ ...identityForm, konsultan_supervisor: e.target.value })}
                         placeholder="Nama penanda tangan"
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
@@ -2026,9 +2016,9 @@ function ProyekContent() {
                   <div className="space-y-4">
                     <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Direktur Kontraktor</label>
-                      <input 
-                        value={identityForm.kontraktor_director} 
-                        onChange={e => setIdentityForm({...identityForm, kontraktor_director: e.target.value})}
+                      <input
+                        value={identityForm.kontraktor_director}
+                        onChange={e => setIdentityForm({ ...identityForm, kontraktor_director: e.target.value })}
                         placeholder="Nama Pimpinan Komanditer"
                         className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                       />
@@ -2039,14 +2029,13 @@ function ProyekContent() {
 
               <div className="pt-4 flex flex-col sm:flex-row gap-4">
                 <button type="button" onClick={() => setIsIdentityModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200">Batal</button>
-                <button 
-                  type="submit" 
+                <button
+                  type="submit"
                   disabled={!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim()}
-                  className={`flex-[2] py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-xs transition-all ${
-                    (!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim())
-                    ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
-                    : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-[1.02] active:scale-95'
-                  }`}
+                  className={`flex-[2] py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-xs transition-all ${(!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim())
+                      ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
+                      : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-[1.02] active:scale-95'
+                    }`}
                 >
                   Simpan Perubahan
                 </button>
@@ -2064,8 +2053,8 @@ function ProyekContent() {
             </div>
             <h3 className="text-xl font-black text-slate-800 dark:text-white uppercase tracking-tight mb-2">Hapus Proyek Permanen?</h3>
             <p className="text-xs text-slate-400 font-bold leading-relaxed mb-8">
-              Tindakan ini <span className="text-red-500 underline">tidak dapat dibatalkan</span>. Seluruh riwayat <span className="text-white">Jadwal</span>, 
-              riwayat perubahan <span className="text-white">CCO (Addendum)</span>, data <span className="text-white">Mutual Check (MC)</span>, 
+              Tindakan ini <span className="text-red-500 underline">tidak dapat dibatalkan</span>. Seluruh riwayat <span className="text-white">Jadwal</span>,
+              riwayat perubahan <span className="text-white">CCO (Addendum)</span>, data <span className="text-white">Mutual Check (MC)</span>,
               progres harian, dan dokumentasi akan dihapus dari server selamanya.
             </p>
             <div className="flex flex-col gap-3">
