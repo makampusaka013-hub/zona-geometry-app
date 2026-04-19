@@ -38,6 +38,17 @@ function formatIdr(n) {
   }).format(n || 0);
 }
 
+function safeFormatDate(dateStr) {
+  if (!dateStr) return '—';
+  try {
+    const d = new Date(dateStr);
+    if (isNaN(d.getTime())) return '—';
+    return d.toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' });
+  } catch (e) {
+    return '—';
+  }
+}
+
 function fmt(n) { return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
 
 const romanToInt = (s) => {
@@ -1241,7 +1252,7 @@ function ProyekContent() {
                               <span className="font-black text-sm text-slate-800 dark:text-white">{p.manual_duration} <span className="text-[10px] font-semibold text-slate-400">hari</span></span>
                               {p.start_date ? (
                                 <span className="text-[9px] text-slate-400 font-mono">
-                                  {new Date(p.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                  {safeFormatDate(p.start_date)}
                                 </span>
                               ) : (
                                 <span className="text-[9px] text-amber-500 font-semibold">Tgl mulai belum diset</span>
