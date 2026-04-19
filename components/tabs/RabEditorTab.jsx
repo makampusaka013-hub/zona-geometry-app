@@ -199,7 +199,7 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
           {loading && <div className="p-3 text-xs text-slate-400 animate-pulse">Mencari...</div>}
           {!loading && results.length === 0 && <div className="p-3 text-[10px] text-slate-400 italic">Data tidak ditemukan.</div>}
           {!loading && results.map((item, idx) => (
-            <div key={idx} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" onClick={() => { setQuery(''); setOpen(false); onSelect(item); }}>
+            <div key={idx} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" onClick={() => { setOpen(false); onSelect(item); }}>
               <div className="flex justify-between items-start mb-0.5">
                 <div className="flex items-center gap-2">
                   {item.is_custom && (
@@ -742,7 +742,7 @@ export default function RabEditorTab({
                             </td>
                             <td className="px-3 py-4 min-w-[150px]">
                                <input 
-                                 value={row.uraianCustom || ''} 
+                                 value={row.uraianCustom || row.uraian || ''} 
                                  onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })} 
                                  className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400/50" 
                                  placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."} 
