@@ -16,7 +16,7 @@ const supabaseAdmin = createClient(
 
 export async function POST(request) {
   try {
-    const { order_id, userId: fallbackUserId, plan: fallbackPlan } = await request.json();
+    const { order_id, userId: fallbackUserId, userEmail: dashboardEmail, plan: fallbackPlan } = await request.json();
 
     if (!order_id) {
       return NextResponse.json({ error: 'order_id is required' }, { status: 400 });
@@ -65,19 +65,29 @@ export async function POST(request) {
 
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
       try {
-        // 4. FIND USER (Primary: userId, Fallback: Email)
+        // 1. FIND USER (Primary: userId, Secondary: Midtrans Email, Final: Dashboard Email)
         let member = null;
+        
+        // Cek lewat ID
         const { data: memberById } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
         member = memberById;
 
+        // Cek lewat Email Midtrans (Jika ada)
         if (!member && userEmail) {
-          console.log(`[VERIFY] User ID ${userId} not found. Trying fallback to Email: ${userEmail}`);
-          const { data: memberByEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
-          member = memberByEmail;
+          console.log(`[VERIFY] ID not found. Trying Midtrans Email: ${userEmail}`);
+          const { data: memberByMidEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
+          member = memberByMidEmail;
+        }
+
+        // Cek lewat Email Dashboard (LAST RESORT)
+        if (!member && dashboardEmail) {
+          console.log(`[VERIFY] Still not found. Trying Dashboard Email: ${dashboardEmail}`);
+          const { data: memberByDashEmail } = await supabaseAdmin.from('members').select('*').eq('email', dashboardEmail).maybeSingle();
+          member = memberByDashEmail;
         }
 
         if (!member) {
-          console.error(`[VERIFY] User NOT FOUND (ID: ${userId}, Email: ${userEmail}). Cannot verify.`);
+          console.error(`[VERIFY] User NOT FOUND (ID: ${userId}, MidEmail: ${userEmail}, DashEmail: ${dashboardEmail}). Cannot verify.`);
           return NextResponse.json({ error: 'User not found in database' }, { status: 404 });
         }
 

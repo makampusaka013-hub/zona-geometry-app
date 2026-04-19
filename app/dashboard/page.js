@@ -275,7 +275,9 @@ function DashboardContent() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               order_id: orderId, 
-              userId: member.user_id 
+              userId: member.user_id,
+              userEmail: member.email, // KRUSIAL untuk sinkronisasi cadangan
+              plan: searchParams.get('plan') || 'normal' 
             })
           });
           
