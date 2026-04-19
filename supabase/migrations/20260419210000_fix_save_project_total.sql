@@ -1,5 +1,5 @@
 -- =============================================================================
--- Migration: Fix save_project_transactional and add total_kontrak column
+-- Migration: Fix save_project_transactional (Total Variable Removal Version)
 -- =============================================================================
 
 -- 1. Ensure the total_kontrak column exists
@@ -13,31 +13,28 @@ CREATE OR REPLACE FUNCTION public.save_project_transactional(
 )
 RETURNS UUID AS $$
 DECLARE
-  v_project_id UUID;
-  v_user_id UUID;
-  v_location_id UUID;
   v_calc_subtotal NUMERIC := 0;
   v_ppn_percent NUMERIC;
   v_final_total NUMERIC;
   r RECORD;
-  v_target_line_id UUID;
   v_existing_ids UUID[] := ARRAY[]::UUID[];
   v_line_item JSONB;
 BEGIN
-  v_user_id := auth.uid();
-  IF v_user_id IS NULL THEN
-     v_user_id := (p_project_data->>'user_id')::UUID;
-  END IF;
+  -- SETUP SESSION CONTEXT DIRECTLY (No local variables for these IDs)
+  PERFORM set_config('app.cur_user_id', COALESCE(auth.uid(), (p_project_data->>'user_id')::UUID)::TEXT, true);
+  
+  PERFORM set_config('app.cur_loc_id', COALESCE(
+    (p_project_data->>'location_id')::TEXT,
+    (SELECT location_id::TEXT FROM public.projects WHERE id = p_project_id),
+    (SELECT selected_location_id::TEXT FROM public.members WHERE user_id = auth.uid())
+  ), true);
 
-  v_location_id := (p_project_data->>'location_id')::UUID;
   v_ppn_percent := COALESCE((p_project_data->>'ppn_percent')::NUMERIC, 12);
 
-  -- 1. Calculate Total Kontrak from p_lines (Using Loop for maximum compatibility)
+  -- 1. Calculate Aggregates
   IF p_lines IS NOT NULL AND jsonb_array_length(p_lines) > 0 THEN
     FOR v_line_item IN SELECT jsonb_array_elements(p_lines) LOOP
        v_calc_subtotal := v_calc_subtotal + COALESCE((v_line_item->>'jumlah')::NUMERIC, 0);
-       
-       -- Collect existing IDs for smart sync
        IF v_line_item->>'id' IS NOT NULL THEN
          v_existing_ids := array_append(v_existing_ids, (v_line_item->>'id')::UUID);
        END IF;
@@ -48,6 +45,8 @@ BEGIN
 
   -- 2. Project Header Update/Insert
   IF p_project_id IS NOT NULL THEN
+    PERFORM set_config('app.cur_proj_id', p_project_id::TEXT, true);
+    
     UPDATE public.projects
     SET
       name = p_project_data->>'name',
@@ -56,32 +55,34 @@ BEGIN
       activity_name = p_project_data->>'activity_name',
       work_name = p_project_data->>'work_name',
       location = p_project_data->>'location',
-      location_id = v_location_id,
+      location_id = NULLIF(current_setting('app.cur_loc_id', true), '')::UUID, 
       fiscal_year = p_project_data->>'fiscal_year',
       contract_number = p_project_data->>'contract_number',
       hsp_value = (p_project_data->>'hsp_value')::NUMERIC,
       ppn_percent = v_ppn_percent,
       total_kontrak = v_final_total, 
       updated_at = NOW()
-    WHERE id = p_project_id;
-    
-    v_project_id := p_project_id;
+    WHERE id = (current_setting('app.cur_proj_id', true))::UUID;
   ELSE
     INSERT INTO public.projects (
       user_id, created_by, name, code, program_name, activity_name, 
       work_name, location, location_id, fiscal_year, contract_number, hsp_value, ppn_percent, total_kontrak
     ) VALUES (
-      v_user_id, v_user_id, p_project_data->>'name', p_project_data->>'code', p_project_data->>'program_name', 
+      (current_setting('app.cur_user_id', true))::UUID, 
+      (current_setting('app.cur_user_id', true))::UUID, 
+      p_project_data->>'name', p_project_data->>'code', p_project_data->>'program_name', 
       p_project_data->>'activity_name', p_project_data->>'work_name', p_project_data->>'location', 
-      v_location_id, p_project_data->>'fiscal_year', p_project_data->>'contract_number', (p_project_data->>'hsp_value')::NUMERIC,
+      NULLIF(current_setting('app.cur_loc_id', true), '')::UUID, 
+      p_project_data->>'fiscal_year', p_project_data->>'contract_number', (p_project_data->>'hsp_value')::NUMERIC,
       v_ppn_percent, v_final_total
     )
-    RETURNING id INTO v_project_id;
+    RETURNING id INTO r;
+    PERFORM set_config('app.cur_proj_id', r.id::TEXT, true);
   END IF;
 
-  -- 3. Smart Sync Lines (Delete removed lines)
+  -- 3. Smart Sync Lines
   DELETE FROM public.ahsp_lines 
-  WHERE project_id = v_project_id 
+  WHERE project_id = (current_setting('app.cur_proj_id', true))::UUID
   AND (id != ALL(v_existing_ids));
 
   -- 4. Upsert Lines and snapshots
@@ -114,24 +115,26 @@ BEGIN
           analisa_custom = r.analisa_custom,
           updated_at = NOW()
         WHERE id = r.id;
-        v_target_line_id := r.id;
-        
-        DELETE FROM public.ahsp_line_snapshots WHERE ahsp_line_id = v_target_line_id;
+        PERFORM set_config('app.cur_line_id', r.id::TEXT, true);
       ELSE
         INSERT INTO public.ahsp_lines (
           project_id, master_ahsp_id, bab_pekerjaan, sort_order, uraian, uraian_custom, satuan, volume, harga_satuan, jumlah, analisa_custom
         ) VALUES (
-          v_project_id, r.master_ahsp_id, r.bab_pekerjaan, r.sort_order, r.uraian, r.uraian_custom, r.satuan, r.volume, r.harga_satuan, r.jumlah, r.analisa_custom
-        ) RETURNING id INTO v_target_line_id;
+          (current_setting('app.cur_proj_id', true))::UUID, 
+          r.master_ahsp_id, r.bab_pekerjaan, r.sort_order, r.uraian, r.uraian_custom, r.satuan, r.volume, r.harga_satuan, r.jumlah, r.analisa_custom
+        ) RETURNING id INTO r;
+        PERFORM set_config('app.cur_line_id', r.id::TEXT, true);
       END IF;
 
-      -- Snapshots creation
+      -- 5. Final Snapshots (Zero Local Variable References)
+      DELETE FROM public.ahsp_line_snapshots WHERE ahsp_line_id = (current_setting('app.cur_line_id', true))::UUID;
+
       IF r.master_ahsp_id IS NOT NULL THEN
         INSERT INTO public.ahsp_line_snapshots (
           ahsp_line_id, uraian, kode_item, satuan, koefisien, harga_konversi, jenis_komponen, subtotal, tkdn
         )
         SELECT 
-           v_target_line_id, 
+           (current_setting('app.cur_line_id', true))::UUID, 
            mad.uraian_ahsp, 
            COALESCE(mhd.kode_item, mad.uraian_ahsp),
            mad.satuan_uraian,
@@ -151,12 +154,12 @@ BEGIN
               AND (mk.satuan_ahsp IS NOT DISTINCT FROM mad.satuan_uraian)
         LEFT JOIN public.master_harga_dasar mhd 
                ON mhd.id = mk.item_dasar_id 
-              AND mhd.location_id = v_location_id
+              AND mhd.location_id = NULLIF(current_setting('app.cur_loc_id', true), '')::UUID
         WHERE mad.ahsp_id = r.master_ahsp_id;
       END IF;
     END LOOP;
   END IF;
 
-  RETURN v_project_id;
+  RETURN (current_setting('app.cur_proj_id', true))::UUID;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;

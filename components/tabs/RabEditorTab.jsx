@@ -350,7 +350,8 @@ export default function RabEditorTab({
         
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
         const currentSavedPrice = item.harga_satuan;
-        const activePrice = freshPrice !== null ? freshPrice : currentSavedPrice;
+        // Hanya gunakan harga fresh jika > 0, jika tidak pakai harga yang tersimpan di DB
+        const activePrice = (freshPrice && parseNum(freshPrice) > 0) ? freshPrice : currentSavedPrice;
 
         grouped[bab].push({
           key: item.id,
