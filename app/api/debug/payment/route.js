@@ -58,12 +58,24 @@ export async function GET(request) {
       midtransCheck = 'CONNECTION ERROR: ' + e.message;
     }
 
-    // Check Member Row
-    const { data: member, error: memberError } = await supabaseAdmin
-      .from('members')
-      .select('*')
-      .eq('user_id', userId)
-      .maybeSingle();
+    let member = null;
+    let memberError = null;
+
+    if (userId) {
+      // Cek apakah userId adalah UUID (sederhana) atau Email
+      const isUuid = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(userId);
+
+      if (isUuid) {
+        const { data, error } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
+        member = data;
+        memberError = error;
+      } else {
+        // Coba cari berdasarkan email
+        const { data, error } = await supabaseAdmin.from('members').select('*').eq('email', userId).maybeSingle();
+        member = data;
+        memberError = error;
+      }
+    }
 
     // Check Config
     const configCheck = {
