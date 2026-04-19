@@ -792,7 +792,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                  <ComposedChart data={chartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
+                  <ComposedChart data={processedChartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
                     <defs>
                       <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3}/>
@@ -809,7 +809,8 @@ function DashboardContent() {
                       axisLine={false}
                       tickLine={false}
                       tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
-                      interval={sCurveFreq === 'daily' ? 'preserveStartEnd' : 0}
+                      interval="preserveStartEnd"
+                      minTickGap={30}
                     />
                     {/* Left Axis: Percentage (%) */}
                     <YAxis
@@ -856,10 +857,10 @@ function DashboardContent() {
                       }}
                     />
 
-                    {/* Periodic Bars (Grouped) */}
-                    <Bar yAxisId="right" dataKey="dailyUpah" fill={isDark ? '#312e81' : '#818cf8'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
-                    <Bar yAxisId="right" dataKey="dailyBahan" fill={isDark ? '#92400e' : '#fbbf24'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
-                    <Bar yAxisId="right" dataKey="dailyAlat" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 4 : 12} />
+                    {/* Periodic Bars (Grouped & Stacked) */}
+                    <Bar yAxisId="right" dataKey="dailyUpah" stackId="a" fill={isDark ? '#312e81' : '#818cf8'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
+                    <Bar yAxisId="right" dataKey="dailyBahan" stackId="a" fill={isDark ? '#92400e' : '#fbbf24'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
+                    <Bar yAxisId="right" dataKey="dailyAlat" stackId="a" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
 
                     {/* Cumulative Lines (% on Left Axis) */}
                     <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
