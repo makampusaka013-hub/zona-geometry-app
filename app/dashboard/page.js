@@ -248,12 +248,49 @@ function DashboardContent() {
   
   // Pemicu sinkronisasi ulang jika ada parameter pembayaran sukses
   const paymentStatus = searchParams.get('payment');
+  const orderId = searchParams.get('order_id');
+  
   useEffect(() => {
-    if (paymentStatus === 'success') {
-      console.log('Payment success detected, re-syncing data...');
-      loadData();
+    let isMounted = true;
+    
+    async function handlePaymentSuccess() {
+      if (paymentStatus === 'success' || (orderId && searchParams.get('transaction_status') === 'settlement')) {
+        console.log('Payment success detected, running aggressive verification...');
+        
+        try {
+          // Selalu tembak verify manual untuk berjaga-jaga jika webhook belum diproses atau gagal
+          if (orderId && member?.user_id) {
+            await fetch('/api/payment/verify', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ 
+                order_id: orderId, 
+                userId: member.user_id 
+              })
+            });
+          } else {
+             // Jika orderId tidak diekspos di URL tapi statusnya success, kita bisa hit API general
+             // Namun tanpa order_id API verify tidak akan bisa, jadi kita panggil loadData biasa saja
+             await loadData();
+             return;
+          }
+
+          // Paksa reload penuh agar Sidebar dan Layout terupdate total dari Supabase
+          if (isMounted) {
+            window.location.href = '/dashboard';
+          }
+        } catch (e) {
+          console.error("Verification callback failed:", e);
+        }
+      }
     }
-  }, [paymentStatus, loadData]);
+    
+    handlePaymentSuccess();
+    
+    return () => { isMounted = false; };
+    // Jangan panggil loadData di dependencies agar tidak loop dengan 'member.user_id'
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [paymentStatus, orderId]);
 
   // Real-time Glow Sync based on role in active project
   const activeProjectSlot = useMemo(() => {
