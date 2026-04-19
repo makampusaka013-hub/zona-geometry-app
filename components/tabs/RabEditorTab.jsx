@@ -206,9 +206,11 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
                     <span className="text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-tighter">Custom</span>
                   )}
                 </div>
-                <div className="text-[8px] px-1.5 py-0.5 bg-slate-100 dark:bg-slate-900 rounded font-black text-slate-400 uppercase">{item.type}</div>
+              <div className="flex flex-col gap-0.5">
+                <div className="text-[9px] font-mono font-bold text-indigo-500 dark:text-orange-400 opacity-80">{item.kode_ahsp}</div>
+                <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.nama_pekerjaan}</div>
               </div>
-              <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight">{item.nama_pekerjaan}</div>
+            </div>
               <div className="flex gap-2 text-[9px] text-slate-400 mt-1">
                  <span>{formatIdr(parseFloat(item.total_subtotal || 0))}</span>
                  <span className="opacity-40">|</span>
