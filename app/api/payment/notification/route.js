@@ -10,56 +10,56 @@ const supabaseAdmin = createClient(
 
 export async function POST(request) {
   try {
-    const body = await request.json();
+    // 1. Safe Body Parsing
+    let body;
+    try {
+      body = await request.json();
+    } catch (e) {
+      console.error('[MIDTRANS WEBHOOK] Malformed JSON payload');
+      return NextResponse.json({ error: 'Malformed request body' }, { status: 400 });
+    }
+
     const {
       transaction_status,
       status_code,
       gross_amount,
       order_id,
       signature_key,
-    } = body;
-    console.log('[MIDTRANS WEBHOOK] Received payload:', JSON.stringify(body, null, 2));
+      custom_field1: midtransUserId,
+      custom_field2: midtransPlan,
+      custom_field3: midtransEmail
+    } = body || {};
 
-    // 1. Verify Signature
+    console.log('[MIDTRANS WEBHOOK] Received payload for Order:', order_id);
+
+    // 2. Verify Signature
     const serverKey = process.env.MIDTRANS_SERVER_KEY;
-    
-    // Midtrans gross_amount can be tricky (sometimes has .00)
-    // We try to match what Midtrans sends exactly
     const combinedString = order_id + status_code + gross_amount + serverKey;
     const hash = crypto.createHash('sha512').update(combinedString).digest('hex');
 
     if (hash !== signature_key) {
-      console.error('[MIDTRANS WEBHOOK] Signature Mismatch!');
-      console.log('[MIDTRANS WEBHOOK] OrderId:', order_id);
-      console.log('[MIDTRANS WEBHOOK] Status:', status_code);
-      console.log('[MIDTRANS WEBHOOK] Gross:', gross_amount);
-      // Don't log full server key, just first 4 chars for safety check
-      console.log('[MIDTRANS WEBHOOK] ServerKey Check:', serverKey ? serverKey.substring(0, 4) + '...' : 'MISSING');
-      
+      console.error('[MIDTRANS WEBHOOK] Signature Mismatch for Order:', order_id);
       return NextResponse.json({ error: 'Invalid signature' }, { status: 403 });
     }
-    console.log('[MIDTRANS WEBHOOK] Signature valid for Order:', order_id);
 
-    // 2. Get identifying metadata (with fallbacks)
-    let userId = body.custom_field1;
-    let plan = body.custom_field2;
-    let userEmail = body.custom_field3; // Fallback cadangan
+    // 3. Identification Synthesis
+    let userId = midtransUserId;
+    let plan = midtransPlan;
+    let userEmail = midtransEmail;
 
-    // 3. RECOVERY LOGIC: ID & Plan extraction from order_id prefix
-    const parts = order_id.split('-');
-    if (parts.length >= 6) { 
-      if (!userId) {
-        userId = parts.slice(1, -1).join('-');
-        console.log('[MIDTRANS WEBHOOK] userId recovered from order_id:', userId);
+    // RECOVERY LOGIC: Parse from order_id if metadata is missing (ZPN-UUID-RAND)
+    if ((!userId || !plan) && order_id) {
+      const parts = order_id.split('-');
+      if (parts.length >= 6) {
+        if (!userId) userId = parts.slice(1, -1).join('-');
+        const prefix = parts[0];
+        if (prefix === 'ZPA') plan = 'advance';
+        else if (prefix === 'ZPP') plan = 'pro';
+        else if (prefix === 'ZPN') plan = 'normal';
       }
-      
-      const prefix = parts[0];
-      if (prefix === 'ZPA') plan = 'advance';
-      else if (prefix === 'ZPP') plan = 'pro';
-      else if (prefix === 'ZPN') plan = 'normal';
     }
 
-    // Determine target role (normalize casing)
+    // Map Role
     let parsedPlan = (plan || '').toLowerCase();
     const roleMap = { advance: 'advance', pro: 'pro', normal: 'normal' };
     if (order_id.startsWith('ZPA')) parsedPlan = 'advance';
@@ -68,29 +68,29 @@ export async function POST(request) {
     const newRole = roleMap[parsedPlan] || 'normal';
 
     // 4. FIND USER (Primary: userId, Fallback: Email)
-    let member = null;
-    const { data: memberById } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
-    member = memberById;
-
-    if (!member && userEmail) {
-      console.log(`[MIDTRANS WEBHOOK] User ID ${userId} not found. Trying fallback to Email: ${userEmail}`);
-      const { data: memberByEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
-      member = memberByEmail;
-    }
-
-    if (!member) {
-      console.error(`[MIDTRANS WEBHOOK] User NOT FOUND (ID: ${userId}, Email: ${userEmail}). Cannot process payment.`);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    const actualUserId = member.user_id;
-
-    // 5. Process Payment Status
     if (transaction_status === 'settlement' || transaction_status === 'capture') {
-      console.log(`[MIDTRANS WEBHOOK] PROCESSING SUCCESS: Role=${newRole} for User=${actualUserId} (${member.full_name})`);
-      
       try {
-        // Calculate Expiry (Accumulative)
+        let member = null;
+        
+        if (userId) {
+          const { data: mById } = await supabaseAdmin.from('members').select('*').eq('user_id', userId).maybeSingle();
+          member = mById;
+        }
+
+        if (!member && userEmail) {
+          console.log(`[MIDTRANS WEBHOOK] User ID not found. Trying Metadata Email: ${userEmail}`);
+          const { data: mByEmail } = await supabaseAdmin.from('members').select('*').eq('email', userEmail).maybeSingle();
+          member = mByEmail;
+        }
+
+        if (!member) {
+          console.error(`[MIDTRANS WEBHOOK] ABORT: User NOT FOUND (ID: ${userId}, Email: ${userEmail}). Notification orphaned.`);
+          return NextResponse.json({ error: 'User not found' }, { status: 404 });
+        }
+
+        const actualUserId = member.user_id;
+
+        // 5. Update Status and Expiry (Accumulative)
         let baseDate = new Date();
         if (member.expired_at) {
           const currentExp = new Date(member.expired_at);
@@ -99,41 +99,40 @@ export async function POST(request) {
           }
         }
         baseDate.setDate(baseDate.getDate() + 30);
-        const finalExpiry = baseDate.toISOString();
 
         const { error: updateError } = await supabaseAdmin
           .from('members')
           .update({
             role: newRole,
             is_paid: true,
-            expired_at: finalExpiry,
-            approval_status: 'active',
+            expired_at: baseDate.toISOString(),
             status: 'active',
+            approval_status: 'active',
             updated_at: new Date().toISOString()
           })
           .eq('user_id', actualUserId);
 
         if (updateError) {
-          console.error(`[MIDTRANS WEBHOOK] DB Update Error for user ${actualUserId}:`, updateError);
-          return NextResponse.json({ error: updateError.message }, { status: 500 });
+          console.error(`[MIDTRANS WEBHOOK] Database Update Failed for ${actualUserId}:`, updateError);
+          return NextResponse.json({ error: 'Database update failed' }, { status: 500 });
         }
         
         console.log(`[MIDTRANS WEBHOOK] SYNC SUCCESS! User ${actualUserId} is now ${newRole}`);
         return NextResponse.json({ success: true, message: 'Notification processed' });
 
       } catch (dbErr) {
-        console.error('[MIDTRANS WEBHOOK] Internal Process Error:', dbErr);
+        console.error('[MIDTRANS WEBHOOK] Internal Sync Logic Crash:', dbErr);
         return NextResponse.json({ error: dbErr.message }, { status: 500 });
       }
     } else if (transaction_status === 'expire' || transaction_status === 'cancel') {
-      console.log(`[MIDTRANS WEBHOOK] Payment failed/expired for user: ${actualUserId}`);
+      console.log(`[MIDTRANS WEBHOOK] Payment failed/expired for Order: ${order_id}`);
       return NextResponse.json({ status: 'handled_failure' });
     }
 
     return NextResponse.json({ status: 'pending/unhandled' });
 
   } catch (error) {
-    console.error('Midtrans Webhook Global Error:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    console.error('[MIDTRANS WEBHOOK] Fatal Global Error:', error);
+    return NextResponse.json({ error: error.message || 'Webhook internal error' }, { status: 500 });
   }
 }
