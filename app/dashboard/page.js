@@ -283,10 +283,9 @@ function DashboardContent() {
           
           const result = await res.json();
           if (result.success) {
-            console.log('[PAYMENT] Proactive verification successful! Waiting for DB replication...');
-            // Beri jeda 1.5 detik agar database benar-benar sudah tersinkronisasi sebelum reload
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            window.location.href = '/dashboard';
+            console.log('[PAYMENT] Proactive verification successful! Cleaning up URL...');
+            // Bersihkan parameter URL agar tidak terjadi loop refresh
+            router.replace('/dashboard');
           }
         } catch (e) {
           console.error("[PAYMENT] Proactive verification failed:", e);
