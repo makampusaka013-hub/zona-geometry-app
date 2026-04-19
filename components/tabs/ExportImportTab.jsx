@@ -665,7 +665,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                          <div className="h-px bg-slate-200 dark:bg-slate-700" />
                          <div className="flex items-center justify-between text-[10px] font-bold text-slate-500 uppercase px-2">
                             <span>PPN Proyek</span>
-                            <span className="text-emerald-600">{project?.ppn_percent || 12}%</span>
+                            <span className="text-emerald-600">{project?.ppn_percent ?? 12}%</span>
                          </div>
                       </div>
 
