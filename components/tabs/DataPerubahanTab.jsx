@@ -490,14 +490,17 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
                 <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">HARGA SATUAN</th>
                 <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900 w-32">VOL. {mcType}</th>
                 <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">JUMLAH {mcType}</th>
-                <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">SELISIH %</th>
+                <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900 w-32">SELISIH (+/-)</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
               {items.map(it => {
                 const val = localMc[it.id] ?? 0;
-                const pct = it.volume > 0 ? (Number(val) / Number(it.volume)) * 100 : 0;
+                const volDelta = Number(val) - Number(it.volume);
                 const jumlahMc = Number(val) * Number(it.harga_satuan);
+                const jumlahKontrak = Number(it.volume) * Number(it.harga_satuan);
+                const deltaTotal = jumlahMc - jumlahKontrak;
+
                 return (
                   <tr key={it.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-900/40 transition-colors group">
                     <td className="px-6 py-6 border-b border-slate-50 dark:border-slate-800/50">
@@ -519,12 +522,12 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
                     <td className="px-4 py-6 text-right font-mono text-[10px] font-black text-slate-700 dark:text-slate-300 bg-slate-50/50 dark:bg-white/5 border-b border-slate-50 dark:border-slate-800/50">
                       {jumlahMc.toLocaleString('id-ID')}
                     </td>
-                    <td className="px-4 py-6 text-right border-b border-slate-50 dark:border-slate-800/50">
-                      <div className="flex flex-col items-end">
-                        <span className="font-mono text-[10px] font-black text-slate-700 dark:text-slate-300">{pct.toFixed(1)}%</span>
-                        <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full mt-1.5 overflow-hidden">
-                          <div className={`h-full transition-all duration-1000 ${pct > 100 ? 'bg-indigo-500' : 'bg-emerald-500'}`} style={{ width: `${Math.min(100, pct)}%` }} />
-                        </div>
+                    <td className={`px-4 py-6 text-right border-b border-slate-50 dark:border-slate-800/50 font-mono text-[10px] font-black ${deltaTotal > 0 ? 'text-emerald-600' : deltaTotal < 0 ? 'text-red-500' : 'text-slate-300'}`}>
+                      <div className="flex flex-col items-end gap-0.5">
+                         <span className="text-[8px] opacity-70">
+                           {volDelta !== 0 && `${volDelta > 0 ? '+' : ''}${Number(volDelta).toLocaleString('id-ID')} Vol`}
+                         </span>
+                         <span>{deltaTotal > 0 ? '+' : ''}{Number(deltaTotal).toLocaleString('id-ID')}</span>
                       </div>
                     </td>
                   </tr>
