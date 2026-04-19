@@ -297,9 +297,7 @@ function DashboardContent() {
     handlePaymentSuccess();
     
     return () => { isMounted = false; };
-    // Jangan panggil loadData di dependencies agar tidak loop dengan 'member.user_id'
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [paymentStatus, orderId]);
+  }, [paymentStatus, orderId, member]); // Tambahkan 'member' agar re-run saat data user siap
 
   // Real-time Glow Sync based on role in active project
   const activeProjectSlot = useMemo(() => {
