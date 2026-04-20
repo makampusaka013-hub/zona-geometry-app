@@ -7,7 +7,7 @@ import { supabase } from '@/lib/supabase';
 import { Logo } from './Logo';
 import { ThemeToggle } from './ThemeToggle';
 
-export function Sidebar() {
+export function Sidebar({ isOpen, onClose }) {
   const pathname = usePathname();
   const router = useRouter();
   const [member, setMember] = useState(null);
@@ -186,11 +186,33 @@ export function Sidebar() {
   ];
 
   return (
-    <aside className="w-64 h-screen bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-colors duration-200 shrink-0">
-      <div className="pt-10 px-6 pb-6 flex items-center justify-between">
-        <Logo className="h-14" />
-        <ThemeToggle />
-      </div>
+    <>
+      {/* Backdrop (Mobile Only) */}
+      <div 
+        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
+          isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
+        }`}
+        onClick={onClose}
+      />
+
+      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
+        isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
+      }`}>
+        <div className="pt-10 px-6 pb-6 flex items-center justify-between">
+          <Logo className="h-14" />
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            {/* Close Button (Mobile Only) */}
+            <button 
+              onClick={onClose}
+              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+        </div>
 
       <nav className="flex-1 px-4 space-y-1 overflow-y-auto">
         {/* Regional Context Selector */}
@@ -347,5 +369,6 @@ export function Sidebar() {
         </div>
       </div>
     </aside>
+    </>
   );
 }

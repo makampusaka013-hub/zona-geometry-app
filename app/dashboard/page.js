@@ -699,7 +699,7 @@ function DashboardContent() {
 
   return (
     <div className={`min-h-screen bg-slate-50 dark:bg-[#0f172a] pb-24 role-${activeProjectSlot}`}>
-      <div className="bg-slate-50/80 backdrop-blur-md dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-8 py-6">
+      <div className="bg-slate-50/80 backdrop-blur-md dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 lg:px-8 py-6">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex items-center gap-5">
             <LogoMark className="h-10 w-auto" />
@@ -751,7 +751,7 @@ function DashboardContent() {
         )}
       </div>
 
-      <div className="px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+      <div className="px-4 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-9 space-y-8">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />

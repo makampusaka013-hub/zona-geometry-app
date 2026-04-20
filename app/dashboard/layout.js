@@ -5,6 +5,7 @@ import { usePathname, useRouter } from 'next/navigation';
 import { Sidebar } from '@/components/Sidebar';
 import { LockedOverlay } from '@/components/LockedOverlay';
 import { supabase } from '@/lib/supabase';
+import { ThemeToggle } from '@/components/ThemeToggle';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -12,6 +13,7 @@ export default function DashboardLayout({ children }) {
   const [loading, setLoading] = useState(true);
   const [isExpired, setIsExpired] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   useEffect(() => {
     async function checkStatus() {
@@ -56,6 +58,11 @@ export default function DashboardLayout({ children }) {
     checkStatus();
   }, [pathname, router]);
 
+  // Tutup sidebar otomatis saat berpindah halaman (di mobile)
+  useEffect(() => {
+    setIsSidebarOpen(false);
+  }, [pathname]);
+
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center bg-white dark:bg-[#0f172a]">
@@ -84,10 +91,32 @@ export default function DashboardLayout({ children }) {
   // NORMAL (AKKTIF ATAU ADMIN)
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-[#0f172a] transition-colors duration-200">
-      <Sidebar />
-      <main className="flex-1 overflow-y-auto">
-        {children}
-      </main>
+      <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
+      
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
+        {/* Mobile Header (Sembunyi di Desktop) */}
+        <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-[#020617] border-b border-slate-100 dark:border-slate-800 shrink-0 z-20">
+          <div className="flex items-center gap-3">
+            <button 
+              onClick={() => setIsSidebarOpen(true)}
+              className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            >
+              <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 6h16M4 12h16M4 18h16" />
+              </svg>
+            </button>
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-indigo-600 dark:bg-orange-600 rounded-lg flex items-center justify-center text-white font-black text-xs">ZG</div>
+              <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest leading-none">Zona<br/>Geometry</span>
+            </div>
+          </div>
+          <ThemeToggle />
+        </header>
+
+        <main className="flex-1 overflow-y-auto relative">
+          {children}
+        </main>
+      </div>
     </div>
   );
 }

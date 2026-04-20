@@ -16,13 +16,17 @@
 -- ============================================================
 
 -- Hapus semua kebijakan lama yang bertumpang tindih
-DROP POLICY IF EXISTS "Users can insert their own tickets" ON public.support_tickets;
-DROP POLICY IF EXISTS "Users can view their own tickets" ON public.support_tickets;
-DROP POLICY IF EXISTS "Admins can manage all tickets" ON public.support_tickets;
+DROP POLICY IF EXISTS "Users can insert their own tickets"  ON public.support_tickets;
+DROP POLICY IF EXISTS "Users can view their own tickets"    ON public.support_tickets;
+DROP POLICY IF EXISTS "Admins can manage all tickets"       ON public.support_tickets;
 -- Hapus kebijakan lain yang mungkin dibuat oleh migrasi sebelumnya
-DROP POLICY IF EXISTS "support_tickets_select" ON public.support_tickets;
-DROP POLICY IF EXISTS "support_tickets_insert" ON public.support_tickets;
-DROP POLICY IF EXISTS "support_tickets_admin" ON public.support_tickets;
+DROP POLICY IF EXISTS "support_tickets_select"              ON public.support_tickets;
+DROP POLICY IF EXISTS "support_tickets_insert"              ON public.support_tickets;
+DROP POLICY IF EXISTS "support_tickets_admin"               ON public.support_tickets;
+-- Hapus kebijakan baru (jika migrasi dijalankan ulang)
+DROP POLICY IF EXISTS "support_tickets_own_select"          ON public.support_tickets;
+DROP POLICY IF EXISTS "support_tickets_own_insert"          ON public.support_tickets;
+DROP POLICY IF EXISTS "support_tickets_admin_all"           ON public.support_tickets;
 
 -- Buat ulang kebijakan yang bersih dan efisien
 -- Menggunakan (select auth.uid()) untuk menghindari "Auth RLS Initialization Plan"
@@ -50,16 +54,19 @@ CREATE POLICY "support_tickets_admin_all" ON public.support_tickets
 -- ============================================================
 
 -- Hapus semua kebijakan SELECT lama yang mungkin tumpang tindih
-DROP POLICY IF EXISTS "master_ahsp_public_read" ON public.master_ahsp;
-DROP POLICY IF EXISTS "master_ahsp_select" ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_public_read"                    ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_select"                         ON public.master_ahsp;
 DROP POLICY IF EXISTS "Allow authenticated users to read master_ahsp" ON public.master_ahsp;
-DROP POLICY IF EXISTS "Public read master_ahsp" ON public.master_ahsp;
-DROP POLICY IF EXISTS "Allow public read" ON public.master_ahsp;
-DROP POLICY IF EXISTS "Authenticated read" ON public.master_ahsp;
-DROP POLICY IF EXISTS "master_ahsp_authenticated_read" ON public.master_ahsp;
-DROP POLICY IF EXISTS "master_ahsp_anon_read" ON public.master_ahsp;
+DROP POLICY IF EXISTS "Public read master_ahsp"                    ON public.master_ahsp;
+DROP POLICY IF EXISTS "Allow public read"                          ON public.master_ahsp;
+DROP POLICY IF EXISTS "Authenticated read"                         ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_authenticated_read"             ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_anon_read"                      ON public.master_ahsp;
+DROP POLICY IF EXISTS "Public Read Access for master_ahsp"         ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_select_v2"                      ON public.master_ahsp;
+DROP POLICY IF EXISTS "master_ahsp_read_all"                       ON public.master_ahsp;
 
--- Buat satu kebijakan SELECT yang menggabungkan semua akses
+-- Buat satu kebijakan SELECT tunggal yang mencakup semua role (anon & authenticated)
 CREATE POLICY "master_ahsp_read_all" ON public.master_ahsp
     FOR SELECT USING (true);
 
@@ -70,14 +77,17 @@ CREATE POLICY "master_ahsp_read_all" ON public.master_ahsp
 -- Solusi:  Sama seperti master_ahsp.
 -- ============================================================
 
-DROP POLICY IF EXISTS "master_ahsp_details_public_read" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "master_ahsp_details_select" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "Allow authenticated users to read master_ahsp_details" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "Public read master_ahsp_details" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "Allow public read" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "Authenticated read" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "master_ahsp_details_authenticated_read" ON public.master_ahsp_details;
-DROP POLICY IF EXISTS "master_ahsp_details_anon_read" ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_public_read"                         ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_select"                               ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "Allow authenticated users to read master_ahsp_details"    ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "Public read master_ahsp_details"                          ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "Allow public read"                                        ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "Authenticated read"                                       ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_authenticated_read"                   ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_anon_read"                            ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "Public Read Access for master_ahsp_details"               ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_select_v3"                            ON public.master_ahsp_details;
+DROP POLICY IF EXISTS "master_ahsp_details_read_all"                             ON public.master_ahsp_details;
 
 CREATE POLICY "master_ahsp_details_read_all" ON public.master_ahsp_details
     FOR SELECT USING (true);
@@ -89,14 +99,17 @@ CREATE POLICY "master_ahsp_details_read_all" ON public.master_ahsp_details
 -- Solusi:  Sama seperti tabel master lainnya.
 -- ============================================================
 
-DROP POLICY IF EXISTS "master_harga_dasar_public_read" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "master_harga_dasar_select" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "Allow authenticated users to read master_harga_dasar" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "Public read master_harga_dasar" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "Allow public read" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "Authenticated read" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "master_harga_dasar_authenticated_read" ON public.master_harga_dasar;
-DROP POLICY IF EXISTS "master_harga_dasar_anon_read" ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_public_read"                         ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_select"                               ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "Allow authenticated users to read master_harga_dasar"    ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "Public read master_harga_dasar"                          ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "Allow public read"                                        ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "Authenticated read"                                       ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_authenticated_read"                   ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_anon_read"                            ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "Public Read Access for master_harga_dasar"               ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_select_v3"                            ON public.master_harga_dasar;
+DROP POLICY IF EXISTS "master_harga_dasar_read_all"                             ON public.master_harga_dasar;
 
 CREATE POLICY "master_harga_dasar_read_all" ON public.master_harga_dasar
     FOR SELECT USING (true);

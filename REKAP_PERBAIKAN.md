@@ -34,5 +34,62 @@ Setiap kali ada perubahan pada variabel lingkungan di Vercel:
 2. Lakukan **Redeploy** pada deployment terbaru.
 3. Pastikan kode terbaru sudah di-push ke GitHub.
 
+
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 20 April 2026*
+
+# Rekap Perbaikan: Hardening Keamanan Supabase (RLS & Audit)
+
+Riwayat perbaikan untuk mengatasi peringatan *Supabase Security Advisor* dan memperkuat infrastruktur basis data.
+
+## 1. Masalah yang Diselesaikan
+- **Multiple Permissive Policies**: Menghapus kebijakan RLS yang bertumpang tindih (misalnya: varian nama lama, kebijakan Admin `FOR ALL` yang bertabrakan dengan `FOR SELECT` user).
+- **Auth RLS Initialization Plan**: Mengoptimalkan kebijakan yang menggunakan `auth.uid()` dengan mengubahnya menjadi `(SELECT auth.uid())` untuk performa lebih baik.
+- **Missing Foreign Keys & RLS**: Mengaktifkan RLS pada tabel-tabel baru (seperti `support_tickets`, `analysis`, dll) dan menambahkan constraint `FOREIGN KEY` yang hilang.
+
+## 2. Solusi Teknis (Definitive Migration)
+Dibuat satu file migrasi final yang bersifat **idempotent** (aman dijalankan berulang kali):
+- **File**: `20260420200000_definitive_policy_cleanup.sql`
+- **Tindakan**:
+    1. Melakukan `DROP POLICY IF EXISTS` pada semua varian nama kebijakan lama (v1, v2, vFinal, manage, dll) di 12+ tabel utama.
+    2. Memisahkan kebijakan `FOR ALL` menjadi operasi spesifik (`INSERT`, `UPDATE`, `DELETE`) untuk menghindari peringatan performa.
+    3. Menggabungkan kebijakan Akses User dan Admin menjadi satu kebijakan terintegrasi per operasi.
+
+## 3. Daftar Tabel yang Diperkuat
+- `active_sessions`, `daily_reports`, `daily_progress`, `project_photos`, `project_revisions`, `project_items`, `manpower_analysis`, `support_tickets`, `master_ahsp`, `master_ahsp_details`, `master_harga_dasar`.
+
+## 4. Instruksi Manual (PENTING)
+Beberapa tindakan keamanan TIDAK bisa dilakukan via SQL dan harus dilakukan secara manual oleh owner di Dashboard Supabase:
+1. **Leaked Password Protection**:
+    - Buka Dashboard Supabase → Authentication → Settings.
+    - Scroll ke bagian **"Password Protection"**.
+    - Aktifkan toggle **"Leaked Password Protection"**.
+2. **Eksekusi SQL**:
+    - Pastikan hanya menjalankan file migrasi terbaru (`20260420200000_definitive_policy_cleanup.sql`) untuk memastikan basis data bersih dari kebijakan lama yang redundant.
+
+
+---
+
+# Rekap Perbaikan: Optimasi Performa & Struktur Index (Final)
+
+Penyelesaian audit database dengan mengutamakan standar keamanan industri (Structural Hardening) untuk menghentikan siklus saran kontradiktif dari Advisor.
+
+## 1. Masalah yang Diselesaikan
+- **Unindexed Foreign Keys (Critical)**: Memasang kembali index pada seluruh kolom kunci tamu (FK) yang dilaporkan kurang, guna menjamin integritas relasional dan performa penghapusan data.
+- **Identical & Redundant Cleanup**: Menghapus index kembar dan penumpukan index di `project_members` yang terbukti membebani database.
+- **Structural Integrity over False Positives**: Mengabaikan peringatan "Unused Index" pada tabel dengan data sedikit demi mempertahankan index FK yang secara struktural wajib ada.
+
+## 2. Solusi Teknis (Final Hardened State)
+Dibuat file migrasi tunggal yang mencakup seluruh audit:
+- **File**: `20260420210000_add_missing_performance_indexes.sql`
+- **Daftar Index FK yang Dipertahankan**:
+    - `members(location)`, `projects(location)`, `daily_progress(report)`, `project_photos(report)`, `manpower(item)`, `ahsp(ahsp_id)`, `tickets(user)`, `revisions(approved)`.
+- **Tindakan Pembersihan**:
+    - Menghapus redundansi Primary Key di `project_members`.
+    - Menghapus index identik/duplikat penamaan di tabel master.
+
+## 3. Kesimpulan Akhir
+- **Status Dashboard**: Peringatan **"Unindexed Foreign Keys"** dan **"Identical Indexes"** telah **tuntas 100%**.
+- **Catatan**: Daftar "Unused Index" mungkin akan tetap menampilkan index FK tersebut selama volume data masih sedikit. Hal ini adalah **normal dan benar** secara arsitektur database untuk menjamin keamanan jangka panjang.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 20 April 2026 (20:57)*

@@ -50,25 +50,24 @@ ALTER TABLE public.manpower_analysis       ENABLE ROW LEVEL SECURITY;
 
 -- ============================================================
 -- BAGIAN 3: KEBIJAKAN RLS — ACTIVE_SESSIONS
--- User hanya bisa melihat & mengelola sesinya sendiri.
+-- Kebijakan lama 'active_sessions_manage_v1' sudah mencakup FOR ALL.
+-- Hapus kebijakan terpisah yang baru saya buat agar tidak bertumpang tindih.
+-- Kemudian perbarui kebijakan 'manage_v1' dengan versi yang lebih bersih.
 -- ============================================================
 
-DROP POLICY IF EXISTS "sessions_own_select"  ON public.active_sessions;
-DROP POLICY IF EXISTS "sessions_own_insert"  ON public.active_sessions;
-DROP POLICY IF EXISTS "sessions_own_delete"  ON public.active_sessions;
-DROP POLICY IF EXISTS "sessions_own_update"  ON public.active_sessions;
+DROP POLICY IF EXISTS "sessions_own_select"       ON public.active_sessions;
+DROP POLICY IF EXISTS "sessions_own_insert"       ON public.active_sessions;
+DROP POLICY IF EXISTS "sessions_own_update"       ON public.active_sessions;
+DROP POLICY IF EXISTS "sessions_own_delete"       ON public.active_sessions;
+DROP POLICY IF EXISTS "active_sessions_manage_v1" ON public.active_sessions;
+DROP POLICY IF EXISTS "active_sessions_manage_v2" ON public.active_sessions;
 
-CREATE POLICY "sessions_own_select" ON public.active_sessions
-  FOR SELECT USING ((select auth.uid()) = user_id);
-
-CREATE POLICY "sessions_own_insert" ON public.active_sessions
-  FOR INSERT WITH CHECK ((select auth.uid()) = user_id);
-
-CREATE POLICY "sessions_own_update" ON public.active_sessions
-  FOR UPDATE USING ((select auth.uid()) = user_id);
-
-CREATE POLICY "sessions_own_delete" ON public.active_sessions
-  FOR DELETE USING ((select auth.uid()) = user_id);
+-- Buat satu kebijakan tunggal FOR ALL yang efisien (tidak ada tumpang tindih)
+CREATE POLICY "active_sessions_manage_v2" ON public.active_sessions
+  FOR ALL
+  TO authenticated
+  USING (user_id = (SELECT auth.uid()))
+  WITH CHECK (user_id = (SELECT auth.uid()));
 
 
 -- ============================================================
@@ -76,10 +75,12 @@ CREATE POLICY "sessions_own_delete" ON public.active_sessions
 -- Hanya pemilik & member proyek yang bisa melihat laporan.
 -- ============================================================
 
-DROP POLICY IF EXISTS "daily_reports_select" ON public.daily_reports;
-DROP POLICY IF EXISTS "daily_reports_insert" ON public.daily_reports;
-DROP POLICY IF EXISTS "daily_reports_update" ON public.daily_reports;
-DROP POLICY IF EXISTS "daily_reports_delete" ON public.daily_reports;
+DROP POLICY IF EXISTS "daily_reports_select"            ON public.daily_reports;
+DROP POLICY IF EXISTS "daily_reports_insert"            ON public.daily_reports;
+DROP POLICY IF EXISTS "daily_reports_update"            ON public.daily_reports;
+DROP POLICY IF EXISTS "daily_reports_delete"            ON public.daily_reports;
+DROP POLICY IF EXISTS daily_reports_select_if_readable  ON public.daily_reports;
+DROP POLICY IF EXISTS daily_reports_insert_if_writable  ON public.daily_reports;
 
 CREATE POLICY "daily_reports_select" ON public.daily_reports
   FOR SELECT USING (
@@ -111,9 +112,11 @@ CREATE POLICY "daily_reports_delete" ON public.daily_reports
 -- Ikut kebijakan daily_reports (melalui report_id).
 -- ============================================================
 
-DROP POLICY IF EXISTS "daily_progress_select" ON public.daily_progress;
-DROP POLICY IF EXISTS "daily_progress_insert" ON public.daily_progress;
-DROP POLICY IF EXISTS "daily_progress_delete" ON public.daily_progress;
+DROP POLICY IF EXISTS "daily_progress_select"              ON public.daily_progress;
+DROP POLICY IF EXISTS "daily_progress_insert"              ON public.daily_progress;
+DROP POLICY IF EXISTS "daily_progress_delete"              ON public.daily_progress;
+DROP POLICY IF EXISTS daily_progress_select_if_readable    ON public.daily_progress;
+DROP POLICY IF EXISTS daily_progress_insert_if_writable    ON public.daily_progress;
 
 CREATE POLICY "daily_progress_select" ON public.daily_progress
   FOR SELECT USING (
@@ -199,9 +202,10 @@ CREATE POLICY "project_photos_delete" ON public.project_photos
 -- Hanya member proyek & admin yang bisa mengakses revisi.
 -- ============================================================
 
-DROP POLICY IF EXISTS "project_revisions_select" ON public.project_revisions;
-DROP POLICY IF EXISTS "project_revisions_insert" ON public.project_revisions;
-DROP POLICY IF EXISTS "project_revisions_update" ON public.project_revisions;
+DROP POLICY IF EXISTS "project_revisions_select"       ON public.project_revisions;
+DROP POLICY IF EXISTS "project_revisions_insert"       ON public.project_revisions;
+DROP POLICY IF EXISTS "project_revisions_update"       ON public.project_revisions;
+DROP POLICY IF EXISTS "project_revisions_admin_update" ON public.project_revisions;
 
 CREATE POLICY "project_revisions_select" ON public.project_revisions
   FOR SELECT USING (
@@ -241,6 +245,7 @@ CREATE POLICY "project_revisions_admin_update" ON public.project_revisions
       WHERE m.user_id = (select auth.uid()) AND m.role = 'admin'
     )
   );
+
 
 
 -- ============================================================
