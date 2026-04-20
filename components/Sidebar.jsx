@@ -189,13 +189,13 @@ export function Sidebar({ isOpen, onClose }) {
     <>
       {/* Backdrop (Mobile Only) */}
       <div 
-        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-40 lg:hidden transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-[90] lg:hidden transition-opacity duration-300 ${
           isOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
         }`}
         onClick={onClose}
       />
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-50 w-64 h-screen bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
+      <aside className={`fixed lg:static inset-y-0 left-0 z-[100] w-64 h-screen bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         <div className="pt-10 px-6 pb-6 flex items-center justify-between">

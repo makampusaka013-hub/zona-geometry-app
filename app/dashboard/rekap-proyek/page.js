@@ -1082,7 +1082,7 @@ function ProyekContent() {
       </div>
 
       {activeTab !== 'daftar' && (currentProjectObj || isCreating) && (
-        <div className="sticky top-[73px] z-[70] bg-white/90 dark:bg-slate-900/95 backdrop-blur-md border-b-2 border-indigo-600/20 dark:border-orange-500/30 px-6 py-1.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
+        <div className="sticky top-[73px] z-[70] bg-white/90 dark:bg-slate-900/95 backdrop-blur-md border-b-2 border-indigo-600/20 dark:border-orange-500/30 px-4 md:px-6 py-1.5 flex flex-nowrap lg:flex-wrap items-center justify-between gap-2 md:gap-4 shadow-sm overflow-x-hidden">
           <div className="flex items-center gap-2">
           <div className="flex items-center justify-between w-full lg:w-auto">
             <div className="hidden lg:flex items-center gap-0 overflow-hidden rounded-xl shadow-lg border border-indigo-500/30 dark:border-orange-500/20">
@@ -1195,16 +1195,15 @@ function ProyekContent() {
 
         <div className="flex items-center gap-3">
             {activeTab === 'proyek' && currentProjectObj && (
-              <div className="flex items-center gap-4 pr-4 border-r border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col items-end">
                   <span className="text-[7px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-1">Nama Proyek</span>
-                  <span className="text-[10px] font-black text-slate-800 dark:text-white truncate max-w-[120px]">{currentProjectObj.name}</span>
+                  <span className="text-[10px] font-black text-slate-800 dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{currentProjectObj.name}</span>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="hidden lg:flex flex-col items-end">
                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pagu Proyek</span>
                   <span className="text-[10px] font-mono font-black text-slate-700 dark:text-slate-300">{formatIdr(currentProjectObj.hsp_value)}</span>
                 </div>
-                <div className="flex flex-col items-end">
+                <div className="hidden lg:flex flex-col items-end">
                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Selisih</span>
                   <span className={`text-[10px] font-mono font-black ${currentProjectObj.hsp_value >= projectMetrics.total ? 'text-emerald-500' : 'text-red-500'}`}>
                     {formatIdr(currentProjectObj.hsp_value - projectMetrics.total)}
@@ -1225,10 +1224,10 @@ function ProyekContent() {
 
             <button
               onClick={() => setIsIdentityModalOpen(true)}
-              className="flex items-center gap-1.5 px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-orange-600 text-slate-600 dark:text-slate-300 hover:text-white rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:scale-105 active:scale-95 group ml-2"
+              className="flex items-center gap-1.5 px-3 md:px-4 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-indigo-600 dark:hover:bg-orange-600 text-slate-600 dark:text-slate-300 hover:text-white rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 transition-all hover:scale-105 active:scale-95 group ml-1 md:ml-2"
             >
               <Settings2 className="w-3.5 h-3.5 group-hover:rotate-180 transition-transform duration-500" />
-              <span className="text-[9px] font-black uppercase tracking-widest">Info Proyek</span>
+              <span className="text-[9px] font-black uppercase tracking-widest hidden sm:inline">Info Proyek</span>
             </button>
           </div>
         </div>
