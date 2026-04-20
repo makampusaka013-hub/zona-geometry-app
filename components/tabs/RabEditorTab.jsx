@@ -244,6 +244,7 @@ export default function RabEditorTab({
   const [sections, setSections] = useState([]);
   const [recap, setRecap] = useState({ subtotal: 0, ppn: 0, total: 0, rounded: 0, sectionTotals: [] });
   const [isPending, startTransition] = useTransition();
+  const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [identity, setIdentity] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     hsp_value: 0, ppn_percent: 12, program_name: '', activity_name: '', work_name: ''
@@ -575,9 +576,64 @@ export default function RabEditorTab({
   };
 
   if (loading) return <div className="p-10 text-center"><div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-indigo-600 mx-auto" /></div>;
-
+  
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
+      
+      {/* ── Mobile Sticky Summary Bar ── */}
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
+        <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
+          <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+             Grand Total <ChevronDown className={`w-2 h-2 transition-transform ${showMobileDetails ? 'rotate-180' : ''}`} />
+          </div>
+          <div className="text-sm font-mono font-black text-indigo-600 dark:text-orange-500 leading-none">
+            {formatIdr(recap.rounded)}
+          </div>
+        </div>
+        <button 
+          onClick={saveRab} 
+          disabled={saving} 
+          className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-600/20 dark:shadow-orange-600/20 active:scale-95 transition-all disabled:opacity-50"
+        >
+          {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white/20 border-t-white" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Simpan...' : 'Simpan'}
+        </button>
+      </div>
+
+      {/* ── Mobile Details Bottom Sheet ── */}
+      {showMobileDetails && (
+        <div className="lg:hidden fixed inset-0 z-[110] animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMobileDetails(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
+            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" onClick={() => setShowMobileDetails(false)} />
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Ringkasan Biaya</h3>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center text-xs font-bold px-1">
+                 <span className="text-slate-500">SUBTOTAL</span>
+                 <span className="font-mono text-slate-900 dark:text-white uppercase">{formatIdr(recap.subtotal)}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-bold px-1 border-t border-slate-100 dark:border-slate-800 pt-4">
+                 <span className="text-slate-500">PPN ({identity.ppn_percent}%)</span>
+                 <span className="font-mono text-slate-900 dark:text-white uppercase">+{formatIdr(recap.ppn)}</span>
+              </div>
+              <div className="flex justify-between items-center bg-indigo-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-orange-500/20">
+                 <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest">Grand Total</span>
+                 <span className="text-lg font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
+              </div>
+              <div className={`p-4 rounded-2xl border flex justify-between items-center font-mono text-xs font-bold ${projectMeta.hsp_value >= recap.rounded ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                 <span className="text-[10px] font-black opacity-60 uppercase">Selisih Pagu:</span>
+                 <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
+              </div>
+            </div>
+
+            <button onClick={() => setShowMobileDetails(false)} className="w-full h-14 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest">Tutup</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Layout ── (Added space at bottom for mobile bar) */}
+      <div className="pb-24 lg:pb-0">
 
       {!projectId && !initialIdentity && (
         <div className="bg-white dark:bg-[#1e293b] rounded-[32px] border border-slate-200 dark:border-slate-800 p-8 shadow-2xl animate-in slide-in-from-bottom duration-500">
@@ -944,7 +1000,8 @@ export default function RabEditorTab({
            <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
               <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
               <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
-           </div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
