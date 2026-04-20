@@ -29,8 +29,13 @@ export default function UpgradePage() {
   const handleUpgrade = async (planType = 'pro') => {
     setLoading(planType);
     try {
+      // 1. Cek sesi user
       const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user) {
+        throw new Error('Sesi sudah habis, silakan login kembali.');
+      }
 
+      // 2. Buat transaksi di API
       const res = await fetch('/api/payment/create-token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -44,21 +49,28 @@ export default function UpgradePage() {
 
       const data = await res.json();
 
+      if (!res.ok) {
+        throw new Error(data.error || 'Gagal tersambung ke server pembayaran');
+      }
+
+      // 3. Panggil Midtrans Snap
       if (data.token) {
+        if (!window.snap) {
+          throw new Error('Sistem pembayaran sedang dimuat, silakan coba sesaat lagi.');
+        }
+
         window.snap.pay(data.token, {
           onSuccess: async (result) => {
             console.log('Payment success:', result);
-            setLoading(true); // Tahan UI sebentar
-            // VERIFY FALLBACK: Jemput status ke Midtrans agar database langsung update di localhost
+            setLoading(true); // Tahan UI tetap disabled saat redirect
             try {
               if (result.order_id) {
-                const { data: { session } } = await supabase.auth.getSession();
                 await fetch('/api/payment/verify', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
                   body: JSON.stringify({ 
                     order_id: result.order_id,
-                    userId: session?.user?.id,
+                    userId: session.user.id,
                     plan: planType
                   })
                 });
@@ -73,7 +85,8 @@ export default function UpgradePage() {
             router.push(`/dashboard?payment=pending&order_id=${result.order_id}`);
           },
           onError: (result) => {
-            console.log('Payment error:', result);
+            console.error('Payment error:', result);
+            alert('Pembayaran gagal atau dibatalkan.');
             setLoading(false);
           },
           onClose: () => {
@@ -85,6 +98,7 @@ export default function UpgradePage() {
         throw new Error(data.error || 'Gagal membuat transaksi');
       }
     } catch (error) {
+      console.error('Upgrade Error:', error);
       alert('Error: ' + error.message);
       setLoading(false);
     }
@@ -123,8 +137,12 @@ export default function UpgradePage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] p-4 flex flex-col items-center justify-center transition-colors duration-200">
       <Script
-        src="https://app.sandbox.midtrans.com/snap/snap.js"
+        src={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.startsWith('Mid-client-')
+          ? "https://app.midtrans.com/snap/snap.js"
+          : "https://app.sandbox.midtrans.com/snap/snap.js"
+        }
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
+        strategy="afterInteractive"
       />
 
       <div className="max-w-5xl w-full mx-auto space-y-6">

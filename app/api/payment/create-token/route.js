@@ -2,9 +2,11 @@ import { NextResponse } from 'next/server';
 import midtransClient from 'midtrans-client';
 import { createClient } from '@supabase/supabase-js';
 
-// Initialize Midtrans Snap client
+// Initialize Midtrans Snap client dynamically
+const isProduction = process.env.MIDTRANS_SERVER_KEY?.startsWith('Mid-server-');
+
 const snap = new midtransClient.Snap({
-  isProduction: false, // Always false for sandbox
+  isProduction: isProduction,
   serverKey: process.env.MIDTRANS_SERVER_KEY,
   clientKey: process.env.MIDTRANS_CLIENT_KEY,
 });
@@ -14,10 +16,11 @@ export async function POST(request) {
     const { userId, userEmail, fullName, plan } = await request.json();
 
     if (!userId || !userEmail) {
-      return NextResponse.json({ error: 'Missing user data' }, { status: 400 });
+      console.error('Payment API: Missing user data');
+      return NextResponse.json({ error: 'Data user tidak lengkap' }, { status: 400 });
     }
 
-    // Deteksi URL dasar secara dinamis (penting untuk redirect yang benar)
+    // Deteksi URL dasar secara dinamis
     const host = request.headers.get('host');
     const protocol = host.includes('localhost') ? 'http' : 'https';
     const siteUrl = `${protocol}://${host}`;
@@ -31,10 +34,13 @@ export async function POST(request) {
 
     const config = planConfig[plan] || planConfig.normal;
 
-    // Build a secure order_id that includes the userId (UUID is 36 chars)
-    // Format: PRE-USERID-TIME (approx 48 chars)
-    const shortTime = Math.floor(Date.now() / 1000).toString().slice(-6);
-    const orderId = `${config.prefix}-${userId}-${shortTime}`;
+    // Build a secure and valid order_id (Midtrans max 50 chars)
+    // Format: PRE-UUIDSHORT-TIMESTAMP (approx 25-30 chars)
+    const shortUserId = userId.split('-')[0]; // Ambil bagian pertama UUID agar hemat karakter
+    const timestamp = Date.now();
+    const orderId = `${config.prefix}-${shortUserId}-${timestamp}`;
+
+    console.log(`Creating transaction for user ${userId}, plan ${plan}, orderId ${orderId}, mode: ${isProduction ? 'Production' : 'Sandbox'}`);
 
     // Parameters for Midtrans Snap
     const parameter = {
@@ -44,7 +50,7 @@ export async function POST(request) {
       },
       custom_field1: userId,
       custom_field2: plan, 
-      custom_field3: userEmail, // Cadangan jika userId berubah/terhapus saat testing
+      custom_field3: userEmail,
       customer_details: {
         first_name: fullName || 'User',
         email: userEmail,
@@ -73,6 +79,10 @@ export async function POST(request) {
 
   } catch (error) {
     console.error('Error creating Midtrans transaction:', error);
-    return NextResponse.json({ error: error.message }, { status: 500 });
+    // Jika error karena kunci tidak valid atau masalah koneksi
+    return NextResponse.json({ 
+      error: 'Gagal membuat transaksi: ' + (error.message || 'Error internal'),
+      details: error.message 
+    }, { status: 500 });
   }
 }
