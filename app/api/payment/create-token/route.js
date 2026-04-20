@@ -3,12 +3,33 @@ import midtransClient from 'midtrans-client';
 import { createClient } from '@supabase/supabase-js';
 
 // Initialize Midtrans Snap client dynamically
-const isProduction = process.env.MIDTRANS_SERVER_KEY?.startsWith('Mid-server-');
+// Prioritaskan pengatura manual jika ada, jika tidak gunakan deteksi otomatis
+const getMidtransConfig = () => {
+  const serverKey = process.env.MIDTRANS_SERVER_KEY?.trim();
+  const clientKey = process.env.MIDTRANS_CLIENT_KEY?.trim();
+  
+  // Ambil paksa dari env jika ada, jika tidak gunakan deteksi otomatis
+  let isProd = process.env.MIDTRANS_IS_PRODUCTION === 'true';
+  
+  // Jika MIDTRANS_IS_PRODUCTION tidak diset sama sekali (undefined), gunakan deteksi otomatis
+  if (process.env.MIDTRANS_IS_PRODUCTION === undefined) {
+    isProd = serverKey?.startsWith('Mid-server-');
+  }
+  
+  console.log(`Midtrans Config Initialization: Mode=${isProd ? 'Production' : 'Sandbox'}, ServerKey length=${serverKey?.length || 0}`);
+  
+  return {
+    isProduction: isProd,
+    serverKey,
+    clientKey
+  };
+};
 
+const configMidtrans = getMidtransConfig();
 const snap = new midtransClient.Snap({
-  isProduction: isProduction,
-  serverKey: process.env.MIDTRANS_SERVER_KEY,
-  clientKey: process.env.MIDTRANS_CLIENT_KEY,
+  isProduction: configMidtrans.isProduction,
+  serverKey: configMidtrans.serverKey,
+  clientKey: configMidtrans.clientKey,
 });
 
 export async function POST(request) {
@@ -40,7 +61,7 @@ export async function POST(request) {
     const timestamp = Date.now();
     const orderId = `${config.prefix}-${shortUserId}-${timestamp}`;
 
-    console.log(`Creating transaction for user ${userId}, plan ${plan}, orderId ${orderId}, mode: ${isProduction ? 'Production' : 'Sandbox'}`);
+    console.log(`Creating transaction for user ${userId}, plan ${plan}, orderId ${orderId}, mode: ${configMidtrans.isProduction ? 'Production' : 'Sandbox'}`);
 
     // Parameters for Midtrans Snap
     const parameter = {

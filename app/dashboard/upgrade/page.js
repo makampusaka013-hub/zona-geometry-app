@@ -137,7 +137,9 @@ export default function UpgradePage() {
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] p-4 flex flex-col items-center justify-center transition-colors duration-200">
       <Script
-        src={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.startsWith('Mid-client-')
+        src={
+          (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true' || 
+           (process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === undefined && process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY?.startsWith('Mid-client-')))
           ? "https://app.midtrans.com/snap/snap.js"
           : "https://app.sandbox.midtrans.com/snap/snap.js"
         }
