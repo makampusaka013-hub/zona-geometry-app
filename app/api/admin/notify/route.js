@@ -17,6 +17,25 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Email service not configured' }, { status: 500 });
     }
 
+    // --- KEAMANAN: Verifikasi bahwa User memang ada (Anti Spam) ---
+    const { createClient } = require('@supabase/supabase-js');
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    const { data: userExists } = await supabaseAdmin
+      .from('members')
+      .select('user_id')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (!userExists) {
+      console.warn(`[SECURITY] Blocked notify attempt for non-existent user ID: ${userId}`);
+      return NextResponse.json({ error: 'Invalid origin' }, { status: 403 });
+    }
+    // --- AKHIR VERIFIKASI ---
+
     // Since approval is automatic, this is just an Info email for Admin
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',

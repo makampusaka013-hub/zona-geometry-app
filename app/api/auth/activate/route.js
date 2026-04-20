@@ -1,5 +1,6 @@
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
+import { createServerSupabaseClient } from '@/lib/supabaseAuth';
 
 export async function POST(request) {
   try {
@@ -8,6 +9,16 @@ export async function POST(request) {
     if (!userId) {
       return NextResponse.json({ error: 'User ID is required' }, { status: 400 });
     }
+
+    // --- KEAMANAN: Verifikasi Sesi ---
+    const supabaseServer = await createServerSupabaseClient();
+    const { data: { user }, error: authError } = await supabaseServer.auth.getUser();
+
+    if (authError || !user || user.id !== userId) {
+      console.warn(`[SECURITY] Unauthorized activation attempt for ID: ${userId} by ${user?.id || 'unknown'}`);
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    // --- AKHIR VERIFIKASI ---
 
     // Gunakan Service Role Key untuk menembus RLS (Row Level Security)
     const supabaseAdmin = createClient(

@@ -72,7 +72,7 @@ function createEmptySection(name, currentSections = []) {
 function calculateHargaSatuan(baseSubtotal, profitPercent) {
   const base = parseNum(baseSubtotal);
   const profit = parseNum(profitPercent);
-  const total = base + base * (profit / 100);
+  const total = Math.round(base + base * (profit / 100));
   return total;
 }
 
@@ -401,9 +401,9 @@ export default function RabEditorTab({
         name: sec.namaBab,
         total: sec.lines.reduce((s, r) => s + (parseNum(r.volume) * parseNum(r.hargaSatuan)), 0)
       }));
-      const subtotal = sectionTotals.reduce((sum, s) => sum + s.total, 0);
+      const subtotal = Math.round(sectionTotals.reduce((sum, s) => sum + s.total, 0));
       const ppnPercent = parseNum(identity.ppn_percent);
-      const ppn = subtotal * (ppnPercent / 100);
+      const ppn = Math.round(subtotal * (ppnPercent / 100));
       const total = subtotal + ppn;
       const rounded = Math.ceil(total / 1000) * 1000;
       setRecap({ subtotal, ppn, total, rounded, sectionTotals });
