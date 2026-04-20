@@ -124,10 +124,10 @@ export default function PublicLandingPage() {
           __html: JSON.stringify({
             "@context": "https://schema.org",
             "@type": "SoftwareApplication",
-            "name": "Zona Geometry App",
+            "name": "Zona Geometry",
             "operatingSystem": "Web",
             "applicationCategory": "BusinessApplication",
-            "image": "https://zonageometry.id/images/og-zona-geometry.jpg",
+            "image": "https://zonageometry.id/favicon.png",
             "offers": {
               "@type": "Offer",
               "price": "0",
@@ -147,7 +147,7 @@ export default function PublicLandingPage() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 flex items-center justify-between h-16">
           <div className="flex items-center gap-3">
             <LogoMark className="w-8 h-8" />
-            <span className="font-black text-slate-900 dark:text-slate-100 text-lg tracking-tight">Zona Geometry App</span>
+            <span className="font-black text-slate-900 dark:text-slate-100 text-lg tracking-tight">Zona Geometry</span>
             <span className="hidden sm:inline text-[10px] font-black bg-indigo-600 text-white px-2 py-0.5 rounded-full uppercase tracking-wider">Pro</span>
           </div>
           <nav className="flex items-center gap-2">
@@ -345,7 +345,7 @@ export default function PublicLandingPage() {
       <footer className="bg-white dark:bg-[#0f172a] border-t border-slate-100 dark:border-slate-800 py-8 px-4 sm:px-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-2">
           <LogoMark className="w-5 h-5" />
-          <span className="font-black text-slate-800 dark:text-slate-200 text-sm">Zona Geometry App</span>
+          <span className="font-black text-slate-800 dark:text-slate-200 text-sm">Zona Geometry</span>
         </div>
         <p className="text-xs text-slate-400">Sistem RAB & Monitoring Konstruksi — <span className="text-slate-500">Versi Pro</span></p>
         <div className="flex items-center justify-center gap-4 mt-3">

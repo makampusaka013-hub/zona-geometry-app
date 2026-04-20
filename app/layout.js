@@ -27,11 +27,11 @@ export const metadata = {
   icons: {
     icon: [
       { url: '/favicon.png', sizes: 'any', type: 'image/png' },
-      { url: '/icon-48.png', sizes: '48x48', type: 'image/png' },
+      { url: '/favicon.png', sizes: '48x48', type: 'image/png' },
       { url: '/favicon.png', sizes: '96x96', type: 'image/png' },
       { url: '/favicon.png', sizes: '144x144', type: 'image/png' },
       { url: '/favicon.png', sizes: '192x192', type: 'image/png' },
-      { url: '/logo.svg', type: 'image/svg+xml' },
+      { url: '/logo.png', type: 'image/png' },
     ],
     shortcut: '/favicon.png',
     apple: [
@@ -93,7 +93,7 @@ export default function RootLayout({ children }) {
                 "@context": "https://schema.org",
                 "@type": "WebSite",
                 "name": "Zona Geometry",
-                "url": "https://www.zonageometry.id"
+                "url": "https://zonageometry.id"
               })
             }}
           />

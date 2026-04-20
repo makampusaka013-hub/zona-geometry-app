@@ -6,6 +6,7 @@ import { Sidebar } from '@/components/Sidebar';
 import { LockedOverlay } from '@/components/LockedOverlay';
 import { supabase } from '@/lib/supabase';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { LogoMark } from '@/components/LogoMark';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
@@ -106,7 +107,7 @@ export default function DashboardLayout({ children }) {
               </svg>
             </button>
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-indigo-600 dark:bg-orange-600 rounded-lg flex items-center justify-center text-white font-black text-xs">ZG</div>
+              <LogoMark className="w-8 h-8" />
               <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest leading-none">Zona<br/>Geometry</span>
             </div>
           </div>
