@@ -1101,8 +1101,11 @@ function ProyekContent() {
                  {activeTabObj && <activeTabObj.icon className="w-4 h-4" />}
                </div>
             </div>
+          </div>
 
-            {activeTab === 'proyek' && (
+            {/* Desktop Only Labels/Toggles */}
+            <div className="flex items-center gap-2">
+              {activeTab === 'proyek' && (
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl ml-4 border border-slate-200 dark:border-slate-700">
                 {((isAdmin || isOwner || userSlotRole === 'pembuat') && !isModeNormal) && (
                   <button
@@ -1732,6 +1735,19 @@ function ProyekContent() {
                       />
                     </div>
                     <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                        ITEM PEKERJAAN <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        required
+                        value={createForm.work_name || ''}
+                        onChange={e => setCreateForm({ ...createForm, work_name: e.target.value })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        placeholder="Contoh: Rehabilitasi Gedung Kantor"
+                      />
+                    </div>
+                    <div className="space-y-2">
                       <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
                       <input
                         value={createForm.program_name}
@@ -1871,6 +1887,19 @@ function ProyekContent() {
                         value={identityForm.name}
                         onChange={e => setIdentityForm({ ...identityForm, name: e.target.value })}
                         className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                        ITEM PEKERJAAN <span className="text-rose-500">*</span>
+                      </label>
+                      <input
+                        required
+                        value={identityForm.work_name || ''}
+                        onChange={e => setIdentityForm({ ...identityForm, work_name: e.target.value })}
+                        onFocus={(e) => e.target.select()}
+                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        placeholder="Contoh: Rehabilitasi Gedung Kantor"
                       />
                     </div>
                     <div className="space-y-2">
