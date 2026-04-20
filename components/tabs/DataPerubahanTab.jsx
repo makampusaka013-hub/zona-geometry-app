@@ -304,7 +304,7 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
 
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] shadow-2xl overflow-hidden relative">
         <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
-          <table className="w-full text-sm border-separate border-spacing-0">
+          <table className="w-full text-sm border-separate border-spacing-0 min-w-[1000px]">
             <thead className="sticky top-0 z-30">
               <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[8px] uppercase font-black tracking-widest shadow-sm">
                 <th className="px-4 py-4 text-left border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900 min-w-[200px]" rowSpan={2}>Uraian Pekerjaan</th>
@@ -482,7 +482,7 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
 
       <div className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] shadow-2xl overflow-hidden relative">
         <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
-          <table className="w-full text-sm border-separate border-spacing-0">
+          <table className="w-full text-sm border-separate border-spacing-0 min-w-[1000px]">
             <thead className="sticky top-0 z-30">
               <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] uppercase font-black tracking-widest shadow-sm">
                 <th className="px-6 py-4 text-left border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900 min-w-[200px]">URAIAN PEKERJAAN</th>

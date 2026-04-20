@@ -226,12 +226,12 @@ export default function ScheduleTab({
 
 
       {/* ── INTERNAL SCROLL DATA TABLE (Minimalist Design - No Scroll) ── */}
-      <div className="rounded-b-[32px] border-x border-b border-slate-200 dark:border-slate-800 overflow-hidden bg-white dark:bg-[#020617] shadow-2xl relative">
-        <table className="w-full text-sm border-separate border-spacing-0 table-fixed">
+      <div className="rounded-b-[32px] border-x border-b border-slate-200 dark:border-slate-800 overflow-x-auto max-h-[70vh] scrollbar-thin bg-white dark:bg-[#020617] shadow-2xl relative">
+        <table className="w-full text-sm border-separate border-spacing-0 table-fixed min-w-[900px]">
           <thead className="sticky top-0 z-20">
             <tr className="bg-slate-50 dark:bg-slate-900/80 backdrop-blur-sm text-[9px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 shadow-sm transition-all">
               <th className="px-4 py-4 text-left border-b border-slate-200 dark:border-slate-800 w-[50px]">No</th>
-              <th className="px-4 py-4 text-left border-b border-slate-200 dark:border-slate-800">Uraian</th>
+              <th className="px-4 py-4 text-left border-b border-slate-200 dark:border-slate-800 min-w-[250px]">Uraian</th>
               <th className="px-4 py-4 text-right border-b border-slate-200 dark:border-slate-800 w-[80px]">Vol</th>
               <th className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 w-[110px]">Pekerja</th>
               <th className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 w-[110px]">Durasi</th>
