@@ -715,16 +715,18 @@ function DashboardContent() {
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => !joinedLimitReached && setShowJoinModal(true)}
-              disabled={joinedLimitReached}
-              className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${joinedLimitReached
-                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-700'
-                }`}
-            >
-              <Users className="w-4 h-4" /> Gabung Proyek
-            </button>
+            {(member?.role === 'pro' || member?.role === 'advance' || member?.role === 'admin') && (
+              <button
+                onClick={() => !joinedLimitReached && setShowJoinModal(true)}
+                disabled={joinedLimitReached}
+                className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-xs uppercase tracking-widest transition-all ${joinedLimitReached
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-50 border border-slate-200 dark:border-slate-700'
+                  }`}
+              >
+                <Users className="w-4 h-4" /> Gabung Proyek
+              </button>
+            )}
             <Link
               href={ownedLimitReached ? '#' : "/dashboard/rekap-proyek?action=new"}
               style={{ pointerEvents: ownedLimitReached ? 'none' : 'auto' }}
