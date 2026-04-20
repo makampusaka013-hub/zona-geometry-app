@@ -1005,26 +1005,23 @@ function ProyekContent() {
       <div className="sticky top-0 z-[80] bg-slate-50/80 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-6 py-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div className="flex items-center gap-4">
-            <h1 className="text-xl font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
+            <h1 className="hidden lg:flex text-xl font-bold text-slate-900 dark:text-slate-100 items-center gap-2">
               <Package className="w-6 h-6 text-indigo-600 dark:text-orange-500" /> Proyek
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="flex items-center gap-1.5 ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800">
+            <div className="flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto flex-1 lg:flex-initial no-scrollbar">
               {visibleTabs.map(tab => (
-                <div key={tab.id} className="relative group">
+                <div key={tab.id} className="relative group flex-shrink-0">
                   <button
                     onClick={() => setActiveTab(tab.id)}
-                    className={`p-2.5 rounded-xl transition-all duration-300 ${activeTab === tab.id
-                      ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105 active:scale-95'
-                      : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 hover:bg-white dark:hover:bg-slate-900 shadow-sm sm:shadow-none'
+                    className={`p-2 rounded-xl transition-all duration-300 ${activeTab === tab.id
+                      ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105'
+                      : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400'
                       }`}
                   >
-                    <tab.icon className="w-5 h-5" />
+                    <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  <div className="absolute left-1/2 -translate-x-1/2 top-full mt-3 px-2.5 py-1.5 bg-slate-900/90 backdrop-blur-md text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-[0_10px_30px_rgba(0,0,0,0.3)] border border-slate-700">
-                    {tab.label}
-                  </div>
                 </div>
               ))}
             </div>
@@ -1087,7 +1084,8 @@ function ProyekContent() {
       {activeTab !== 'daftar' && (currentProjectObj || isCreating) && (
         <div className="sticky top-[73px] z-[70] bg-white/90 dark:bg-slate-900/95 backdrop-blur-md border-b-2 border-indigo-600/20 dark:border-orange-500/30 px-6 py-1.5 flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-2">
-            <div className="flex items-center gap-0 overflow-hidden rounded-xl shadow-lg border border-indigo-500/30 dark:border-orange-500/20">
+          <div className="flex items-center justify-between w-full lg:w-auto">
+            <div className="hidden lg:flex items-center gap-0 overflow-hidden rounded-xl shadow-lg border border-indigo-500/30 dark:border-orange-500/20">
               <div className="bg-[#0f172a] dark:bg-slate-800 px-3 py-1.5 flex flex-col items-center justify-center border-r border-indigo-500/20">
                 <span className="text-[6px] font-black text-white/50 uppercase tracking-[0.2em] leading-none mb-0.5">Tab</span>
                 <span className="text-[8px] font-black text-indigo-400 dark:text-orange-400 uppercase tracking-widest leading-none">Proyek</span>
@@ -1095,6 +1093,13 @@ function ProyekContent() {
               <div className="bg-indigo-600 dark:bg-orange-600 px-4 py-1.5 flex items-center min-w-[100px] justify-center">
                 <span className="text-[10px] font-black text-white uppercase tracking-widest drop-shadow-sm">{activeTabObj?.label}</span>
               </div>
+            </div>
+
+            {/* Mobile Tab Icon (Right Side) */}
+            <div className="lg:hidden flex items-center gap-2 ml-auto">
+               <div className="w-8 h-8 rounded-lg bg-indigo-600 dark:bg-orange-600 flex items-center justify-center text-white shadow-md">
+                 {activeTabObj && <activeTabObj.icon className="w-4 h-4" />}
+               </div>
             </div>
 
             {activeTab === 'proyek' && (

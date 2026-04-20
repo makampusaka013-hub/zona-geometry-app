@@ -24,20 +24,6 @@ export const metadata = {
     address: false,
     telephone: false,
   },
-  icons: {
-    icon: [
-      { url: '/favicon.png', sizes: 'any', type: 'image/png' },
-      { url: '/favicon.png', sizes: '48x48', type: 'image/png' },
-      { url: '/favicon.png', sizes: '96x96', type: 'image/png' },
-      { url: '/favicon.png', sizes: '144x144', type: 'image/png' },
-      { url: '/favicon.png', sizes: '192x192', type: 'image/png' },
-      { url: '/logo.png', type: 'image/png' },
-    ],
-    shortcut: '/favicon.png',
-    apple: [
-      { url: '/favicon.png', sizes: '180x180', type: 'image/png' },
-    ],
-  },
   robots: {
     index: true,
     follow: true,
