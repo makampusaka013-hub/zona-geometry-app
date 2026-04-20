@@ -1195,6 +1195,7 @@ function ProyekContent() {
 
         <div className="flex items-center gap-3">
             {activeTab === 'proyek' && currentProjectObj && (
+              <div className="hidden sm:flex items-center gap-4 pr-4 border-r border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col items-end">
                   <span className="text-[7px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-1">Nama Proyek</span>
                   <span className="text-[10px] font-black text-slate-800 dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{currentProjectObj.name}</span>
