@@ -195,16 +195,16 @@ export default function ProgressTab({
       <div className="border-t-0 bg-white dark:bg-[#020617] overflow-hidden">
         <div className="overflow-x-auto max-h-[700px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
           <table 
-            className="text-sm border-separate border-spacing-0 table-fixed"
-            style={{ minWidth: `calc(640px + (${timeRange} * 85px))` }}
+            className="text-sm border-separate border-spacing-0 table-fixed min-w-[320px]"
+            style={{ width: `calc(320px + (${timeRange} * 85px))` }}
           >
             <thead className="sticky top-0 z-50">
               <tr className="bg-slate-100 dark:bg-slate-900 text-[10px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 shadow-sm">
-                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-6 py-4 text-left w-[300px] min-w-[300px] border-b border-slate-200 dark:border-slate-800">Item Pekerjaan</th>
-                <th className="sticky left-[300px] z-50 bg-slate-100 dark:bg-slate-900 px-3 py-4 text-center w-[60px] min-w-[60px] border-b border-slate-200 dark:border-slate-800">Sat</th>
-                <th className="sticky left-[360px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Target</th>
-                <th className="sticky left-[450px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Realisasi</th>
-                <th className="sticky left-[540px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[100px] min-w-[100px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
+                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-6 py-4 text-left w-[180px] lg:w-[300px] min-w-[180px] lg:min-w-[300px] border-b border-slate-200 dark:border-slate-800">Item Pekerjaan</th>
+                <th className="lg:sticky lg:left-[300px] z-50 bg-slate-100 dark:bg-slate-900 px-3 py-4 text-center w-[60px] min-w-[60px] border-b border-slate-200 dark:border-slate-800">Sat</th>
+                <th className="lg:sticky lg:left-[360px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Target</th>
+                <th className="lg:sticky lg:left-[450px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Realisasi</th>
+                <th className="lg:sticky lg:left-[540px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[100px] min-w-[100px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
                 {Array.from({ length: timeRange }).map((_, idx) => (
                   <th key={idx} className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 text-[9px] font-black w-[85px] min-w-[85px] whitespace-nowrap bg-slate-100 dark:bg-slate-900">
                     H-{idx + 1}<br/><span className="text-[8px] opacity-60 font-black uppercase text-slate-400 dark:text-slate-500">{getDateLabel(idx)}</span>
@@ -229,7 +229,7 @@ export default function ProgressTab({
 
                 return (
                   <tr key={key} onClick={() => setSelectedRowId(isSelected ? null : key)} className={`${isSelected ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-[#020617]'} hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group`}>
-                    <td className={`sticky left-0 z-10 ${rowBgClass} px-6 py-6 border-r border-slate-100 dark:border-slate-800/50 truncate w-[300px]`}>
+                    <td className={`sticky left-0 z-10 ${rowBgClass} px-6 py-6 border-r border-slate-100 dark:border-slate-800/50 truncate w-[180px] lg:w-[300px]`}>
                       <div className="flex items-center gap-2 mb-1">
                         {babName && <div className="text-[8px] text-indigo-600 dark:text-orange-400 font-black uppercase tracking-widest">{babName}</div>}
                         {row.status_approval === 'final' && (
@@ -245,10 +245,10 @@ export default function ProgressTab({
                       </div>
                       <div className="font-bold text-slate-800 dark:text-white text-[12px] tracking-tight">{row.name}</div>
                     </td>
-                    <td className={`sticky left-[300px] z-10 ${rowBgClass} px-3 py-6 text-center text-[10px] font-bold text-slate-500 border-r border-slate-100 dark:border-slate-800/50 w-[60px]}`}>{row.unit}</td>
-                    <td className={`sticky left-[360px] z-10 ${rowBgClass} px-4 py-6 text-right text-[10px] font-mono font-bold text-slate-400 border-r border-slate-100 dark:border-slate-800/50 w-[90px]`}>{fmt(row.target)}</td>
-                    <td className={`sticky left-[450px] z-10 ${rowBgClass} px-4 py-6 text-right text-[11px] font-black text-indigo-600 dark:text-orange-400 border-r border-slate-100 dark:border-slate-800/50 w-[90px]`}>{fmt(totalReal)}</td>
-                    <td className={`sticky left-[540px] z-10 ${rowBgClass} px-4 py-6 text-right text-[11px] font-black border-r border-slate-100 dark:border-slate-800/50 w-[100px] ${diff < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
+                    <td className={`lg:sticky lg:left-[300px] z-10 ${rowBgClass} px-3 py-6 text-center text-[10px] font-bold text-slate-500 border-r border-slate-100 dark:border-slate-800/50 w-[60px]}`}>{row.unit}</td>
+                    <td className={`lg:sticky lg:left-[360px] z-10 ${rowBgClass} px-4 py-6 text-right text-[10px] font-mono font-bold text-slate-400 border-r border-slate-100 dark:border-slate-800/50 w-[90px]`}>{fmt(row.target)}</td>
+                    <td className={`lg:sticky lg:left-[450px] z-10 ${rowBgClass} px-4 py-6 text-right text-[11px] font-black text-indigo-600 dark:text-orange-400 border-r border-slate-100 dark:border-slate-800/50 w-[90px]`}>{fmt(totalReal)}</td>
+                    <td className={`lg:sticky lg:left-[540px] z-10 ${rowBgClass} px-4 py-6 text-right text-[11px] font-black border-r border-slate-100 dark:border-slate-800/50 w-[100px] ${diff < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                       <div className="flex flex-col items-end gap-1.5">
                         <span>{fmt(diff)}</span>
                         

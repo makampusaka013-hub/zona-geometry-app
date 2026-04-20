@@ -195,7 +195,7 @@ export function Sidebar({ isOpen, onClose }) {
         onClick={onClose}
       />
 
-      <aside className={`fixed lg:static inset-y-0 left-0 z-[100] w-64 h-screen bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
+      <aside className={`fixed lg:static inset-y-0 left-0 z-[100] w-64 h-[100dvh] bg-white border-r border-slate-200 dark:bg-[#020617] dark:border-slate-800 flex flex-col transition-all duration-300 ease-in-out shrink-0 ${
         isOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'
       }`}>
         <div className="pt-10 px-6 pb-6 flex items-center justify-between">
@@ -321,7 +321,7 @@ export function Sidebar({ isOpen, onClose }) {
         )}
       </nav>
 
-      <div className="p-4 border-t border-slate-200 dark:border-slate-800">
+      <div className="p-4 border-t border-slate-200 dark:border-slate-800 pb-10 lg:pb-4">
         <div className="bg-white border border-slate-200 dark:bg-slate-800 dark:border-slate-700 p-3 rounded-xl shadow-sm">
           <Link href="/dashboard/profile" className="flex items-center gap-3 hover:opacity-80 transition-opacity">
             <div className="h-10 w-10 flex items-center justify-center rounded-full bg-indigo-100 text-indigo-700 dark:bg-orange-500/10 dark:text-orange-400 font-bold shrink-0">
