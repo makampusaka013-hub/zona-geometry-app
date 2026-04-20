@@ -181,7 +181,10 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         type="text" 
         value={query} 
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }} 
-        onFocus={() => { if(query.length >= 1) setOpen(true); }} 
+        onFocus={(e) => { 
+          e.target.select();
+          if(query.length >= 1) setOpen(true); 
+        }} 
         className={`w-full bg-slate-50 dark:bg-slate-900/50 border-none px-2 py-1.5 text-[11px] font-mono font-bold placeholder:font-sans placeholder:font-normal focus:ring-1 focus:ring-indigo-500 rounded transition-all ${kode ? 'text-indigo-600 dark:text-orange-400' : 'text-slate-900 dark:text-white'}`} 
         placeholder={placeholder} 
         title={value || ''}
@@ -596,6 +599,7 @@ export default function RabEditorTab({
                     value={identity.work_name} 
                     onChange={e => setIdentity({...identity, work_name: e.target.value})}
                     placeholder="Contoh: Rehabilitasi Gedung Kantor"
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 ring-indigo-500/10 dark:text-white transition-all shadow-inner"
                   />
                 </div>
@@ -617,6 +621,7 @@ export default function RabEditorTab({
                     <input 
                       value={identity.fiscal_year} 
                       onChange={e => setIdentity({...identity, fiscal_year: e.target.value})}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 ring-indigo-500/10 dark:text-white transition-all shadow-inner"
                     />
                   </div>
@@ -626,6 +631,7 @@ export default function RabEditorTab({
                       type="number"
                       value={identity.hsp_value} 
                       onChange={e => setIdentity({...identity, hsp_value: e.target.value})}
+                      onFocus={(e) => e.target.select()}
                       className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 ring-indigo-500/10 dark:text-white transition-all shadow-inner"
                     />
                   </div>
@@ -636,6 +642,7 @@ export default function RabEditorTab({
                     value={identity.program_name} 
                     onChange={e => setIdentity({...identity, program_name: e.target.value})}
                     placeholder="Ketik detail lain jika diperlukan..."
+                    onFocus={(e) => e.target.select()}
                     className="w-full px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl text-[11px] font-bold outline-none focus:ring-2 ring-indigo-500/10 dark:text-white transition-all shadow-inner"
                   />
                 </div>
@@ -706,6 +713,7 @@ export default function RabEditorTab({
                     <input 
                       value={sec.namaBab} 
                       onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))} 
+                      onFocus={(e) => e.target.select()}
                       className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white" 
                       placeholder="NAMA BAB PEKERJAAN..." 
                     />
@@ -748,6 +756,7 @@ export default function RabEditorTab({
                                <input 
                                  value={row.uraianCustom || row.uraian || ''} 
                                  onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })} 
+                                 onFocus={(e) => e.target.select()}
                                  className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400/50" 
                                  placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."} 
                                />
