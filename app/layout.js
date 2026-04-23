@@ -77,25 +77,36 @@ export default function RootLayout({ children }) {
             dangerouslySetInnerHTML={{
               __html: JSON.stringify({
                 "@context": "https://schema.org",
-                "@type": "SoftwareApplication",
-                "name": "Zona Geometry",
-                "operatingSystem": "Web",
-                "applicationCategory": "BusinessApplication",
-                "description": "Aplikasi RAB Pro dan penyusunan AHSP 2026 digital untuk manajemen proyek konstruksi.",
-                "offers": {
-                  "@type": "Offer",
-                  "price": "0",
-                  "priceCurrency": "IDR"
-                },
-                "publisher": {
-                  "@type": "Organization",
-                  "name": "Zona Geometry",
-                  "url": "https://zonageometry.id",
-                  "location": {
-                    "@type": "Place",
-                    "name": "Kotamobagu, Sulawesi Utara"
+                "@graph": [
+                  {
+                    "@type": "SoftwareApplication",
+                    "@id": "https://zonageometry.id/#software",
+                    "name": "Zona Geometry",
+                    "url": "https://zonageometry.id",
+                    "applicationCategory": "BusinessApplication",
+                    "operatingSystem": "Web",
+                    "description": "Aplikasi RAB Pro dan penyusunan AHSP 2026 digital untuk manajemen proyek konstruksi.",
+                    "offers": {
+                      "@type": "Offer",
+                      "price": "0",
+                      "priceCurrency": "IDR"
+                    },
+                    "publisher": { "@id": "https://zonageometry.id/#organization" }
+                  },
+                  {
+                    "@type": "Organization",
+                    "@id": "https://zonageometry.id/#organization",
+                    "name": "Zona Geometry",
+                    "url": "https://zonageometry.id",
+                    "logo": "https://zonageometry.id/logo.svg",
+                    "address": {
+                      "@type": "PostalAddress",
+                      "addressLocality": "Kotamobagu",
+                      "addressRegion": "Sulawesi Utara",
+                      "addressCountry": "ID"
+                    }
                   }
-                }
+                ]
               })
             }}
           />

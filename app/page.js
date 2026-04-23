@@ -117,34 +117,7 @@ export default function PublicLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617]">
-      {/* JSON-LD Schema for SoftwareApplication & Organization */}
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "SoftwareApplication",
-            "name": "Zona Geometry",
-            "operatingSystem": "Web",
-            "applicationCategory": "BusinessApplication",
-            "description": "Aplikasi RAB Pro dan penyusunan AHSP 2026 digital untuk manajemen proyek konstruksi.",
-            "offers": {
-              "@type": "Offer",
-              "price": "0",
-              "priceCurrency": "IDR"
-            },
-            "publisher": {
-              "@type": "Organization",
-              "name": "Zona Geometry",
-              "url": "https://zonageometry.id",
-              "location": {
-                "@type": "Place",
-                "name": "Kotamobagu, Sulawesi Utara"
-              }
-            }
-          })
-        }}
-      />
+      {/* SEO Schema is managed in layout.js to avoid duplication and hydration issues */}
 
       {/* ── Nav ──────────────────────────────────────────────── */}
       <header className="sticky top-0 z-50 bg-white/80 dark:bg-[#0f172a]/80 backdrop-blur-md border-b border-slate-100 dark:border-slate-800">
@@ -176,13 +149,13 @@ export default function PublicLandingPage() {
         <div className="relative max-w-4xl mx-auto text-center">
           <div className="inline-flex items-center gap-2 bg-indigo-50 dark:bg-indigo-900/40 text-indigo-700 dark:text-indigo-300 border border-indigo-100 dark:border-indigo-800 rounded-full px-4 py-2 text-xs font-black uppercase tracking-widest mb-6">
             <Zap className="w-3.5 h-3.5" />
-            Sistem RAB & Monitoring Konstruksi Digital berbasis BIM
+            Sistem RAB {' & '} Monitoring Konstruksi Digital berbasis BIM
           </div>
           <h1 className="text-4xl sm:text-5xl lg:text-6xl font-black text-slate-900 dark:text-slate-50 tracking-tight leading-tight mb-6">
             Kelola Proyek Konstruksi
             <br />
             <span className="bg-gradient-to-r from-indigo-600 to-indigo-400 dark:from-orange-500 dark:to-amber-400 bg-clip-text text-transparent">
-              Lebih Cerdas & Akurat
+              Lebih Cerdas {' & '} Akurat
             </span>
           </h1>
           <p className="text-lg text-slate-500 dark:text-slate-400 max-w-2xl mx-auto mb-8">
@@ -370,7 +343,7 @@ export default function PublicLandingPage() {
           <LogoMark className="w-5 h-5" />
           <span className="font-black text-slate-800 dark:text-slate-200 text-sm">Zona Geometry</span>
         </div>
-        <p className="text-xs text-slate-400">Sistem RAB & Monitoring Konstruksi — <span className="text-slate-500">Versi Pro</span></p>
+        <p className="text-xs text-slate-400">Sistem RAB {' & '} Monitoring Konstruksi — <span className="text-slate-500">Versi Pro</span></p>
         <div className="flex items-center justify-center gap-4 mt-3">
           <Link href="/login" className="text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 transition-colors">Masuk</Link>
           <Link href="/register" className="text-xs text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 transition-colors">Daftar</Link>
