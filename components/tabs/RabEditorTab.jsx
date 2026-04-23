@@ -204,7 +204,12 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
           {loading && <div className="p-3 text-xs text-slate-400 animate-pulse">Mencari...</div>}
           {!loading && results.length === 0 && <div className="p-3 text-[10px] text-slate-400 italic">Data tidak ditemukan.</div>}
           {!loading && results.map((item, idx) => (
-            <div key={idx} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" onClick={() => { setOpen(false); onSelect(item); }}>
+            <div 
+              key={idx} 
+              className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" 
+              onClick={() => { setOpen(false); onSelect(item); }}
+              title={item.nama_pekerjaan}
+            >
               <div className="flex items-start gap-2.5">
                 {item.is_custom && (
                   <span className="mt-1 text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-tighter flex-shrink-0">Custom</span>
