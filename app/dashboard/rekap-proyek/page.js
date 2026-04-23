@@ -1074,7 +1074,7 @@ function ProyekContent() {
                       PROYEK BARU: {identityForm.name || 'DRAFT'}
                     </option>
                   )}
-                  <option value="" className="dark:bg-slate-800 dark:text-white">Semua Proyek</option>
+                  <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
                   {projects.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
                 </select>
               </div>
@@ -1324,7 +1324,7 @@ function ProyekContent() {
                       </td>
                     </tr>
                   ) : (
-                    projects.filter(p => !selectedProject || p.id === selectedProject).map(p => {
+                    projects.map(p => {
                       if (!p) return null;
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
