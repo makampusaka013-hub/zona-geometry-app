@@ -336,7 +336,7 @@ export default function RabEditorTab({
         fiscal_year: proj.fiscal_year || '',
         contract_number: proj.contract_number || '',
         hsp_value: proj.hsp_value || 0,
-        ppn_percent: proj.ppn_percent || 12
+        ppn_percent: proj.ppn_percent ?? 12
       });
     }
 
