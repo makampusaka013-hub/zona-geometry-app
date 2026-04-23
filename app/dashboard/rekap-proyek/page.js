@@ -151,33 +151,35 @@ function ProyekContent() {
 
   // ── Unified URL & State Synchronization ──
   useEffect(() => {
-    // Skip sync if we are in the middle of creating a project or checking auth
+    // Skip sync if we are in the middle of a transition or loading
     if (isCreating || isCheckingAuth.current || loading) return;
 
-    const urlId = searchParams.get('id');
-    
-    // Direction: URL -> State
-    if (urlId && urlId !== selectedProject) {
-      setSelectedProject(urlId);
-      localStorage.setItem('bc_last_project', urlId);
-      return;
-    }
-
-    // Direction: State -> URL
-    if (selectedProject && urlId !== selectedProject) {
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('id', selectedProject);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      localStorage.setItem('bc_last_project', selectedProject);
-      return;
-    }
-
-    // Auto-restore from localStorage if no ID in URL and no project selected
-    if (!urlId && !selectedProject) {
-      const savedId = localStorage.getItem('bc_last_project');
-      if (savedId && projects.some(p => p.id === savedId)) {
-        setSelectedProject(savedId);
+    try {
+      const urlId = searchParams?.get('id');
+      
+      // 1. Direction: URL -> State
+      if (urlId && urlId !== selectedProject) {
+        setSelectedProject(urlId);
+        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
+      } 
+      // 2. Direction: State -> URL
+      else if (selectedProject && urlId !== selectedProject) {
+        const params = new URLSearchParams(searchParams?.toString() || '');
+        params.set('id', selectedProject);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
       }
+      // 3. Auto-restore from localStorage if no ID in URL and no project selected
+      else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0) {
+        if (typeof window !== 'undefined') {
+          const savedId = localStorage.getItem('bc_last_project');
+          if (savedId && projects.some(p => p && p.id === savedId)) {
+            setSelectedProject(savedId);
+          }
+        }
+      }
+    } catch (err) {
+      console.error('URL Sync Error:', err);
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
 
@@ -488,14 +490,14 @@ function ProyekContent() {
         const urlId = searchParams.get('id');
         let activeId = forcedId || urlId || selectedProject;
 
-        if (activeId && !proj.some(p => p.id === activeId)) {
+        if (activeId && Array.isArray(proj) && !proj.some(p => p && p.id === activeId)) {
           if (forcedId) {
              // Keep it
           } else {
-             activeId = proj[0].id;
+             activeId = proj[0]?.id;
           }
-        } else if (!activeId) {
-          activeId = proj[0].id;
+        } else if (!activeId && Array.isArray(proj) && proj.length > 0) {
+          activeId = proj[0]?.id;
         }
 
         if (activeId !== selectedProject) {
