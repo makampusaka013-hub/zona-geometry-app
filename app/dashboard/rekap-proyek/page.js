@@ -300,8 +300,9 @@ function ProyekContent() {
       
       toast.success('Proyek berhasil dibuat.');
       
-      // Update local state first to prevent loadData from snapping back
-      setProjects(prev => [data, ...prev]);
+      // Update local state first and pass it to loadData to prevent snapping back
+      const newProject = { ...data, ahsp_lines: [] };
+      setProjects(prev => [newProject, ...prev]);
       setSelectedProject(data.id);
       
       // Update URL & LocalStorage
@@ -310,12 +311,12 @@ function ProyekContent() {
       router.push(`${pathname}?${params.toString()}`);
       localStorage.setItem('bc_last_project', data.id);
       
-      setIsCreating(false); // Move this last to unlock loadData logic
+      setIsCreating(false);
       setActiveTab('proyek');
       setSubTabProyek('rab');
       
-      // No need to await loadData() here as the local state is updated
-      loadData();
+      // Explicitly pass the new ID to loadData
+      loadData(data.id);
     } catch (err) {
       toast.error('Gagal membuat proyek: ' + err.message);
     } finally {
@@ -436,7 +437,7 @@ function ProyekContent() {
 
   const [selectedBackupLineId, setSelectedBackupLineId] = useState(null);
 
-  const loadData = useCallback(async () => {
+  const loadData = useCallback(async (forcedId = null) => {
     if (isCheckingAuth.current) return;
     isCheckingAuth.current = true;
     const version = ++dataVersionRef.current;
@@ -479,17 +480,16 @@ function ProyekContent() {
       if (proj && proj.length > 0 && !isCreating) {
         // Coba ambil dari URL dulu
         const urlId = searchParams.get('id');
-        let activeId = urlId || selectedProject;
+        let activeId = forcedId || urlId || selectedProject;
 
-        if (!proj.some(p => p.id === activeId)) {
-          // Hanya snap back jika tidak sedang dalam proses navigasi ke proyek baru
-          if (!activeId || activeId === '') {
-            activeId = proj[0].id;
+        if (activeId && !proj.some(p => p.id === activeId)) {
+          if (forcedId) {
+             // Keep it
           } else {
-            // Jika ID di URL/State tidak ada di list (mungkin baru didelete atau belum terfetch), 
-            // biarkan saja dulu atau snap back jika memang tidak valid
-            // activeId = proj[0].id; 
+             activeId = proj[0].id;
           }
+        } else if (!activeId) {
+          activeId = proj[0].id;
         }
 
         if (activeId !== selectedProject) {
@@ -1751,7 +1751,7 @@ function ProyekContent() {
       {/* Modal: Buat Identitas Proyek */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-5xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-5xl shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col h-auto max-h-[90vh] lg:max-h-[85vh] overflow-hidden">
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-600 dark:bg-orange-600 flex items-center justify-center text-white shadow-lg">
@@ -1770,7 +1770,7 @@ function ProyekContent() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="flex-1 flex flex-col overflow-hidden">
+            <form onSubmit={handleCreateSubmit} className="flex-1 flex flex-col overflow-hidden min-h-0">
               <div className="overflow-y-auto p-8 space-y-6 scrollbar-hide flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
@@ -1928,7 +1928,7 @@ function ProyekContent() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateProjectIdentity} className="flex-1 flex flex-col overflow-hidden">
+            <form onSubmit={handleUpdateProjectIdentity} className="flex-1 flex flex-col overflow-hidden min-h-0">
               <div className="overflow-y-auto p-8 space-y-6 scrollbar-hide flex-1">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                   <div className="space-y-6">
