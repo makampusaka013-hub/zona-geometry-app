@@ -275,12 +275,35 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
     setLoadingPro('custom');
     try {
+      // Enrich ahspLines with details for export if missing
+      const enrichedLines = [...ahspLines];
+      const missingDetailIds = enrichedLines
+        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && !l.analisa_custom)
+        .map(l => l.master_ahsp_id);
+
+      if (missingDetailIds.length > 0) {
+        const { data: detailsData } = await supabase
+          .from('view_analisa_ahsp')
+          .select('master_ahsp_id, details')
+          .in('master_ahsp_id', missingDetailIds);
+        
+        if (detailsData) {
+          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+          enrichedLines.forEach(l => {
+            if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) {
+              if (!l.master_ahsp) l.master_ahsp = {};
+              l.master_ahsp.details = detailMap[l.master_ahsp_id];
+            }
+          });
+        }
+      }
+
       if (exportMode === 'catalog') {
         const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-        await generateProjectReport(project, userMember, ahspLines, selectedSheets, { isCatalog: true, catAhsp, catPrice });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice });
       } else {
-        await generateProjectReport(project, userMember, ahspLines, selectedSheets);
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets);
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
