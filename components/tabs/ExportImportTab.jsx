@@ -303,13 +303,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
         await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice });
       } else {
-        // Fetch project location prices to ensure fallback in report
-        const { data: locationPrices } = await supabase
-          .from('master_harga_dasar')
-          .select('kode_item, harga_satuan')
-          .eq('location_id', project.location_id);
+        // Fetch project-specific resource prices (Komponen Harga)
+        const { data: projectPrices } = await supabase
+          .from('view_project_resource_summary')
+          .select('kode_item:key_item, harga_satuan')
+          .eq('project_id', project.id);
           
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { locationPrices });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices });
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
