@@ -110,7 +110,6 @@ function ProyekContent() {
   const [ahspCatalog, setAhspCatalog] = useState({});
   const [mpTargetDurasi, setMpTargetDurasi] = useState(0);
   const [itemWorkers, setItemWorkers] = useState({});
-  const pathname = usePathname();
   const [itemDurasi, setItemDurasi] = useState({});
   const [savingField, setSavingField] = useState(null);
   const [scheduleRange, setScheduleRange] = useState(60);
