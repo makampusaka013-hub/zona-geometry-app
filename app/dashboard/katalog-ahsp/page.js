@@ -89,7 +89,7 @@ function InlineFaktorCell({ det, isAdmin, isPro, isAdvance, onSave }) {
     setKonvData(k || null);
     setFaktor(String(k?.faktor_konversi ?? 1));
     setSatuan(k?.satuan_ahsp || '');
-    
+
     // Initialize DB Item Selection
     if (k?.master_harga_dasar) {
       const initDbItem = { ...k.master_harga_dasar, id: k.item_dasar_id };
@@ -145,7 +145,7 @@ function InlineFaktorCell({ det, isAdmin, isPro, isAdvance, onSave }) {
   return (
     <td className="px-2 py-2 align-top" colSpan={1} onClick={e => e.stopPropagation()}>
       <div className="min-w-[320px] rounded-lg border border-orange-300 dark:border-orange-700 bg-orange-50 dark:bg-orange-900/40 p-3 shadow-md text-xs space-y-3 z-10 relative">
-        
+
         {/* Pencarian Harga Dasar (EDITABLE) */}
         <div ref={dropdownRef} className="flex flex-col gap-1 relative text-slate-700 dark:text-slate-200">
           <label className="font-semibold text-xs">Pilih Harga Dasar (DB):</label>
@@ -159,29 +159,29 @@ function InlineFaktorCell({ det, isAdmin, isPro, isAdvance, onSave }) {
           />
           {showDbDropdown && dbResults.length > 0 && (
             <ul className="absolute top-[52px] left-0 w-full max-h-48 overflow-y-auto bg-white dark:bg-slate-800 border border-slate-300 dark:border-slate-600 rounded-md shadow-xl z-50 divide-y divide-slate-100 dark:divide-slate-700">
-               {dbResults.map(r => (
-                 <li 
-                   key={r.id} 
-                   onClick={() => {
-                     setSelectedDbItem(r);
-                     setDbSearch(r.nama_item);
-                     setShowDbDropdown(false);
-                   }}
-                   className="p-2 text-xs hover:bg-amber-100/60 dark:hover:bg-amber-900/50 cursor-pointer text-slate-800 dark:text-slate-200 transition-colors"
-                 >
-                   <div className="font-bold truncate flex items-center gap-1.5">
-                     {r.nama_item}
-                     {r.sumber === 'Custom Anda' ? (
-                       <span className="text-[9px] bg-indigo-100 text-indigo-600 dark:bg-orange-900/40 dark:text-orange-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">✏️ Custom</span>
-                     ) : (
-                       <span className="text-[9px] bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 px-1.5 py-0.5 rounded-full shrink-0">🔒 PUPR</span>
-                     )}
-                   </div>
-                   <div className="text-[10px] text-slate-500 mt-0.5 flex justify-between">
-                     <span>{formatIdr(r.harga_satuan)} / {r.satuan}</span>
-                   </div>
-                 </li>
-               ))}
+              {dbResults.map(r => (
+                <li
+                  key={r.id}
+                  onClick={() => {
+                    setSelectedDbItem(r);
+                    setDbSearch(r.nama_item);
+                    setShowDbDropdown(false);
+                  }}
+                  className="p-2 text-xs hover:bg-amber-100/60 dark:hover:bg-amber-900/50 cursor-pointer text-slate-800 dark:text-slate-200 transition-colors"
+                >
+                  <div className="font-bold truncate flex items-center gap-1.5">
+                    {r.nama_item}
+                    {r.sumber === 'Custom Anda' ? (
+                      <span className="text-[9px] bg-indigo-100 text-indigo-600 dark:bg-orange-900/40 dark:text-orange-400 px-1.5 py-0.5 rounded-full font-semibold shrink-0">✏️ Custom</span>
+                    ) : (
+                      <span className="text-[9px] bg-slate-100 text-slate-500 dark:bg-slate-700 dark:text-slate-400 px-1.5 py-0.5 rounded-full shrink-0">🔒 PUPR</span>
+                    )}
+                  </div>
+                  <div className="text-[10px] text-slate-500 mt-0.5 flex justify-between">
+                    <span>{formatIdr(r.harga_satuan)} / {r.satuan}</span>
+                  </div>
+                </li>
+              ))}
             </ul>
           )}
           {showDbDropdown && dbResults.length === 0 && dbSearch.length >= 2 && (
@@ -196,9 +196,9 @@ function InlineFaktorCell({ det, isAdmin, isPro, isAdvance, onSave }) {
           <span>Nilai Dasar:</span>
           <span className="font-mono font-bold text-slate-800 dark:text-slate-100">{formatIdr(hargaDasar)}<span className="text-slate-400 ml-1 font-normal">/{satuanDasar}</span></span>
         </div>
-        
+
         <hr className="border-amber-200 dark:border-amber-700" />
-        
+
         {/* Faktor Input */}
         <div className="flex items-center gap-2">
           <label className="text-slate-700 dark:text-slate-300 whitespace-nowrap font-medium">Bagi (÷):</label>
@@ -220,13 +220,13 @@ function InlineFaktorCell({ det, isAdmin, isPro, isAdvance, onSave }) {
             className="w-16 font-mono text-center border border-orange-400 rounded px-2 py-1.5 focus:outline-none focus:ring-1 focus:ring-orange-500 bg-white dark:bg-[#0f172a]"
           />
         </div>
-        
+
         {/* Preview */}
         <div className="bg-white dark:bg-slate-800 rounded px-2 py-1.5 flex justify-between items-center border border-amber-200 dark:border-amber-700">
           <span className="text-slate-600 dark:text-slate-400 font-medium">Hasil Konversi:</span>
           <span className="font-mono font-bold text-lg text-emerald-700 dark:text-emerald-400">{formatIdr(preview)}</span>
         </div>
-        
+
         {/* Actions */}
         <div className="flex gap-2 pt-2">
           <button onClick={commit} disabled={saving} className="flex-1 bg-orange-500 hover:bg-orange-600 text-white font-semibold py-2 rounded focus:outline-none focus:ring-2 focus:ring-offset-1 focus:ring-orange-500 disabled:opacity-50 transition-colors shadow-sm">
@@ -252,7 +252,7 @@ function ModalUserOverride({ det, onClose, onSaved }) {
   const [saving, setSaving] = useState(false);
   const [showDrop, setShowDrop] = useState(false);
   const dropRef = useRef(null);
-  
+
   // Konversi Factor
   const [faktor, setFaktor] = useState(1);
   const [showCalc, setShowCalc] = useState(false);
@@ -304,19 +304,19 @@ function ModalUserOverride({ det, onClose, onSaved }) {
       payload = { ...payload, harga_langsung: h, tkdn_langsung: isNaN(t) ? 0 : t, harga_item_id: null, source_table: null };
     } else {
       if (!selectedItem) { toast.warning('Pilih item dari daftar terlebih dahulu.'); setSaving(false); return; }
-      
+
       // Jika ada faktor konversi, kita ubah menjadi mode 'langsung' tapi tetap mencatat item referensinya?
       // Sayangnya schema saat ini saling eksklusif. Kita simpan sebagai harga_langsung saja 
       // agar volumenya tetap konsisten dengan Analisa PUPR.
       const f = parseFloat(faktor);
       if (f !== 1 && f > 0) {
         const finalPrice = selectedItem.harga_satuan / f;
-        payload = { 
-          ...payload, 
-          harga_langsung: finalPrice, 
+        payload = {
+          ...payload,
+          harga_langsung: finalPrice,
           tkdn_langsung: selectedItem.tkdn_percent || 0,
-          harga_item_id: null, 
-          source_table: null 
+          harga_item_id: null,
+          source_table: null
         };
       } else {
         payload = { ...payload, harga_item_id: selectedItem.id, source_table: selectedItem.source_table, harga_langsung: null, tkdn_langsung: null };
@@ -326,7 +326,7 @@ function ModalUserOverride({ det, onClose, onSaved }) {
     const { error } = await supabase
       .from('user_ahsp_price_override')
       .upsert(payload, { onConflict: 'user_id,ahsp_detail_id' });
-    
+
     setSaving(false);
     if (error) { toast.error('Gagal simpan override: ' + error.message); return; }
     onSaved?.();
@@ -347,7 +347,7 @@ function ModalUserOverride({ det, onClose, onSaved }) {
           </div>
           <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-700 text-slate-400 shrink-0">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"/>
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
         </div>
@@ -399,36 +399,36 @@ function ModalUserOverride({ det, onClose, onSaved }) {
                     <span>Item Terpilih</span>
                     <span className="font-mono">{formatIdr(selectedItem.harga_satuan)}/{selectedItem.satuan}</span>
                   </div>
-                  
+
                   <div className="flex items-center gap-2 pt-1 border-t border-violet-100 dark:border-violet-800">
                     <div className="flex-1">
                       <label className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">Faktor Bagi (÷)</label>
-                      <input 
+                      <input
                         type="number" step="0.001" value={faktor} onChange={e => setFaktor(e.target.value)}
                         className="w-full bg-white dark:bg-slate-800 border-2 border-violet-200 dark:border-violet-700 rounded-lg px-2 py-1.5 text-xs font-black outline-none focus:border-violet-500"
                       />
                     </div>
-                    <button 
+                    <button
                       onClick={() => setShowCalc(true)}
                       className="mt-4 p-2 bg-white dark:bg-slate-700 border border-violet-300 dark:border-violet-600 rounded-lg text-violet-600 dark:text-violet-300 hover:bg-violet-50 transition-colors"
                       title="Hitung Faktor Konversi"
                     >
-                       <Calculator className="w-4 h-4" />
+                      <Calculator className="w-4 h-4" />
                     </button>
                   </div>
 
                   {parseFloat(faktor) !== 1 && parseFloat(faktor) > 0 && (
                     <div className="flex justify-between items-center pt-1 border-t border-dashed border-violet-200 dark:border-violet-700">
-                       <span className="text-[9px] font-bold text-slate-400">Harga Akhir:</span>
-                       <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
-                          {formatIdr(selectedItem.harga_satuan / parseFloat(faktor))}
-                       </span>
+                      <span className="text-[9px] font-bold text-slate-400">Harga Akhir:</span>
+                      <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">
+                        {formatIdr(selectedItem.harga_satuan / parseFloat(faktor))}
+                      </span>
                     </div>
                   )}
                 </div>
               )}
-              
-              <ConversionCalculatorModal 
+
+              <ConversionCalculatorModal
                 isOpen={showCalc}
                 onClose={() => setShowCalc(false)}
                 onApply={(val) => { setFaktor(val); setShowCalc(false); }}
@@ -570,7 +570,7 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
       .select('*')
       .eq('master_ahsp_id', id)
       .single();
-    
+
     if (data) {
       // Map view details to form details (item_id and source_table are needed)
       // Since view_katalog_ahsp_custom might not have item_id/source_table in details yet (only display info),
@@ -677,7 +677,7 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
   async function handleSave() {
     if (!form.kode || !form.nama) { toast.warning('Kode dan Nama wajib diisi.'); return; }
     if (form.details.length === 0) { toast.warning('Rincian analisa tidak boleh kosong.'); return; }
-    
+
     setSaving(true);
     const payload = {
       p_id: ahspId,
@@ -718,17 +718,17 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4 animate-in fade-in duration-300" onClick={onClose}>
-      <div 
+      <div
         className="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-5xl max-h-[90vh] flex flex-col overflow-hidden border border-slate-200 dark:border-slate-700"
         onClick={e => e.stopPropagation()}
       >
-        
+
         {/* HEADER */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-slate-200 dark:border-slate-700">
           <div>
             <h2 className="text-base font-bold text-slate-900 dark:text-slate-100 flex items-center gap-2">
-               <Layers className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-               {ahspId ? 'Edit AHSP Custom' : 'Tambah AHSP Baru'}
+              <Layers className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+              {ahspId ? 'Edit AHSP Custom' : 'Tambah AHSP Baru'}
             </h2>
             <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Membangun analisa harga satuan mandiri yang hanya bisa dilihat oleh Anda</p>
           </div>
@@ -739,35 +739,35 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
 
         {/* BODY */}
         <div className="flex-1 overflow-y-auto p-6 space-y-6">
-          
+
           {/* Section 1: Identitas */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="md:col-span-1">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kode HSP *</label>
-              <input 
-                type="text" 
-                value={form.kode} 
-                onChange={e => setForm({...form, kode: e.target.value})}
+              <input
+                type="text"
+                value={form.kode}
+                onChange={e => setForm({ ...form, kode: e.target.value })}
                 placeholder="cth: HSP.001"
                 className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div className="md:col-span-2">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Nama Pekerjaan *</label>
-              <input 
-                type="text" 
-                value={form.nama} 
-                onChange={e => setForm({...form, nama: e.target.value})}
+              <input
+                type="text"
+                value={form.nama}
+                onChange={e => setForm({ ...form, nama: e.target.value })}
                 placeholder="cth: Pembuatan 1 m' Pagar Sementara"
                 className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div className="md:col-span-1">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Satuan *</label>
-              <input 
-                type="text" 
-                value={form.satuan} 
-                onChange={e => setForm({...form, satuan: e.target.value})}
+              <input
+                type="text"
+                value={form.satuan}
+                onChange={e => setForm({ ...form, satuan: e.target.value })}
                 placeholder="m2, m', kg..."
                 className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
@@ -777,20 +777,20 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Kategori / Divisi</label>
-              <input 
-                type="text" 
-                value={form.kategori} 
-                onChange={e => setForm({...form, kategori: e.target.value})}
+              <input
+                type="text"
+                value={form.kategori}
+                onChange={e => setForm({ ...form, kategori: e.target.value })}
                 className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
               />
             </div>
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">Overhead + Profit (%)</label>
               <div className="relative">
-                <input 
-                  type="number" 
-                  value={form.profit} 
-                  onChange={e => setForm({...form, profit: parseFloat(e.target.value) || 0})}
+                <input
+                  type="number"
+                  value={form.profit}
+                  onChange={e => setForm({ ...form, profit: parseFloat(e.target.value) || 0 })}
                   className="w-full text-sm border border-slate-300 dark:border-slate-600 rounded-lg px-3 py-2 bg-white dark:bg-slate-700 text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-indigo-500"
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 font-bold text-xs">%</span>
@@ -806,11 +806,11 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
               <h3 className="text-xs font-bold uppercase tracking-wider text-slate-500 flex items-center gap-2">
                 <Wrench className="w-3.5 h-3.5" /> Rincian Komponen Analisa
               </h3>
-              
+
               <div className="relative" ref={searchRef}>
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:ring-2 focus-within:ring-indigo-500 transition-all">
                   <Search className="w-4 h-4 text-slate-400" />
-                  <input 
+                  <input
                     type="text"
                     value={searchQuery}
                     onFocus={() => setShowSearch(true)}
@@ -819,13 +819,13 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
                     className="bg-transparent text-xs font-medium text-slate-900 dark:text-white border-0 focus:ring-0 placeholder:text-slate-400 w-64"
                   />
                 </div>
-                
+
                 {showSearch && searchResults.length > 0 && (
                   <div className="absolute top-full right-0 mt-2 w-[450px] bg-white dark:bg-slate-800 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 z-[110] overflow-hidden">
                     <ul className="divide-y divide-slate-100 dark:divide-slate-700 max-h-72 overflow-y-auto">
                       {searchResults.map(res => (
-                        <li 
-                          key={`${res.id}-${res.source_table}`} 
+                        <li
+                          key={`${res.id}-${res.source_table}`}
                           onClick={() => addDetail(res)}
                           className="px-4 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer group flex items-center justify-between gap-4"
                         >
@@ -874,11 +874,10 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
                           <div className="flex flex-col">
                             <span className="font-semibold text-slate-900 dark:text-slate-100">{det.nama_item}</span>
                             <div className="flex items-center gap-1.5 mt-0.5">
-                              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${
-                                det.kategori === 'Upah' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
-                                det.kategori === 'Bahan' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
-                                'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
-                              }`}>{det.kategori}</span>
+                              <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${det.kategori === 'Upah' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
+                                  det.kategori === 'Bahan' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
+                                    'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
+                                }`}>{det.kategori}</span>
                               <span className="text-[9px] text-slate-400 font-mono">{det.kode_item}</span>
                             </div>
                           </div>
@@ -886,14 +885,14 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
                         <td className="px-4 py-3 text-center text-slate-500 font-medium">{det.satuan}</td>
                         <td className="px-4 py-3 text-center">
                           <div className="relative group/k">
-                            <input 
-                              type="number" 
-                              step="0.00001" 
+                            <input
+                              type="number"
+                              step="0.00001"
                               value={det.koefisien}
                               onChange={e => updateKoef(det.item_id, e.target.value)}
                               className="w-full bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-600 rounded px-2 py-1 text-center text-sm font-mono focus:ring-2 focus:ring-indigo-500"
                             />
-                            <button 
+                            <button
                               onClick={() => { setActiveCalcItemId(det.item_id); setShowCalculator(true); }}
                               className="absolute right-1 top-1/2 -translate-y-1/2 p-1 bg-slate-100 dark:bg-slate-700 rounded opacity-0 group-hover/k:opacity-100 transition-opacity text-indigo-600 dark:text-orange-400"
                               title="Hitung Konversi"
@@ -937,7 +936,7 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
                 <div className="text-xs font-bold text-emerald-600 dark:text-emerald-400 font-mono">{totalTkdnPercent.toFixed(2)}%</div>
               </div>
             </div>
-            
+
             <div className="bg-indigo-600 dark:bg-orange-600 rounded-xl p-4 flex flex-col justify-center shadow-lg shadow-indigo-600/20 dark:shadow-orange-600/10">
               <div className="text-[9px] font-bold uppercase tracking-widest text-white/50 mb-0.5 text-center">Total Harga Satuan</div>
               <div className="text-lg font-black text-white text-center font-mono">
@@ -956,13 +955,13 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
             <span className="text-[10px] font-bold uppercase tracking-wider">Tersimpan di Katalog AHSP Custom Anda</span>
           </div>
           <div className="flex gap-3">
-            <button 
+            <button
               onClick={onClose}
               className="px-6 py-2 rounded-lg border border-slate-300 dark:border-slate-600 text-xs font-bold uppercase tracking-widest text-slate-500 hover:bg-white dark:hover:bg-slate-800 transition-all font-semibold"
             >
               Batal
             </button>
-            <button 
+            <button
               onClick={handleSave}
               disabled={saving}
               className="px-8 py-2 rounded-lg bg-indigo-600 dark:bg-orange-600 hover:bg-indigo-700 dark:hover:bg-orange-700 text-white text-xs font-bold uppercase tracking-widest shadow-md hover:scale-105 active:scale-95 transition-all flex items-center gap-2 disabled:opacity-50 font-semibold"
@@ -973,12 +972,12 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
           </div>
         </div>
 
-        <ConversionCalculatorModal 
+        <ConversionCalculatorModal
           isOpen={showCalculator}
           onClose={() => setShowCalculator(false)}
           onApply={(val) => {
             if (activeCalcItemId) {
-               updateKoef(activeCalcItemId, val);
+              updateKoef(activeCalcItemId, val);
             }
             setShowCalculator(false);
           }}
@@ -1000,12 +999,12 @@ export default function KatalogAhspPage() {
   const [currentUserId, setCurrentUserId] = useState(null);
   const [showHspModal, setShowHspModal] = useState(false);
   const [editHspId, setEditHspId] = useState(null);
-  
+
   // Data
   const [data, setData] = useState([]);
   const [completeCount, setCompleteCount] = useState(0);
   const [incompleteCount, setIncompleteCount] = useState(0);
-  
+
   // UI State
   const [query, setQuery] = useState('');
   const [jenisFilter, setJenisFilter] = useState('');
@@ -1055,9 +1054,9 @@ export default function KatalogAhspPage() {
 
       // Fetch options for the filter
       const { data } = await supabase.from('master_ahsp').select('jenis_pekerjaan').limit(2000);
-      if(data) {
-         const unique = [...new Set(data.map(d => d.jenis_pekerjaan).filter(Boolean))].sort();
-         setJenisOptions(unique);
+      if (data) {
+        const unique = [...new Set(data.map(d => d.jenis_pekerjaan).filter(Boolean))].sort();
+        setJenisOptions(unique);
       }
     } catch (err) {
       console.error('Failed to load stats:', err);
@@ -1073,7 +1072,7 @@ export default function KatalogAhspPage() {
     }
 
     setLoading(true);
-    
+
     // Gunakan RPC v2 yang jauh lebih cepat dan sudah teroptimasi regional
     const { data: rows, error } = await supabase.rpc('get_ahsp_catalog_v2', {
       p_location_id: selectedLocationId,
@@ -1083,7 +1082,7 @@ export default function KatalogAhspPage() {
       p_limit: limit,
       p_offset: (page - 1) * limit
     });
-    
+
     if (error) {
       console.error('RPC get_ahsp_catalog_v2 error:', error);
       setErrorMsg(error.message);
@@ -1156,7 +1155,7 @@ export default function KatalogAhspPage() {
         faktor_konversi: newFaktor,
         satuan_ahsp: newSatuan || null,
       };
-      
+
       if (newItemDasarId !== undefined) {
         updateData.item_dasar_id = newItemDasarId;
       }
@@ -1188,10 +1187,10 @@ export default function KatalogAhspPage() {
       .eq('user_id', currentUserId);
 
     if (error) {
-       toast.error('Gagal reset: ' + error.message);
+      toast.error('Gagal reset: ' + error.message);
     } else {
-       showToast('✅ Seluruh Analisa AHSP telah dikembalikan ke standar PUPR.');
-       loadData();
+      showToast('✅ Seluruh Analisa AHSP telah dikembalikan ke standar PUPR.');
+      loadData();
     }
     setLoading(false);
   }
@@ -1208,8 +1207,8 @@ export default function KatalogAhspPage() {
 
       {/* HEADER */}
       <div className="text-center py-6 bg-slate-100 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
-         <h1 className="text-[16px] uppercase font-bold text-slate-900 dark:text-slate-100 tracking-wide">ANALISA HARGA SATUAN</h1>
-         <p className="text-[8px] text-slate-600 dark:text-slate-400 mt-1 uppercase tracking-wider">AHSP CIPTA KARYA SE BINA KONSTRUKSI NO 182 TAHUN 2025</p>
+        <h1 className="text-[16px] uppercase font-bold text-slate-900 dark:text-slate-100 tracking-wide">ANALISA HARGA SATUAN</h1>
+        <p className="text-[8px] text-slate-600 dark:text-slate-400 mt-1 uppercase tracking-wider">AHSP CIPTA KARYA SE BINA KONSTRUKSI NO 182 TAHUN 2025</p>
       </div>
 
       <main className="mx-auto max-w-[1400px] px-4 py-6">
@@ -1257,13 +1256,13 @@ export default function KatalogAhspPage() {
                 </button>
               </div>
             )}
-            <select value={jenisFilter} onChange={e => {setJenisFilter(e.target.value); setPage(1);}} className="text-sm border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-slate-700 dark:text-slate-200 py-2 max-w-[200px] truncate">
+            <select value={jenisFilter} onChange={e => { setJenisFilter(e.target.value); setPage(1); }} className="text-sm border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-slate-700 dark:text-slate-200 py-2 max-w-[200px] truncate">
               <option value="">Semua Jenis Pekerjaan</option>
               {jenisOptions.map(opt => (
                 <option key={opt} value={opt}>{opt}</option>
               ))}
             </select>
-            <select value={limit} onChange={e => {setLimit(Number(e.target.value)); setPage(1);}} className="text-sm border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-slate-700 dark:text-slate-200 py-2">
+            <select value={limit} onChange={e => { setLimit(Number(e.target.value)); setPage(1); }} className="text-sm border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-slate-700 dark:text-slate-200 py-2">
               <option value={10}>10 Baris</option>
               <option value={20}>20 Baris</option>
               <option value={50}>50 Baris</option>
@@ -1274,15 +1273,15 @@ export default function KatalogAhspPage() {
 
         {/* SEARCH BAR GLOBAL */}
         <div className="mb-6 p-4 rounded-xl bg-white dark:bg-[#1e293b] border border-slate-200 dark:border-slate-700 shadow-sm flex items-center">
-           <svg className="w-5 h-5 text-slate-400 mr-2" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
-              <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
-           </svg>
-           <input 
-              placeholder="Ketik Kode atau Nama Pekerjaan untuk mencari di seluruh Database..." 
-              value={query} 
-              onChange={e => { setQuery(e.target.value); setPage(1); }} 
-              className="w-full border-0 bg-transparent text-sm focus:outline-none focus:ring-0 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 font-medium" 
-           />
+          <svg className="w-5 h-5 text-slate-400 mr-2" fill="none" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" viewBox="0 0 24 24" stroke="currentColor">
+            <path d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
+          </svg>
+          <input
+            placeholder="Ketik Kode atau Nama Pekerjaan untuk mencari di seluruh Database..."
+            value={query}
+            onChange={e => { setQuery(e.target.value); setPage(1); }}
+            className="w-full border-0 bg-transparent text-sm focus:outline-none focus:ring-0 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 font-medium"
+          />
         </div>
 
         {/* TABLE */}
@@ -1313,15 +1312,15 @@ export default function KatalogAhspPage() {
                 <tr><td colSpan={12} className="text-center py-10 text-slate-500">Memuat data...</td></tr>
               ) : data.length === 0 ? (
                 <tr>
-                   <td colSpan={12} className="text-center py-12">
-                     <p className="text-slate-500 dark:text-slate-400 font-medium text-base">Tidak ada AHSP yang Lengkap.</p>
-                     {!showIncomplete && incompleteCount > 0 && (
-                        <p className="text-amber-600 dark:text-amber-500 mt-2 text-xs bg-amber-50 dark:bg-amber-900/20 inline-block px-3 py-1.5 rounded-full">
-                          💡 Ada {incompleteCount} AHSP di database, namun disembunyikan karena belum memiliki Total Harga (Rp 0).<br/>
-                          Centang tuas <b>&quot;Tampilkan Semua&quot;</b> di atas jika Anda ingin melihatnya.
-                        </p>
-                     )}
-                   </td>
+                  <td colSpan={12} className="text-center py-12">
+                    <p className="text-slate-500 dark:text-slate-400 font-medium text-base">Tidak ada AHSP yang Lengkap.</p>
+                    {!showIncomplete && incompleteCount > 0 && (
+                      <p className="text-amber-600 dark:text-amber-500 mt-2 text-xs bg-amber-50 dark:bg-amber-900/20 inline-block px-3 py-1.5 rounded-full">
+                        💡 Ada {incompleteCount} AHSP di database, namun disembunyikan karena belum memiliki Total Harga (Rp 0).<br />
+                        Centang tuas <b>&quot;Tampilkan Semua&quot;</b> di atas jika Anda ingin melihatnya.
+                      </p>
+                    )}
+                  </td>
                 </tr>
               ) : (
                 data.map((row, index) => {
@@ -1329,7 +1328,7 @@ export default function KatalogAhspPage() {
                   const rowKey = row.master_ahsp_id || `ahsp-${index}`;
                   const isExpanded = expandedRows.has(rowKey);
                   const isIncomplete = row.is_lengkap === false;
-                  
+
                   const profitAmt = row.total_subtotal * ((row.overhead_profit || 0) / 100);
                   const totalHarga = row.total_subtotal + profitAmt;
 
@@ -1339,24 +1338,24 @@ export default function KatalogAhspPage() {
                   return (
                     <Fragment key={rowKey}>
                       {/* MAIN ROW */}
-                        <tr 
-                          onClick={() => toggleRow(rowKey)}
-                          className={`cursor-pointer transition-colors shadow-sm ${row.is_custom 
-                            ? 'bg-indigo-50/70 hover:bg-indigo-100/90 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/50' 
-                            : (isIncomplete ? 'bg-rose-50/50 dark:bg-rose-900/10 hover:bg-rose-100/50' : 'bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all')
+                      <tr
+                        onClick={() => toggleRow(rowKey)}
+                        className={`cursor-pointer transition-colors shadow-sm ${row.is_custom
+                          ? 'bg-indigo-50/70 hover:bg-indigo-100/90 dark:bg-indigo-950/30 dark:hover:bg-indigo-900/50'
+                          : (isIncomplete ? 'bg-rose-50/50 dark:bg-rose-900/10 hover:bg-rose-100/50' : 'bg-white dark:bg-slate-900/40 hover:bg-slate-50 dark:hover:bg-slate-800/60 transition-all')
                           }`}
-                        >
-                          <td className="px-3 py-3 font-mono text-xs font-semibold text-indigo-700 dark:text-orange-400">
-                            {isIncomplete && <span className="mr-1 text-rose-500 text-[10px]" title="Belum Lengkap">⚠️</span>}
-                            <div className="flex items-center gap-2">
-                              {row.kode_ahsp}
-                              {row.is_custom && (
-                                <span className="text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1.5 py-0.5 rounded-md font-black tracking-widest uppercase">Custom</span>
-                              )}
-                            </div>
-                          </td>
+                      >
+                        <td className="px-3 py-3 font-mono text-xs font-semibold text-indigo-700 dark:text-orange-400">
+                          {isIncomplete && <span className="mr-1 text-rose-500 text-[10px]" title="Belum Lengkap">⚠️</span>}
+                          <div className="flex items-center gap-2">
+                            {row.kode_ahsp}
+                            {row.is_custom && (
+                              <span className="text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1.5 py-0.5 rounded-md font-black tracking-widest uppercase">Custom</span>
+                            )}
+                          </div>
+                        </td>
                         <td className="px-3 py-3 font-medium text-slate-900 dark:text-slate-100 whitespace-normal min-w-[200px]">
-                           {row.nama_pekerjaan}
+                          {row.nama_pekerjaan}
                         </td>
                         <td className="px-3 py-3 text-center text-slate-600 dark:text-slate-400 font-mono text-xs">{row.satuan_pekerjaan}</td>
                         <td className="px-3 py-3"></td>
@@ -1365,8 +1364,8 @@ export default function KatalogAhspPage() {
                         <td className="px-3 py-3 text-right font-mono text-xs">{formatIdr(row.total_bahan)}</td>
                         <td className="px-3 py-3 text-right font-mono text-xs">{formatIdr(row.total_alat)}</td>
                         <td className="px-3 py-3 text-right font-mono text-xs text-slate-500">
-                           <div>{row.overhead_profit}%</div>
-                           <div className="text-[10px] opacity-70">+{formatIdr(profitAmt)}</div>
+                          <div>{row.overhead_profit}%</div>
+                          <div className="text-[10px] opacity-70">+{formatIdr(profitAmt)}</div>
                         </td>
                         <td className="px-3 py-3 text-right font-mono text-xs font-bold text-slate-800 dark:text-slate-200">{formatIdr(totalHarga)}</td>
                         <td className="px-3 py-3 text-center font-mono text-xs text-green-700 dark:text-green-400">{Number(row.total_tkdn_percent || 0).toFixed(2)}%</td>
@@ -1400,34 +1399,34 @@ export default function KatalogAhspPage() {
                         return (
                           <tr key={idx} className={`group ${isDetEmpty ? 'bg-rose-100/50 dark:bg-rose-900/30' : 'bg-slate-50 dark:bg-slate-800/50'} border-b border-dashed border-slate-200 dark:border-slate-700 last:border-b-0`}>
                             <td className="px-3 py-2 text-right">
-                               {isDetEmpty && <span className="mr-1 text-rose-500 text-[10px]" title="Harga Dasar 0">⚠️</span>}
-                               <span className="text-[10px] text-slate-400 font-mono">{det?.kode_item}</span>
+                              {isDetEmpty && <span className="mr-1 text-rose-500 text-[10px]" title="Harga Dasar 0">⚠️</span>}
+                              <span className="text-[10px] text-slate-400 font-mono">{det?.kode_item}</span>
                             </td>
                             <td className="px-3 py-2 text-xs text-slate-600 dark:text-slate-400 pl-6 border-l-2 border-indigo-200 dark:border-orange-500/20 whitespace-normal">
-                               <span className={`mr-2 text-[9px] font-semibold px-1.5 py-0.5 rounded ${jenisBadge.cls}`}>{jenisBadge.label}</span>
-                               ↳ {det?.uraian}
+                              <span className={`mr-2 text-[9px] font-semibold px-1.5 py-0.5 rounded ${jenisBadge.cls}`}>{jenisBadge.label}</span>
+                              ↳ {det?.uraian}
                             </td>
                             <td className="px-3 py-2 text-center text-xs text-slate-500">{det?.satuan}</td>
                             <td className="px-3 py-2 text-center text-xs font-mono text-slate-500">{det?.koefisien}</td>
                             {/* Editable faktor cell - Admin only (harga dasar tidak berubah) */}
                             <InlineFaktorCell det={det} isAdmin={isAdmin} isPro={isPro} isAdvance={isAdvance} onSave={handleSaveFaktor} />
                             <td className="px-3 py-2 text-right text-xs font-mono text-slate-500 bg-slate-100/50 dark:bg-slate-800">
-                               {det?.jenis_komponen === 'upah' ? formatIdr(det?.subtotal) : '-'}
+                              {det?.jenis_komponen === 'upah' ? formatIdr(det?.subtotal) : '-'}
                             </td>
                             <td className="px-3 py-2 text-right text-xs font-mono text-slate-500 bg-slate-100/50 dark:bg-slate-800">
-                               {det?.jenis_komponen === 'bahan' ? formatIdr(det?.subtotal) : '-'}
+                              {det?.jenis_komponen === 'bahan' ? formatIdr(det?.subtotal) : '-'}
                             </td>
                             <td className="px-3 py-2 text-right text-xs font-mono text-slate-500 bg-slate-100/50 dark:bg-slate-800">
-                               {det?.jenis_komponen === 'alat' ? formatIdr(det?.subtotal) : '-'}
+                              {det?.jenis_komponen === 'alat' ? formatIdr(det?.subtotal) : '-'}
                             </td>
                             <td className="px-3 py-2"></td>
                             <td className="px-3 py-2"></td>
                             <td className="px-3 py-2 text-center text-xs font-mono text-slate-500">{Number(det?.tkdn || 0).toFixed(2)}%</td>
                             <InlineUserOverrideCell
-                               det={det}
-                               isPro={isPro || isAdmin || isAdvance}
-                               onSaved={() => handleReloadSingleRow(row.master_ahsp_id)}
-                             />
+                              det={det}
+                              isPro={isPro || isAdmin || isAdvance}
+                              onSaved={() => handleReloadSingleRow(row.master_ahsp_id)}
+                            />
                           </tr>
                         );
                       })}
@@ -1441,27 +1440,27 @@ export default function KatalogAhspPage() {
 
         {/* PAGINATION CONTROLS */}
         <div className="mt-4 flex items-center justify-between">
-           <button 
-             disabled={page === 1} 
-             onClick={() => setPage(p => p - 1)}
-             className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-sm text-slate-700 dark:text-slate-200 disabled:opacity-50"
-           >
-             Sebelumnya
-           </button>
-           <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Halaman {page}</span>
-           <button 
-             disabled={data.length < limit}
-             onClick={() => setPage(p => p + 1)}
-             className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-sm text-slate-700 dark:text-slate-200 disabled:opacity-50"
-           >
-             Selanjutnya
-           </button>
+          <button
+            disabled={page === 1}
+            onClick={() => setPage(p => p - 1)}
+            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-sm text-slate-700 dark:text-slate-200 disabled:opacity-50"
+          >
+            Sebelumnya
+          </button>
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-400">Halaman {page}</span>
+          <button
+            disabled={data.length < limit}
+            onClick={() => setPage(p => p + 1)}
+            className="px-4 py-2 border border-slate-300 dark:border-slate-600 rounded bg-white dark:bg-[#1e293b] text-sm text-slate-700 dark:text-slate-200 disabled:opacity-50"
+          >
+            Selanjutnya
+          </button>
         </div>
 
         {/* MODAL HSP CUSTOM */}
-        <ModalHspCustom 
-          isOpen={showHspModal} 
-          onClose={() => setShowHspModal(false)} 
+        <ModalHspCustom
+          isOpen={showHspModal}
+          onClose={() => setShowHspModal(false)}
           ahspId={editHspId}
           currentUserId={currentUserId}
           onSaved={() => {
