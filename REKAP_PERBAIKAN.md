@@ -111,4 +111,27 @@ Penyelesaian masalah pencarian AHSP yang terputus dari database dan optimalisasi
 - **Auto-Initialization logic**: Menambahkan logika `new Date().toISOString()` pada form pembuatan proyek baru untuk mengisi otomatis `start_date`.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (15:35)*
+
+# Rekap Perbaikan: Advanced Catalog Access & Permissions (23 April 2026)
+
+Penyelesaian perluasan sistem role-based access control (RBAC) untuk manajemen katalog profesional dan perbaikan akurasi statistik ketuntasan AHSP.
+
+## 1. Masalah yang Diselesaikan
+- **Role Permissions Gaps**: Role **Advance** sebelumnya tidak memiliki akses edit ke katalog, padahal dibutuhkan untuk level Senior Estimator.
+- **Data Integrity Risk**: Role **Normal** (Pelaksana) memiliki akses edit ke katalog harga yang berisiko mengacaukan standar pricing pusat.
+- **Inaccurate AHSP Stats**: Indikator "Lengkap/Belum Lengkap" tetap 0 meskipun data tersedia, serta logika deteksi "Tidak Lengkap" yang belum presisi.
+- **Performance Timeout**: Query statistik pada *UNION view* gabungan sering mengalami timeout atau mengembalikan nilai kosong.
+
+## 2. Solusi Teknis & UI/UX
+- **Role Tiering Expansion**: 
+    - Menambahkan role **Advance** ke dalam sistem perizinan `Katalog Harga` dan `Katalog AHSP`.
+    - Membatasi role **Normal** menjadi *Read-Only* pada seluruh modul katalog.
+    - Menambahkan opsi **Advance** pada dashboard Admin User Management.
+- **Unified Editor Mode**: Menyamakan instruksi UI menjadi **"Mode Editor"** bagi role Admin, Pro, dan Advance untuk kemudahan navigasi.
+- **Robust Stats Engine**:
+    - Memisahkan query *count* antara data PUPR (Official) dan data Custom untuk stabilitas PostgREST.
+    - Memperbarui logika database: AHSP ditandai `is_lengkap = false` jika terdapat item uraian dengan harga satuan 0 atau jika AHSP kosong.
+- **Custom View Hardening**: Memperbaiki perhitungan `is_lengkap` pada `view_katalog_ahsp_custom` agar tidak lagi bersifat hardcoded `true`.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (17:15)*

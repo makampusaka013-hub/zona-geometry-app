@@ -11,9 +11,9 @@ Admin: Kontrol penuh sistem, manajemen user (Aktivasi, Role, & Masa Aktif), dan 
 
 Mode Pro (Kontraktor/Estimator): Membuat RAB, AHSP, Schedule, CCO, dan Laporan. Membutuhkan aktivasi Admin.
 
-Mode Normal (Pelaksana Lapangan): Input progres volume harian, foto dokumentasi, dan absensi manpower.
+Mode Advance (Senior Estimator/Admin Internal): Memiliki akses penuh ke manajemen Katalog Harga (Custom & Override) dan Katalog AHSP (Edit Faktor Konversi & Custom AHSP). Membutuhkan penugasan khusus oleh Admin.
 
-Mode View (Owner/PUPR): Read-only dashboard, monitoring Kurva S, dan download laporan final.
+Mode Normal (Pelaksana Lapangan): Input progres volume harian, foto dokumentasi, dan absensi manpower. Akses Katalog bersifat Read-Only.
 
 2. PROJECT METADATA (Informasi Kontrak)
 Setiap proyek wajib memiliki data administratif untuk keperluan Header Laporan:

@@ -8,7 +8,7 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | Status | Fitur | Keterangan |
 | :---: | --- | --- |
 | ✅ | **Sistem Autentikasi** | Register & Login beroperasi penuh. **Enforcement Akses**: User 'Pending'/'Suspended' otomatis diblokir & logout. |
-| ✅ | **Pembagian Peran (Roles)** | Modul `Kelola User` khusus Admin sepenuhnya matang. Role (admin, pro, normal, view), kontrol masa aktif (`expired_at`), perlindungan akses (Admin Bypass), serta fungsi Hapus Akun via Secure RPC. |
+| ✅ | **Pembagian Peran (Roles)** | Modul `Kelola User` khusus Admin sepenuhnya matang. Role (admin, pro, advance, normal, view), kontrol masa aktif (`expired_at`), perlindungan akses (Admin Bypass), serta fungsi Hapus Akun via Secure RPC. |
 | ✅ | **Mode Pro (Kontraktor)** | RAB/Estimator stabil. Katalog Harga Custom + Price Override per AHSP aktif. Modul CCO & MC-0 fungsional. |
 | ✅ | **Mode Normal (Pelaksana)** | Input progres harian (Volume, Bahan, Tenaga) live 1-365 hari. |
 | ✅ | **Mode View (Owner)** | Akses *read-only* aktif di Dashboard dengan Monitoring Kurva S kumulatif. |
@@ -96,7 +96,7 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 ## 6. Business Logic (Membership)
 | Status | Fitur | Keterangan |
 | :---: | --- | --- |
-| ✅ | **Tier Gratis vs Pro** | Role-view, batasan proyek kadaluarsa aktif. Katalog Custom sudah terkunci ke role Pro & Admin. |
+| ✅ | **Tier Gratis vs Pro** | Role-view, batasan proyek kadaluarsa aktif. Katalog Custom sudah terkunci ke role Pro, Advance, & Admin. Role Normal dibatasi akses Read-Only. |
 | ✅ | **Account Access Control** | Sistem aktivasi akun oleh Admin via `approval_status`. Integrasi RLS & client-side enforcement (Admin-always-active bypass). |
 
 ---
@@ -140,6 +140,10 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | 2026-04 | **PPN 0% Logic Fix** | Perbaikan bug `||` ke `??` yang mencegah penyimpanan nilai PPN 0%. Sekarang 0% adalah nilai valid yang bisa di-save. |
 | 2026-04 | **RAB Tab Visibility Fix** | Penghapusan restriksi sub-tab "RAB Pekerjaan" sehingga selalu muncul bagi seluruh personil proyek (Owner/Admin/Pro/Normal). |
 | 2026-04 | **Auto Project Start Date** | Inisialisasi otomatis `start_date` ke tanggal hari ini saat pembuatan proyek baru sebagai referensi jadwal awal. |
+| 2026-04 | **Advanced Catalog Permissions** | Implementasi tiering akses katalog. Role **Advance** resmi memiliki hak edit setara Admin/Pro di Katalog Harga & AHSP. |
+| 2026-04 | **Catalog Integrity Protection** | Restriksi akses edit katalog bagi role **Normal** untuk menjaga standar pricing perusahaan. |
+| 2026-04 | **Smart AHSP Stats (Logic Fix)** | Perbaikan indikator "Lengkap/Belum Lengkap". AHSP dianggap tidak lengkap jika salah satu item uraian memiliki harga satuan 0. |
+| 2026-04 | **High-Performance Stats Query** | Optimasi query statistik AHSP menggunakan parallel data fetching (pupr vs custom) untuk menghindari timeout pada UNION view. |
 
 ---
 
