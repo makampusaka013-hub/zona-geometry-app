@@ -282,13 +282,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         .map(l => l.master_ahsp_id);
 
       if (missingDetailIds.length > 0) {
-        const { data: detailsData } = await supabase
-          .from('view_analisa_ahsp')
-          .select('master_ahsp_id, details')
-          .in('master_ahsp_id', missingDetailIds);
+        const [puprRes, customRes] = await Promise.all([
+          supabase.from('view_analisa_ahsp').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds),
+          supabase.from('view_katalog_ahsp_custom').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds)
+        ]);
         
-        if (detailsData) {
-          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+        const combinedDetails = [...(puprRes.data || []), ...(customRes.data || [])];
+        if (combinedDetails.length > 0) {
+          const detailMap = Object.fromEntries(combinedDetails.map(d => [d.master_ahsp_id, d.details]));
           enrichedLines.forEach(l => {
             if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) {
               if (!l.master_ahsp) l.master_ahsp = {};
