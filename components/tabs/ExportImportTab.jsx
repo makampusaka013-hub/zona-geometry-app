@@ -312,10 +312,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const pPrices = projectRes.data || [];
         const cPrices = catalogRes.data || [];
         
-        // Merge: Project prices override catalog prices
+        // Merge: Start with Catalog prices, then override with non-zero Project prices
         const mergedMap = {};
-        cPrices.forEach(p => { mergedMap[p.kode_item] = p.harga_satuan; });
-        pPrices.forEach(p => { mergedMap[p.kode_item] = p.harga_satuan; });
+        cPrices.forEach(p => { 
+          if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; 
+        });
+        pPrices.forEach(p => { 
+          if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; 
+        });
         
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
