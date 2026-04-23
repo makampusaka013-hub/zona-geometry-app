@@ -512,7 +512,6 @@ function ProyekContent() {
   }, []);
 
   // Efek untuk menangani aksi dari URL (contoh: ?action=new)
-  const actionProcessed = useRef(null);
   useEffect(() => {
     const action = searchParams?.get('action');
     if (!action || loading || actionProcessed.current === action) return;
