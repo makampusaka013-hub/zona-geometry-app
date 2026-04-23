@@ -90,6 +90,7 @@ const TABS = [
 function ProyekContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const pathname = usePathname();
   const [loading, setLoading] = useState(true);
   const [member, setMember] = useState(null);
   const [projects, setProjects] = useState([]);
