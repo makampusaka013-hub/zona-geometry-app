@@ -134,4 +134,26 @@ Penyelesaian perluasan sistem role-based access control (RBAC) untuk manajemen k
 - **Custom View Hardening**: Memperbaiki perhitungan `is_lengkap` pada `view_katalog_ahsp_custom` agar tidak lagi bersifat hardcoded `true`.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (17:15)*
+
+# Rekap Perbaikan: Excel Reporting Engine Finalization (23 April 2026)
+
+Finalisasi mesin laporan Excel untuk mendukung pelaporan tingkat produksi dengan akurasi data harga 100% dan fleksibilitas format.
+
+## 1. Masalah yang Diselesaikan
+- **Missing Price Data**: Harga pada sheet `harga_satuan_terpakai` sering muncul `0,00` karena ketidakcocokan nama kolom database.
+- **Bold Styling Conflict**: Format cetak tebal (Bold) pada header dan rincian AHSP mengganggu fitur *Conditional Formatting* manual yang dilakukan user di Excel.
+- **Incomplete Resource Mapping**: Beberapa item tenaga kerja dan alat tidak terpetakan harganya jika hanya menggunakan satu sumber data (Catalog/PUPR).
+- **Template Synchronization**: Kebutuhan untuk sinkronisasi permanen antara template lokal di komputer dengan database server/GitHub.
+
+## 2. Solusi Teknis & Perbaikan Mesin
+- **Double-Layer Price Fetching**: 
+    - Implementasi pengambilan data dari dua sumber: `view_project_resource_summary` (Prioritas Utama/User Override) dan `master_harga_dasar` (Prioritas Kedua/PUPR).
+    - Memperbaiki pemetaan kolom ke `harga_snapshot` agar akurat mengambil harga yang sedang dipakai user.
+- **Styling Hardening**:
+    - Menghapus seluruh hardcoded `bold: true` pada sheet AHSP dan Harga Satuan.
+    - Mengatur agar header kolom G pada sheet Harga Satuan secara otomatis tertulis **"Harga Satuan"** via kode mesin.
+- **Robust Field Lookup**: Menambahkan dukungan untuk berbagai variasi nama kolom (`harga`, `harga_satuan`, `harga_snapshot`, `koefisien`, dll) untuk menangani data AHSP kustom.
+- **Automated Sync**: Berhasil melakukan sinkronisasi file `master_template_rab.xlsx` dari workstation lokal ke repositori GitHub pusat.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (22:15)*

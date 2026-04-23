@@ -144,6 +144,7 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | 2026-04 | **Catalog Integrity Protection** | Restriksi akses edit katalog bagi role **Normal** untuk menjaga standar pricing perusahaan. |
 | 2026-04 | **Smart AHSP Stats (Logic Fix)** | Perbaikan indikator "Lengkap/Belum Lengkap". AHSP dianggap tidak lengkap jika salah satu item uraian memiliki harga satuan 0. |
 | 2026-04 | **High-Performance Stats Query** | Optimasi query statistik AHSP menggunakan parallel data fetching (pupr vs custom) untuk menghindari timeout pada UNION view. |
+| 2026-04 | **Excel Engine Production-Ready** | Finalisasi mesin ekspor Excel: Sinkronisasi harga otomatis (PUPR + Override), penghapusan format Bold untuk kompatibilitas filter, dan standarisasi header "Harga Satuan". |
 
 ---
 
