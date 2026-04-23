@@ -132,16 +132,16 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         let combined = [];
 
         if (mode === 'ahsp') {
-          const { data, error } = await supabase.rpc('get_ahsp_catalog_v2', {
-             p_location_id: locationId,
-             p_query: query.trim(),
-             p_show_incomplete: true,
-             p_limit: 20
-          });
+          const { data, error } = await supabase
+            .from('view_analisa_ahsp')
+            .select('*')
+            .or(`kode_ahsp.ilike.%${query.trim()}%,nama_pekerjaan.ilike.%${query.trim()}%`)
+            .order('kode_ahsp')
+            .limit(20);
           
           if (!error) combined = (data || []).map(d => ({ 
             ...d, 
-            id: d.master_ahsp_id, 
+            id: d.id, 
             type: 'ahsp' 
           }));
         } else {
@@ -173,7 +173,7 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
       }
     }, 300);
     return () => clearTimeout(timer);
-  }, [query, open, mode, locationId]);
+  }, [query, open, mode]);
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
@@ -193,32 +193,29 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
       {open && mounted && (query.length >= 1) && createPortal(
         <div 
           ref={resultsRef}
-          className="fixed z-[9999] mt-1 overflow-y-auto rounded-xl bg-white/95 dark:bg-slate-800/95 backdrop-blur-xl shadow-[0_20px_50px_rgba(0,0,0,0.3)] border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in zoom-in-95 duration-200"
+          className="fixed z-[9999] mt-1 overflow-y-auto rounded-xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in zoom-in-95 duration-200"
           style={{ 
-            top: coords.top + 4, 
+            top: coords.top, 
             left: coords.left,
-            width: Math.max(coords.width * 2.5, 400),
+            width: Math.max(coords.width * 2, 400),
             maxHeight: '300px'
           }}
         >
-          {loading && <div className="p-4 text-[10px] font-bold text-slate-400 uppercase tracking-widest animate-pulse">Mencari...</div>}
-          {!loading && results.length === 0 && <div className="p-4 text-[10px] text-slate-400 font-bold uppercase tracking-widest italic text-center">Data tidak ditemukan.</div>}
+          {loading && <div className="p-3 text-xs text-slate-400 animate-pulse">Mencari...</div>}
+          {!loading && results.length === 0 && <div className="p-3 text-[10px] text-slate-400 italic">Data tidak ditemukan.</div>}
           {!loading && results.map((item, idx) => (
-            <div key={idx} className="p-3 hover:bg-indigo-50 dark:hover:bg-orange-950/20 cursor-pointer transition-all border-l-4 border-transparent hover:border-indigo-500 dark:hover:border-orange-500" onClick={() => { setOpen(false); onSelect(item); }}>
-              <div className="flex items-start gap-3">
+            <div key={idx} className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" onClick={() => { setOpen(false); onSelect(item); }}>
+              <div className="flex items-start gap-2.5">
                 {item.is_custom && (
-                  <span className="mt-1 text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1.5 py-0.5 rounded font-black uppercase tracking-tighter flex-shrink-0">Custom</span>
+                  <span className="mt-1 text-[7px] bg-indigo-600 dark:bg-orange-600 text-white px-1 py-0.5 rounded font-black uppercase tracking-tighter flex-shrink-0">Custom</span>
                 )}
                 <div className="flex flex-col gap-0.5 flex-1 min-w-0">
-                  <div className="text-[9px] font-mono font-black text-indigo-500 dark:text-orange-400 opacity-80 flex items-center gap-2">
-                    {item.kode_ahsp}
-                    {!item.is_lengkap && item.type !== 'lumsum' && <span className="text-[8px] bg-red-100 dark:bg-red-900/30 text-red-500 px-1 rounded font-bold">Harga Tidak Lengkap</span>}
-                  </div>
-                  <div className="text-[11px] font-black text-slate-800 dark:text-slate-100 leading-tight truncate">{item.nama_pekerjaan}</div>
+                  <div className="text-[9px] font-mono font-bold text-indigo-500 dark:text-orange-400 opacity-80">{item.kode_ahsp}</div>
+                  <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{item.nama_pekerjaan}</div>
                 </div>
-                <div className="text-right flex-shrink-0">
-                   <div className="text-[10px] font-mono font-black text-slate-900 dark:text-white">{formatIdr(parseFloat(item.total_subtotal || 0))}</div>
-                   <div className="text-[8px] font-bold text-slate-400 uppercase">{item.satuan_pekerjaan || item.satuan}</div>
+                <div className="text-right flex-shrink-0 ml-2">
+                   <div className="text-[10px] font-mono font-bold text-slate-900 dark:text-white">{formatIdr(parseFloat(item.total_subtotal || 0))}</div>
+                   <div className="text-[9px] text-slate-400">{item.satuan_pekerjaan || item.satuan}</div>
                 </div>
               </div>
             </div>
