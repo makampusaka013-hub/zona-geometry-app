@@ -1038,15 +1038,27 @@ export default function KatalogAhspPage() {
   }, [router]);
 
   const loadStats = useCallback(async () => {
-    const { count: cCount } = await supabase.from('view_katalog_ahsp_gabungan').select('*', { count: 'exact', head: true }).eq('is_lengkap', true);
-    const { count: iCount } = await supabase.from('view_katalog_ahsp_gabungan').select('*', { count: 'exact', head: true }).eq('is_lengkap', false);
-    setCompleteCount(cCount || 0);
-    setIncompleteCount(iCount || 0);
+    try {
+      // Fetch counts for both complete and incomplete in parallel
+      const [completeRes, incompleteRes] = await Promise.all([
+        supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id', { count: 'exact' }).eq('is_lengkap', true).limit(1),
+        supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id', { count: 'exact' }).eq('is_lengkap', false).limit(1)
+      ]);
 
-    const { data } = await supabase.from('master_ahsp').select('jenis_pekerjaan').limit(2000);
-    if(data) {
-       const unique = [...new Set(data.map(d => d.jenis_pekerjaan).filter(Boolean))].sort();
-       setJenisOptions(unique);
+      if (completeRes.error) console.error('Stats Error (Complete):', completeRes.error);
+      if (incompleteRes.error) console.error('Stats Error (Incomplete):', incompleteRes.error);
+
+      setCompleteCount(completeRes.count || 0);
+      setIncompleteCount(incompleteRes.count || 0);
+
+      // Fetch options for the filter
+      const { data } = await supabase.from('master_ahsp').select('jenis_pekerjaan').limit(2000);
+      if(data) {
+         const unique = [...new Set(data.map(d => d.jenis_pekerjaan).filter(Boolean))].sort();
+         setJenisOptions(unique);
+      }
+    } catch (err) {
+      console.error('Failed to load stats:', err);
     }
   }, []);
 
