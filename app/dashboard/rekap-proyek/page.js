@@ -1059,13 +1059,21 @@ function ProyekContent() {
             <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
               <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
                 <Package className="w-3.5 h-3.5 text-slate-400" />
-                <select value={selectedProject || ''} onChange={e => setSelectedProject(e.target.value)} className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate">
+                <select 
+                  value={selectedProject || ''} 
+                  onChange={e => {
+                    const val = e.target.value;
+                    setSelectedProject(val);
+                    if (val) setActiveTab('proyek');
+                  }} 
+                  className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
+                >
                   {isCreating && !selectedProject && (
                     <option value="" className="dark:bg-slate-800 dark:text-orange-400 font-bold">
                       PROYEK BARU: {identityForm.name || 'DRAFT'}
                     </option>
                   )}
-                  {!selectedProject && !isCreating && <option value="" disabled>Pilih Proyek...</option>}
+                  <option value="" className="dark:bg-slate-800 dark:text-white">Semua Proyek</option>
                   {projects.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
                 </select>
               </div>
@@ -1298,7 +1306,7 @@ function ProyekContent() {
                       </td>
                     </tr>
                   ) : (
-                    projects.map(p => {
+                    projects.filter(p => !selectedProject || p.id === selectedProject).map(p => {
                       if (!p) return null;
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
