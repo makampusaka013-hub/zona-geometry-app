@@ -562,8 +562,9 @@ export default function KatalogHargaPage() {
 
   const isAdmin = memberRole === 'admin';
   const isPro = memberRole === 'pro';
+  const isAdvance = memberRole === 'advance';
   const isNormal = memberRole === 'normal';
-  const canAddCustom = isAdmin || isPro || isNormal;
+  const canAddCustom = isAdmin || isPro || isAdvance;
 
   const checkAuth = useCallback(async () => {
     if (isCheckingAuth.current) return;
@@ -739,19 +740,19 @@ export default function KatalogHargaPage() {
         )}
 
         {/* Admin info banner */}
-        {isAdmin && (
+        {(isAdmin || isPro || isAdvance) && (
           <div className="mb-4 flex items-center gap-2 text-xs bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 rounded-lg px-3 py-2 text-amber-700 dark:text-amber-400">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
             </svg>
             <span>
-              <strong>Mode Admin:</strong> Klik angka Harga Satuan / TKDN untuk mengeditnya langsung. Harga Custom milik Anda ditandai badge <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400 px-1 rounded">Custom</span>.
+              <strong>Mode Editor:</strong> Klik angka Harga Satuan / TKDN untuk mengeditnya langsung. Harga Custom milik Anda ditandai badge <span className="bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400 px-1 rounded">Custom</span>.
             </span>
           </div>
         )}
 
         {/* User info banner */}
-        {(isPro || isNormal) && (
+        {(isPro || isAdvance) && (
           <div className="mb-4 flex items-center gap-2 text-xs bg-indigo-50 dark:bg-orange-900/20 border border-indigo-200 dark:border-orange-800 rounded-lg px-3 py-2 text-indigo-700 dark:text-orange-400">
             <svg className="w-4 h-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-7.714 2.143L11 21l-2.286-6.857L1 12l7.714-2.143L11 3z" />

@@ -245,6 +245,7 @@ export default function AdminUsersPage() {
                           className="block w-full max-w-[110px] mx-auto rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 px-2 py-1 text-xs font-bold focus:border-indigo-500 dark:focus:border-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500 shadow-sm disabled:opacity-50">
                           <option value="normal">Normal</option>
                           <option value="pro">PRO</option>
+                          <option value="advance">ADVANCE</option>
                           <option value="admin">Admin</option>
                         </select>
                       </td>
