@@ -410,7 +410,8 @@ function ProyekContent() {
         case 'pengecek':
           base = TABS.filter(t => ['daftar', 'proyek', 'progress', 'terpakai', 'dok', 'export'].includes(t.id)); break;
         default:
-          base = TABS.filter(t => t.id === 'daftar');
+          // Default: Selalu tampilkan Daftar dan Proyek agar navigasi tidak hilang
+          base = TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'export'].includes(t.id));
       }
     }
     return filterRbac(base);
