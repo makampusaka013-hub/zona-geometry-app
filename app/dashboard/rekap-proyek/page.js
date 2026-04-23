@@ -1076,7 +1076,6 @@ function ProyekContent() {
                   onChange={e => {
                     const val = e.target.value;
                     setSelectedProject(val);
-                    if (val) setActiveTab('proyek');
                   }} 
                   className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
                 >
