@@ -152,7 +152,8 @@ function ProyekContent() {
   const [createForm, setCreateForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
-    program_name: '', activity_name: '', work_name: ''
+    program_name: '', activity_name: '', work_name: '',
+    start_date: new Date().toISOString().split('T')[0]
   });
 
   const dataVersionRef = useRef(0);
@@ -276,6 +277,7 @@ function ProyekContent() {
           program_name: createForm.program_name,
           activity_name: createForm.activity_name,
           work_name: createForm.work_name,
+          start_date: createForm.start_date || new Date().toISOString().split('T')[0],
           created_by: session.user.id,
           updated_at: new Date().toISOString()
         })
@@ -1134,19 +1136,12 @@ function ProyekContent() {
             <div className="flex items-center gap-2">
               {activeTab === 'proyek' && (
               <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl ml-4 border border-slate-200 dark:border-slate-700">
-                {((isAdmin || isOwner || userSlotRole === 'pembuat') && !isModeNormal) && (
-                  <button
-                    onClick={() => setSubTabProyek('rab')}
-                    className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTabProyek === 'rab' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' : 'text-slate-400 hover:text-slate-600'}`}
-                  >
-                    RAB Pekerjaan
-                  </button>
-                )}
-                {isModeNormal && (
-                  <div className="px-3 py-1 bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600 rounded-lg text-[9px] font-black uppercase tracking-widest">
-                    RAB Pekerjaan
-                  </div>
-                )}
+                <button
+                  onClick={() => setSubTabProyek('rab')}
+                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTabProyek === 'rab' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  RAB Pekerjaan
+                </button>
                 {!isModeNormal && (
                   <>
                     <button
