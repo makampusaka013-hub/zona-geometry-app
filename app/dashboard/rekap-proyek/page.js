@@ -531,14 +531,21 @@ function ProyekContent() {
   }, []);
 
   // Efek untuk menangani aksi dari URL (contoh: ?action=new)
+  const actionProcessed = useRef(null);
   useEffect(() => {
-    const action = searchParams.get('action');
-    if (action === 'new' && !loading) {
+    const action = searchParams?.get('action');
+    if (!action || loading || actionProcessed.current === action) return;
+
+    if (action === 'new') {
+      actionProcessed.current = 'new';
       handleNewProject();
-      // Bersihkan param agar tidak trigger ulang jika page refresh/navigate
-      router.replace('/dashboard/rekap-proyek');
+      
+      // Bersihkan param action tapi pertahankan yang lain (seperti id proyek)
+      const params = new URLSearchParams(searchParams.toString());
+      params.delete('action');
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, loading, handleNewProject, router]);
+  }, [searchParams, loading, handleNewProject, router, pathname]);
 
 
   // Auto-sync location context for regional pricing
