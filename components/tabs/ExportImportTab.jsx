@@ -278,7 +278,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       // Enrich ahspLines with details for export if missing
       const enrichedLines = [...ahspLines];
       const missingDetailIds = enrichedLines
-        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && !l.analisa_custom)
+        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0))
         .map(l => l.master_ahsp_id);
 
       if (missingDetailIds.length > 0) {
