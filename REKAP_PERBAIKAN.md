@@ -197,4 +197,33 @@ Penyelesaian masalah garis vertikal "hantu" pada Kolom G serta pemulihan integri
 - **Correct Style Ordering**: Mengatur ulang urutan eksekusi: reset gaya dilakukan sebelum perintah hapus border, memastikan perintah "No Border" menjadi instruksi terakhir yang diterima oleh Excel.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 24 April 2026 (00:05)*
+
+# Rekap Perbaikan: Radical Cleanup & Dynamic Linking (24 April 2026 - Final)
+
+Penyelesaian akhir mesin pelaporan dengan integrasi formula dinamis antar sheet dan perlindungan estetika header tingkat lanjut.
+
+## 1. Masalah yang Diselesaikan
+- **Style Overwrite Conflicts**: Penemuan bahwa perintah `cell.style = {}` pada baris tertentu dapat memicu kemunculan garis bawaan memori Exceljs.
+- **Data Inconsistency**: Risiko ketidakcocokan data antara sheet HSP dan AHSP jika salah satu diubah secara manual.
+- **Visual Regression**: Hilangnya warna latar belakang (fill) pada header utama saat proses pembersihan baris dilakukan.
+- **Precision Artifacts**: Munculnya angka desimal `,00` pada harga satuan jadi yang mengurangi kerapihan laporan.
+
+## 2. Solusi Teknis & Otomasi Lanjutan
+- **Dynamic Linking (VLOOKUP Implementation)**:
+    - **HSP Sheet**: Seluruh data (Uraian, Harga Satuan, TKDN) kini ditarik langsung dari sheet AHSP menggunakan formula `=VLOOKUP()`. Satu-satunya input statis adalah Kode AHSP di Kolom B.
+    - Menjamin **sinkronisasi data 100%**; jika nilai di AHSP berubah, HSP akan otomatis terupdate.
+- **Advanced Automated Formulas**:
+    - **AVERAGE TKDN**: Kolom N pada judul pekerjaan AHSP kini menggunakan formula `=AVERAGE()` untuk menghitung rata-rata TKDN dari seluruh sub-item secara dinamis.
+    - **Round-to-Whole**: Menerapkan fungsi `=ROUND(..., 0)` pada kolom Total Harga Jadi AHSP untuk menghilangkan desimal yang tidak perlu.
+- **Header Aesthetic Protection**:
+    - Membatasi proses pembersihan agresif hanya pada **Baris 1-5**.
+    - Baris 6 (Header Utama) diproteksi warnanya (fill), namun tetap dibersihkan bordernya secara selektif pada Kolom G untuk menghilangkan garis "hantu".
+- **Professional Accounting Format**: Standarisasi format akuntansi `_(Rp* #,##0.00_);...` pada seluruh kolom nilai uang (Column M di AHSP dan Column F di HSP).
+
+## 3. Status Produksi
+- **Git State**: Up-to-date (Commit `4ae4231`).
+- **Template State**: `master_template_rab.xlsx` telah disinkronkan.
+- **Stability**: Sistem dinyatakan **Stabil & Siap Produksi**.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 24 April 2026 (01:12)*
