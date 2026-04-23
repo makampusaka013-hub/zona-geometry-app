@@ -382,6 +382,7 @@ function ProyekContent() {
   const isOwner = member?.user_id === projectOwnerId;
   const isAdmin = member?.role === 'admin';
   const isAdvance = member?.role === 'advance';
+  const isPro = member?.role === 'pro';
   const isModeNormal = member?.role === 'normal';
 
   const canInputProgress = (userSlotRole === 'pembuat' || isOwner) && !isExpired;
@@ -401,21 +402,21 @@ function ProyekContent() {
       return filterRbac(TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'export'].includes(t.id)));
     }
 
-    // RBAC: Filter berdasarkan peran di proyek (userSlotRole) atau Admin
+    // RBAC: Filter berdasarkan peran di proyek (userSlotRole) atau Admin/Advance/Pro
     let base = TABS;
-    if (!(isAdmin || isOwner)) {
+    if (!(isAdmin || isOwner || isAdvance || isPro)) {
       switch (userSlotRole) {
         case 'pembuat':
           base = TABS.filter(t => ['daftar', 'proyek', 'progress', 'terpakai', 'perubahan', 'tkdn', 'dok', 'export'].includes(t.id)); break;
         case 'pengecek':
           base = TABS.filter(t => ['daftar', 'proyek', 'progress', 'terpakai', 'dok', 'export'].includes(t.id)); break;
         default:
-          // Default: Selalu tampilkan Daftar dan Proyek agar navigasi tidak hilang
+          // Default untuk user tanpa peran spesifik: Tampilkan menu dasar
           base = TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'export'].includes(t.id));
       }
     }
     return filterRbac(base);
-  }, [isModeNormal, isAdmin, isOwner, userSlotRole, member?.role]);
+  }, [isModeNormal, isAdmin, isOwner, isAdvance, isPro, userSlotRole, member?.role]);
 
   const ownedProjectsCount = useMemo(() => projects.filter(p => p.created_by === member?.user_id).length, [projects, member?.user_id]);
   const joinedProjectsCount = useMemo(() => projects.filter(p => p.created_by !== member?.user_id).length, [projects, member?.user_id]);
