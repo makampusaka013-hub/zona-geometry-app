@@ -92,4 +92,23 @@ Dibuat file migrasi tunggal yang mencakup seluruh audit:
 - **Catatan**: Daftar "Unused Index" mungkin akan tetap menampilkan index FK tersebut selama volume data masih sedikit. Hal ini adalah **normal dan benar** secara arsitektur database untuk menjamin keamanan jangka panjang.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 20 April 2026 (20:57)*
+
+# Rekap Perbaikan: AHSP Search Connectivity & UI Refinement (23 April 2026)
+
+Penyelesaian masalah pencarian AHSP yang terputus dari database dan optimalisasi UX pada modul RAB Editor.
+
+## 1. Masalah yang Diselesaikan
+- **Search Connectivity Loss**: Pencarian kode AHSP (misal: "1.1.1.1") tidak memunculkan hasil dari database pusat.
+- **PPN 0% Unsaveable**: Ketidakmampuan menyimpan nilai PPN 0% karena logika default Javascript yang memaksa kembali ke 12%.
+- **Missing Sub-Tab UI**: Sub-tab "RAB Pekerjaan" menghilang atau terkunci bagi beberapa user role, menyisakan hanya tab Backup dan Jadwal.
+- **Manual Start Date Entry**: Kebutuhan untuk pengisian otomatis tanggal mulai proyek agar mempermudah alur kerja penjadwalan.
+
+## 2. Solusi Teknis & UI/UX
+- **Unified AHSP Search**: Mengalihkan target pencarian ke `view_analisa_ahsp`. Hal ini memastikan sinkronisasi 100% dengan database katalog resmi dan custom.
+- **Result Hover Enhancement**: Menambahkan atribut `title` pada elemen hasil pencarian. Sekarang user dapat melihat nama uraian pekerjaan secara lengkap hanya dengan mengarahkan kursor (hover).
+- **Nullish Coalescing for PPN**: Mengganti operator `||` dengan `??` pada logika pemuatan data. Ini memungkinkan angka `0` diproses sebagai nilai valid, bukan sebagai "null/kosong".
+- **Access Policy Liberalization**: Menghapus kondisi restriktif pada tab navigasi. Tab "RAB Pekerjaan" kini bersifat universal bagi seluruh personil yang memiliki akses ke proyek tersebut.
+- **Auto-Initialization logic**: Menambahkan logika `new Date().toISOString()` pada form pembuatan proyek baru untuk mengisi otomatis `start_date`.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (15:35)*

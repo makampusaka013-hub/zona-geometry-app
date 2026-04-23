@@ -135,6 +135,11 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | 2026-04 | **Stakeholder Identity Integration** | Penambahan field administratif (PPK, PPTK, Konsultan, Kontraktor) dan tanda tangan laporan otomatis. |
 | 2026-04 | **Sidebar Active Highlight Fix** | Perbaikan logika deteksi menu aktif menggunakan `startsWith` agar menu tetap menyala orange meskipun memiliki parameter query. |
 | 2026-04 | **Account Expiry Tracking** | Penambahan rincian "Masa Aktif Akun" di halaman profil dengan deteksi warna merah jika sudah kadaluarsa. |
+| 2026-04 | **AHSP Search Connectivity Fix** | Restorasi koneksi pencarian AHSP via `view_analisa_ahsp`. Support pencarian kode spesifik (e.g., "1.1.1.1"). |
+| 2026-04 | **Result Hover Tooltips** | Penambahan `title` attribute pada hasil pencarian untuk menampilkan Uraian Pekerjaan secara utuh saat kursor diarahkan (hover). |
+| 2026-04 | **PPN 0% Logic Fix** | Perbaikan bug `||` ke `??` yang mencegah penyimpanan nilai PPN 0%. Sekarang 0% adalah nilai valid yang bisa di-save. |
+| 2026-04 | **RAB Tab Visibility Fix** | Penghapusan restriksi sub-tab "RAB Pekerjaan" sehingga selalu muncul bagi seluruh personil proyek (Owner/Admin/Pro/Normal). |
+| 2026-04 | **Auto Project Start Date** | Inisialisasi otomatis `start_date` ke tanggal hari ini saat pembuatan proyek baru sebagai referensi jadwal awal. |
 
 ---
 
