@@ -18,6 +18,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     end: new Date().toISOString().split('T')[0]
   });
   const [loadingPro, setLoadingPro] = useState(null); // 'catalog' | 'ahsp' | 'scurve' | 'rab' | 'used_res' | 'used_ahsp'
+  const [headerImage, setHeaderImage] = useState(null); // base64 image string
 
   if (tabLoading) {
     return (
@@ -199,6 +200,21 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
     toast.info(`Periode ${reportType} telah disesuaikan.`);
   }
+  
+  function handleHeaderImageUpload(e) {
+    const file = e.target.files[0];
+    if (!file) return;
+    if (!file.type.startsWith('image/')) {
+      toast.error('File harus berupa gambar.');
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      setHeaderImage(event.target.result);
+      toast.success('Kop gambar berhasil diimpor.');
+    };
+    reader.readAsDataURL(file);
+  }
 
   async function handleExportRegionalCatalog() {
     if (!project?.location_id || !project?.location) {
@@ -301,7 +317,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       if (exportMode === 'catalog') {
         const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage });
       } else {
         // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
         const [projectRes, catalogRes] = await Promise.all([
@@ -323,7 +339,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices, headerImage });
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
@@ -608,6 +624,26 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                           {sheet}
                         </button>
                       ))}
+                    </div>
+                    
+                    <div className="pt-4 space-y-3">
+                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Header / Kop Gambar (Opsional)</p>
+                      <div className="flex items-center gap-4">
+                        <label className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
+                          <Upload className="w-4 h-4 text-indigo-400" />
+                          <span className="text-[10px] font-black uppercase tracking-widest text-white">Import Kop</span>
+                          <input type="file" accept="image/*" className="hidden" onChange={handleHeaderImageUpload} />
+                        </label>
+                        {headerImage && (
+                          <div className="flex items-center gap-2">
+                             <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
+                                <Check className="w-4 h-4 text-emerald-400" />
+                             </div>
+                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kop Siap</span>
+                             <button onClick={() => setHeaderImage(null)} className="text-[9px] font-bold text-rose-400 hover:text-rose-300 uppercase tracking-widest ml-2">Hapus</button>
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm space-y-6">
