@@ -27,6 +27,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     );
   }
 
+  if (!project) {
+    return (
+      <div className="flex flex-col h-64 items-center justify-center space-y-4 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl">
+        <Info className="w-12 h-12 text-slate-300" />
+        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Pilih Proyek Terlebih Dahulu</p>
+      </div>
+    );
+  }
+
   function parseNum(val) {
     if (!val) return 0;
     const parsed = typeof val === 'string' ? parseFloat(val.replace(/,/g, '')) : Number(val);
@@ -152,7 +161,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     const rekapWs = XLSX.utils.aoa_to_sheet(rekapData);
     XLSX.utils.book_append_sheet(wb, rekapWs, "Rekapitulasi");
 
-    ProReport.exportProRabSummary(project, ahspLines);
+    XLSX.writeFile(wb, `Laporan_RAB_${project.name}.xlsx`);
+    toast.success('RAB Berhasil diunduh.');
+  }
+
+  function handleExportUsedAhsp() {
+    if (!project || !ahspLines) return;
+    ProReport.exportProUsedAhsp(project, ahspLines);
+  }
+
+  function handleExportUsedResources() {
+    if (!project || !ahspLines) return;
+    ProReport.exportProUsedResources(project, ahspLines);
   }
 
   function handleSetCurrentPeriod() {
@@ -279,7 +299,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
   return (
     <div className="space-y-10 max-w-5xl mx-auto pt-4 pb-20">
-      {/* ── Header ── */}
+      {/* Header */}
       <div className={`bg-gradient-to-br rounded-[2.5rem] p-10 text-white shadow-2xl relative overflow-hidden border border-white/10 ${
         subTab === 'export' 
           ? 'from-slate-900 to-indigo-950 dark:from-orange-600 dark:to-amber-900' 
@@ -496,7 +516,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                 </div>
               </div>
 
-              {/* ── Additional Tools ── */}
+              {/* Additional Tools */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { id: 'scurve', label: 'Kurva-S & Jadwal', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
@@ -518,7 +538,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                 ))}
               </div>
 
-              {/* ── Custom Template Section ── */}
+              {/* Custom Template Section */}
               <div className="bg-slate-900 dark:bg-slate-800 rounded-[2.5rem] p-10 text-white relative overflow-hidden border border-white/5">
                 <FileSpreadsheet className="absolute -right-20 -bottom-20 w-80 h-80 opacity-5 -rotate-12" />
                 <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
@@ -573,7 +593,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         </>
       ) : (
         <div className="space-y-12">
-          {/* ── Import Wizard UI ── */}
+          {/* Import Wizard UI */}
           <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 border border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden">
              <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
                 <div className="space-y-8">
