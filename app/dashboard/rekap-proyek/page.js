@@ -286,7 +286,6 @@ function ProyekContent() {
           fiscal_year: createForm.fiscal_year,
           contract_number: createForm.contract_number,
           hsp_value: parseFloat(createForm.hsp_value) || 0,
-          manual_duration: parseInt(createForm.manual_duration) || 0,
           ppn_percent: parseFloat(createForm.ppn_percent) || 12,
           program_name: createForm.program_name,
           activity_name: createForm.activity_name,
@@ -334,7 +333,7 @@ function ProyekContent() {
           fiscal_year: identityForm.fiscal_year,
           contract_number: identityForm.contract_number,
           hsp_value: parseFloat(identityForm.hsp_value) || 0,
-          manual_duration: parseInt(identityForm.manual_duration) || 0,
+          hsp_value: parseFloat(identityForm.hsp_value) || 0,
           ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
           program_name: identityForm.program_name,
           activity_name: identityForm.activity_name,
@@ -1758,124 +1757,126 @@ function ProyekContent() {
               </button>
             </div>
 
-            <form onSubmit={handleCreateSubmit} className="overflow-y-auto p-8 space-y-8 scrollbar-hide">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Tag className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Utama</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                        Nama Proyek <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        required
-                        value={createForm.name}
-                        onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                        placeholder="Contoh: Gedung Sebaguna"
-                      />
+            <form onSubmit={handleCreateSubmit} className="flex-1 flex flex-col overflow-hidden">
+              <div className="overflow-y-auto p-8 space-y-6 scrollbar-hide flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Utama</span>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                        ITEM PEKERJAAN <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        required
-                        value={createForm.work_name || ''}
-                        onChange={e => setCreateForm({ ...createForm, work_name: e.target.value })}
-                        onFocus={(e) => e.target.select()}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                        placeholder="Contoh: Rehabilitasi Gedung Kantor"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
-                      <input
-                        value={createForm.program_name}
-                        onChange={e => setCreateForm({ ...createForm, program_name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
-                      <input
-                        value={createForm.activity_name}
-                        onChange={e => setCreateForm({ ...createForm, activity_name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrasi</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
-                      <input
-                        value={createForm.contract_number}
-                        onChange={e => setCreateForm({ ...createForm, contract_number: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Thn Anggaran <span className="text-rose-500">*</span>
+                          Nama Proyek <span className="text-rose-500">*</span>
                         </label>
                         <input
                           required
-                          value={createForm.fiscal_year}
-                          onChange={e => setCreateForm({ ...createForm, fiscal_year: e.target.value })}
+                          value={createForm.name}
+                          onChange={e => setCreateForm({ ...createForm, name: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          placeholder="Contoh: Gedung Sebaguna"
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Pagu (HSP)
+                          ITEM PEKERJAAN <span className="text-rose-500">*</span>
                         </label>
                         <input
-                          type="number"
-                          value={createForm.hsp_value}
-                          onChange={e => setCreateForm({ ...createForm, hsp_value: e.target.value })}
+                          required
+                          value={createForm.work_name || ''}
+                          onChange={e => setCreateForm({ ...createForm, work_name: e.target.value })}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          placeholder="Contoh: Rehabilitasi Gedung Kantor"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
+                        <input
+                          value={createForm.program_name}
+                          onChange={e => setCreateForm({ ...createForm, program_name: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
+                        <input
+                          value={createForm.activity_name}
+                          onChange={e => setCreateForm({ ...createForm, activity_name: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrasi</span>
+                    </div>
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
                         <input
-                          type="number"
-                          value={createForm.manual_duration}
-                          onChange={e => setCreateForm({ ...createForm, manual_duration: e.target.value })}
+                          value={createForm.contract_number}
+                          onChange={e => setCreateForm({ ...createForm, contract_number: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
-                      <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Wilayah / Regional <span className="text-rose-500">*</span>
-                        </label>
-                        <LocationSelect
-                          value={createForm.location}
-                          locationId={createForm.location_id}
-                          locations={locations}
-                          onChange={(id, name) => setCreateForm({ ...createForm, location_id: id, location: name })}
-                        />
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Thn Anggaran <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            required
+                            value={createForm.fiscal_year}
+                            onChange={e => setCreateForm({ ...createForm, fiscal_year: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Pagu (HSP)
+                          </label>
+                          <input
+                            type="number"
+                            value={createForm.hsp_value}
+                            onChange={e => setCreateForm({ ...createForm, hsp_value: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                          <input
+                            type="number"
+                            value={createForm.manual_duration}
+                            onChange={e => setCreateForm({ ...createForm, manual_duration: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Wilayah / Regional <span className="text-rose-500">*</span>
+                          </label>
+                          <LocationSelect
+                            value={createForm.location}
+                            locationId={createForm.location_id}
+                            locations={locations}
+                            onChange={(id, name) => setCreateForm({ ...createForm, location_id: id, location: name })}
+                          />
+                        </div>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
 
-              <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200">Batal</button>
+              <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4">
+                <button type="button" onClick={() => setIsCreateModalOpen(false)} className="flex-1 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200 border border-slate-200 dark:border-slate-700">Batal</button>
                 <button
                   type="submit"
                   disabled={!createForm.name?.trim() || !createForm.fiscal_year?.trim() || !createForm.location?.trim()}
@@ -1914,114 +1915,192 @@ function ProyekContent() {
               </button>
             </div>
 
-            <form onSubmit={handleUpdateProjectIdentity} className="overflow-y-auto p-8 space-y-8 scrollbar-hide">
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Tag className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Utama</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                        Nama Proyek <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        required
-                        value={identityForm.name}
-                        onChange={e => setIdentityForm({ ...identityForm, name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
+            <form onSubmit={handleUpdateProjectIdentity} className="flex-1 flex flex-col overflow-hidden">
+              <div className="overflow-y-auto p-8 space-y-6 scrollbar-hide flex-1">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <Tag className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Data Utama</span>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                        ITEM PEKERJAAN <span className="text-rose-500">*</span>
-                      </label>
-                      <input
-                        required
-                        value={identityForm.work_name || ''}
-                        onChange={e => setIdentityForm({ ...identityForm, work_name: e.target.value })}
-                        onFocus={(e) => e.target.select()}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                        placeholder="Contoh: Rehabilitasi Gedung Kantor"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
-                      <input
-                        value={identityForm.program_name}
-                        onChange={e => setIdentityForm({ ...identityForm, program_name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
-                      <input
-                        value={identityForm.activity_name}
-                        onChange={e => setIdentityForm({ ...identityForm, activity_name: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                <div className="space-y-6">
-                  <div className="flex items-center gap-2 mb-2">
-                    <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrasi</span>
-                  </div>
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
-                      <input
-                        value={identityForm.contract_number}
-                        onChange={e => setIdentityForm({ ...identityForm, contract_number: e.target.value })}
-                        className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Thn Anggaran <span className="text-rose-500">*</span>
+                          Nama Proyek <span className="text-rose-500">*</span>
                         </label>
                         <input
                           required
-                          value={identityForm.fiscal_year}
-                          onChange={e => setIdentityForm({ ...identityForm, fiscal_year: e.target.value })}
+                          value={identityForm.name}
+                          onChange={e => setIdentityForm({ ...identityForm, name: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Pagu (HSP)
+                          ITEM PEKERJAAN <span className="text-rose-500">*</span>
                         </label>
                         <input
-                          type="number"
-                          value={identityForm.hsp_value}
-                          onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
+                          required
+                          value={identityForm.work_name || ''}
+                          onChange={e => setIdentityForm({ ...identityForm, work_name: e.target.value })}
+                          onFocus={(e) => e.target.select()}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          placeholder="Contoh: Rehabilitasi Gedung Kantor"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Program</label>
+                        <input
+                          value={identityForm.program_name}
+                          onChange={e => setIdentityForm({ ...identityForm, program_name: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Kegiatan</label>
+                        <input
+                          value={identityForm.activity_name}
+                          onChange={e => setIdentityForm({ ...identityForm, activity_name: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                     </div>
-                    <div className="grid grid-cols-2 gap-4">
+                  </div>
+
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-2 mb-2">
+                      <ShieldCheck className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Administrasi</span>
+                    </div>
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
                         <input
-                          type="number"
-                          value={identityForm.manual_duration}
-                          onChange={e => setIdentityForm({ ...identityForm, manual_duration: e.target.value })}
+                          value={identityForm.contract_number}
+                          onChange={e => setIdentityForm({ ...identityForm, contract_number: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Thn Anggaran <span className="text-rose-500">*</span>
+                          </label>
+                          <input
+                            required
+                            value={identityForm.fiscal_year}
+                            onChange={e => setIdentityForm({ ...identityForm, fiscal_year: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Pagu (HSP)
+                          </label>
+                          <input
+                            type="number"
+                            value={identityForm.hsp_value}
+                            onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                          <input
+                            type="number"
+                            value={identityForm.manual_duration}
+                            onChange={e => setIdentityForm({ ...identityForm, manual_duration: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Wilayah / Regional <span className="text-rose-500">*</span>
+                          </label>
+                          <LocationSelect
+                            value={identityForm.location}
+                            locationId={identityForm.location_id}
+                            locations={locations}
+                            onChange={(id, name) => setIdentityForm({ ...identityForm, location_id: id, location: name })}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+
+                {/* ── Section Stakeholder & Tanda Tangan ── */}
+                <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
+                  <div className="flex items-center gap-2 mb-6">
+                    <Users className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder & Tanda Tangan Laporan</span>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    {/* PPK & PPTK */}
+                    <div className="space-y-4">
                       <div className="space-y-2">
-                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                          Wilayah / Regional <span className="text-rose-500">*</span>
-                        </label>
-                        <LocationSelect
-                          value={identityForm.location}
-                          locationId={identityForm.location_id}
-                          locations={locations}
-                          onChange={(id, name) => setIdentityForm({ ...identityForm, location_id: id, location: name })}
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPK</label>
+                        <input
+                          value={identityForm.ppk_name}
+                          onChange={e => setIdentityForm({ ...identityForm, ppk_name: e.target.value })}
+                          placeholder="Pejabat Pembuat Komitmen"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">NIP PPK</label>
+                        <input
+                          value={identityForm.ppk_nip}
+                          onChange={e => setIdentityForm({ ...identityForm, ppk_nip: e.target.value })}
+                          placeholder="NIP: 19..."
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPTK</label>
+                        <input
+                          value={identityForm.pptk_name}
+                          onChange={e => setIdentityForm({ ...identityForm, pptk_name: e.target.value })}
+                          placeholder="Pejabat Pelaksana Teknis"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Konsultan */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Perusahaan Konsultan</label>
+                        <input
+                          value={identityForm.konsultan_name}
+                          onChange={e => setIdentityForm({ ...identityForm, konsultan_name: e.target.value })}
+                          placeholder="PT. / CV. ..."
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Pengawas/Direktur</label>
+                        <input
+                          value={identityForm.konsultan_supervisor}
+                          onChange={e => setIdentityForm({ ...identityForm, konsultan_supervisor: e.target.value })}
+                          placeholder="Nama penanda tangan"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Kontraktor */}
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Direktur Kontraktor</label>
+                        <input
+                          value={identityForm.kontraktor_director}
+                          onChange={e => setIdentityForm({ ...identityForm, kontraktor_director: e.target.value })}
+                          placeholder="Nama Pimpinan Komanditer"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                     </div>
@@ -2029,84 +2108,8 @@ function ProyekContent() {
                 </div>
               </div>
 
-              {/* ── Section Stakeholder & Tanda Tangan ── */}
-              <div className="pt-4 border-t border-slate-100 dark:border-slate-800">
-                <div className="flex items-center gap-2 mb-6">
-                  <Users className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Stakeholder & Tanda Tangan Laporan</span>
-                </div>
-
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-                  {/* PPK & PPTK */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPK</label>
-                      <input
-                        value={identityForm.ppk_name}
-                        onChange={e => setIdentityForm({ ...identityForm, ppk_name: e.target.value })}
-                        placeholder="Pejabat Pembuat Komitmen"
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">NIP PPK</label>
-                      <input
-                        value={identityForm.ppk_nip}
-                        onChange={e => setIdentityForm({ ...identityForm, ppk_nip: e.target.value })}
-                        placeholder="NIP: 19..."
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama PPTK</label>
-                      <input
-                        value={identityForm.pptk_name}
-                        onChange={e => setIdentityForm({ ...identityForm, pptk_name: e.target.value })}
-                        placeholder="Pejabat Pelaksana Teknis"
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Konsultan */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Perusahaan Konsultan</label>
-                      <input
-                        value={identityForm.konsultan_name}
-                        onChange={e => setIdentityForm({ ...identityForm, konsultan_name: e.target.value })}
-                        placeholder="PT. / CV. ..."
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Pengawas/Direktur</label>
-                      <input
-                        value={identityForm.konsultan_supervisor}
-                        onChange={e => setIdentityForm({ ...identityForm, konsultan_supervisor: e.target.value })}
-                        placeholder="Nama penanda tangan"
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                  </div>
-
-                  {/* Kontraktor */}
-                  <div className="space-y-4">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Direktur Kontraktor</label>
-                      <input
-                        value={identityForm.kontraktor_director}
-                        onChange={e => setIdentityForm({ ...identityForm, kontraktor_director: e.target.value })}
-                        placeholder="Nama Pimpinan Komanditer"
-                        className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                      />
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 flex flex-col sm:flex-row gap-4">
-                <button type="button" onClick={() => setIsIdentityModalOpen(false)} className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200">Batal</button>
+              <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4">
+                <button type="button" onClick={() => setIsIdentityModalOpen(false)} className="flex-1 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200 border border-slate-200 dark:border-slate-700">Batal</button>
                 <button
                   type="submit"
                   disabled={!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim()}
