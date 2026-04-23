@@ -132,11 +132,13 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         let combined = [];
 
         if (mode === 'ahsp') {
-          const { data, error } = await supabase.rpc('get_ahsp_catalog_v2', {
-             p_location_id: locationId,
-             p_query: query.trim(),
-             p_limit: 15
-          });
+          let qb = supabase.from('view_katalog_ahsp_gabungan').select('*');
+          if (locationId) qb = qb.eq('location_id', locationId);
+          
+          const { data, error } = await qb
+            .or(`kode_ahsp.ilike.${searchPattern},nama_pekerjaan.ilike.${searchPattern}`)
+            .order('kode_ahsp')
+            .limit(15);
           
           if (!error) combined = (data || []).map(d => ({ 
             ...d, 
