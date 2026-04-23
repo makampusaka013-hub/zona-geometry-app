@@ -77,9 +77,25 @@ export default function RootLayout({ children }) {
             dangerouslySetInnerHTML={{
               __html: JSON.stringify({
                 "@context": "https://schema.org",
-                "@type": "WebSite",
+                "@type": "SoftwareApplication",
                 "name": "Zona Geometry",
-                "url": "https://zonageometry.id"
+                "operatingSystem": "Web",
+                "applicationCategory": "BusinessApplication",
+                "description": "Aplikasi RAB Pro dan penyusunan AHSP 2026 digital untuk manajemen proyek konstruksi.",
+                "offers": {
+                  "@type": "Offer",
+                  "price": "0",
+                  "priceCurrency": "IDR"
+                },
+                "publisher": {
+                  "@type": "Organization",
+                  "name": "Zona Geometry",
+                  "url": "https://zonageometry.id",
+                  "location": {
+                    "@type": "Place",
+                    "name": "Kotamobagu, Sulawesi Utara"
+                  }
+                }
               })
             }}
           />

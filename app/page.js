@@ -117,7 +117,7 @@ export default function PublicLandingPage() {
 
   return (
     <div className="min-h-screen bg-[#f8fafc] dark:bg-[#020617]">
-      {/* JSON-LD Schema for SoftwareApplication */}
+      {/* JSON-LD Schema for SoftwareApplication & Organization */}
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
@@ -127,16 +127,20 @@ export default function PublicLandingPage() {
             "name": "Zona Geometry",
             "operatingSystem": "Web",
             "applicationCategory": "BusinessApplication",
-            "image": "https://zonageometry.id/favicon.png",
+            "description": "Aplikasi RAB Pro dan penyusunan AHSP 2026 digital untuk manajemen proyek konstruksi.",
             "offers": {
               "@type": "Offer",
               "price": "0",
               "priceCurrency": "IDR"
             },
-            "aggregateRating": {
-              "@type": "AggregateRating",
-              "ratingValue": "4.9",
-              "ratingCount": "120"
+            "publisher": {
+              "@type": "Organization",
+              "name": "Zona Geometry",
+              "url": "https://zonageometry.id",
+              "location": {
+                "@type": "Place",
+                "name": "Kotamobagu, Sulawesi Utara"
+              }
             }
           })
         }}
@@ -203,6 +207,25 @@ export default function PublicLandingPage() {
 
       {/* ── 3-Party Role Cards ───────────────────────────────── */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pb-16">
+        {/* Context Narrative for SEO */}
+        <div className="bg-white dark:bg-[#1e293b] rounded-3xl p-8 mb-16 border border-slate-100 dark:border-slate-800 shadow-sm text-center">
+          <div className="max-w-3xl mx-auto">
+            <h2 className="text-xl font-black text-slate-900 dark:text-slate-100 mb-4">Tentang Zona Geometry</h2>
+            <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+              <strong>Zona Geometry</strong> adalah aplikasi berbasis web revolusioner yang dirancang khusus untuk mempercepat transformasi digital di sektor konstruksi. 
+              Aplikasi ini berfungsi sebagai platform manajemen proyek terintegrasi yang memudahkan pengguna dalam 
+              <span className="text-indigo-600 dark:text-orange-400 font-bold"> perhitungan AHSP (Analisa Harga Satuan Pekerjaan)</span>, 
+              <span className="text-indigo-600 dark:text-orange-400 font-bold"> manajemen CCO (Contract Change Order)</span>, 
+              <span className="text-indigo-600 dark:text-orange-400 font-bold"> Mutual Check (MC)</span>, serta penyusunan laporan harian, mingguan, hingga bulanan secara otomatis.
+            </p>
+            <div className="mt-6 flex flex-wrap justify-center gap-4 text-[10px] font-bold uppercase tracking-widest text-slate-400">
+              <span className="px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">Kontraktor</span>
+              <span className="px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">Konsultan Pengawas</span>
+              <span className="px-3 py-1 bg-slate-50 dark:bg-slate-900 rounded-full border border-slate-100 dark:border-slate-800">Dinas PUPR / Instansi</span>
+            </div>
+          </div>
+        </div>
+
         <div className="text-center mb-10">
           <h2 className="text-2xl font-black text-slate-900 dark:text-slate-100 mb-2">Kolaborasi 3 Slot Peran</h2>
           <p className="text-slate-500 dark:text-slate-400 text-sm">Pemilik proyek dapat mengundang siapa saja ke 3 slot berikut</p>

@@ -271,10 +271,53 @@ function ProyekContent() {
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
     setIsCreateModalOpen(false);
-    setIsCreating(true);
-    setSelectedProject(null);
-    setActiveTab('proyek');
-    setSubTabProyek('rab');
+    setLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sesi berakhir, silakan login kembali.');
+
+      const { data, error } = await supabase
+        .from('projects')
+        .insert({
+          name: createForm.name || createForm.work_name || 'Proyek Baru',
+          code: createForm.code,
+          location: createForm.location,
+          location_id: createForm.location_id || null,
+          fiscal_year: createForm.fiscal_year,
+          contract_number: createForm.contract_number,
+          hsp_value: parseFloat(createForm.hsp_value) || 0,
+          manual_duration: parseInt(createForm.manual_duration) || 0,
+          ppn_percent: parseFloat(createForm.ppn_percent) || 12,
+          program_name: createForm.program_name,
+          activity_name: createForm.activity_name,
+          work_name: createForm.work_name,
+          created_by: session.user.id,
+          updated_at: new Date().toISOString()
+        })
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      toast.success('Proyek berhasil dibuat.');
+      setIsCreating(false);
+      
+      // Update URL & LocalStorage agar tidak kembali ke proyek lama
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', data.id);
+      router.push(`${pathname}?${params.toString()}`);
+      localStorage.setItem('bc_last_project', data.id);
+      
+      setSelectedProject(data.id);
+      setActiveTab('proyek');
+      setSubTabProyek('rab');
+      
+      await loadData();
+    } catch (err) {
+      toast.error('Gagal membuat proyek: ' + err.message);
+    } finally {
+      setLoading(false);
+    }
   }
 
   async function handleUpdateProjectIdentity(e) {
@@ -1696,7 +1739,7 @@ function ProyekContent() {
       {/* Modal: Buat Identitas Proyek */}
       {isCreateModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-5xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-600 dark:bg-orange-600 flex items-center justify-center text-white shadow-lg">
@@ -1852,7 +1895,7 @@ function ProyekContent() {
       {/* Modal: Edit Identitas Proyek */}
       {isIdentityModalOpen && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-2xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-5xl overflow-hidden shadow-2xl animate-in zoom-in-95 duration-200 border border-slate-100 dark:border-slate-800 flex flex-col max-h-[90vh]">
             <div className="px-8 py-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between bg-slate-50/50 dark:bg-slate-900/50 shrink-0">
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-2xl bg-indigo-600 dark:bg-orange-600 flex items-center justify-center text-white shadow-lg">
