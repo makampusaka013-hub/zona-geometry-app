@@ -309,7 +309,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           .select('kode_item:key_item, harga_satuan')
           .eq('project_id', project.id);
           
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices: projectPrices || [] });
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
