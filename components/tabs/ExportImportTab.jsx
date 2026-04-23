@@ -248,22 +248,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
   }
 
-  function handleExportUsedResources() {
-    if (!ahspLines || ahspLines.length === 0) {
-      toast.warning('Data proyek kosong.');
-      return;
-    }
-    ProReport.exportProUsedResources(project, ahspLines);
-  }
-
-  async function handleExportUsedAhsp() {
-    if (!ahspLines || ahspLines.length === 0) {
-      toast.warning('Data proyek kosong.');
-      return;
-    }
-    ProReport.exportProUsedAhsp(project, ahspLines);
-  }
-
   async function handleConfirmCustomExport() {
     if (selectedSheets.length === 0) {
        toast.warning('Pilih minimal satu sheet untuk diekspor.');
@@ -423,7 +407,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               </div>
             </div>
           ) : (
-            <>
+            <div className="space-y-12">
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                 <div className="lg:col-span-1 space-y-6">
                    <div className="group bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all h-full flex flex-col justify-between">
@@ -441,22 +425,220 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       </button>
                    </div>
                 </div>
-              <Upload className="w-8 h-8 text-slate-400" />
-            </div>
-            <div className="flex-1 space-y-2 text-center md:text-left">
-              <div className="flex items-center gap-3 justify-center md:justify-start">
-                <h3 className="text-xl font-black text-slate-800 dark:text-slate-100">Import Master RAB</h3>
-                <span className="text-[8px] px-2 py-1 rounded-full bg-slate-900 text-white font-black tracking-widest uppercase">Development</span>
+
+                <div className="lg:col-span-2 bg-white dark:bg-slate-900 rounded-[2rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl">
+                  <div className="flex items-center justify-between mb-8">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-emerald-50 dark:bg-emerald-500/10 rounded-2xl flex items-center justify-center">
+                        <TrendingUp className="w-6 h-6 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-slate-900 dark:text-white">Laporan Progres Fisik</h3>
+                        <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest">Advanced Reporting Engine</p>
+                      </div>
+                    </div>
+                    <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
+                      {['harian', 'mingguan', 'bulanan'].map(t => (
+                        <button
+                          key={t}
+                          onClick={() => setReportType(t)}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${reportType === t ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                        >
+                          {t}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Mulai</label>
+                      <div className="relative group">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <input
+                          type="date"
+                          value={dateRange.start}
+                          onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                          className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Selesai</label>
+                      <div className="relative group">
+                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                        <input
+                          type="date"
+                          value={dateRange.end}
+                          onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                          className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                        />
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col sm:flex-row gap-4">
+                    <button
+                      onClick={handleSetCurrentPeriod}
+                      className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                    >
+                      Set Periode Berjalan
+                    </button>
+                    <button
+                      onClick={handleExportReport}
+                      disabled={loadingReport}
+                      className="flex-[2] py-4 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:translate-y-[-2px] active:translate-y-0 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                      {loadingReport ? <Spinner className="w-4 h-4" /> : <Download className="w-4 h-4" />}
+                      Generate Laporan {reportType}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed max-w-xl">
-                  Fasilitas migrasi data otomatis. Terjemahkan berkas Excel vendor luar menjadi entitas cerdas di BuildCalc. Fitur ini masih dalam tahap pengujian performa.
-              </p>
+
+              {/* ── Additional Tools ── */}
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+                {[
+                  { id: 'scurve', label: 'Kurva-S & Jadwal', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
+                  { id: 'used_ahsp', label: 'AHSP Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
+                  { id: 'used_res', label: 'Komponen Harga', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
+                  { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, color: 'indigo' }
+                ].map(tool => (
+                  <button
+                    key={tool.id}
+                    onClick={tool.action}
+                    disabled={loadingPro === tool.id}
+                    className="group bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl hover:translate-y-[-4px] transition-all text-center flex flex-col items-center gap-4 disabled:opacity-50"
+                  >
+                    <div className={`w-14 h-14 bg-${tool.color}-50 dark:bg-${tool.color}-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+                      <tool.icon className={`w-7 h-7 text-${tool.color}-600 dark:text-${tool.color}-400`} />
+                    </div>
+                    <span className="text-[10px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest leading-tight">{tool.label}</span>
+                  </button>
+                ))}
+              </div>
+
+              {/* ── Custom Template Section ── */}
+              <div className="bg-slate-900 dark:bg-slate-800 rounded-[2.5rem] p-10 text-white relative overflow-hidden border border-white/5">
+                <FileSpreadsheet className="absolute -right-20 -bottom-20 w-80 h-80 opacity-5 -rotate-12" />
+                <div className="relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-14 h-14 bg-white/10 rounded-[1.5rem] flex items-center justify-center backdrop-blur-xl border border-white/10">
+                        <LayoutGrid className="w-7 h-7 text-white" />
+                      </div>
+                      <div>
+                        <h3 className="text-2xl font-black tracking-tight">Kustomisasi Laporan</h3>
+                        <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest">Master Template Engine v2.0</p>
+                      </div>
+                    </div>
+                    <p className="text-slate-400 text-sm leading-relaxed">
+                      Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
+                    </p>
+                    <div className="flex flex-wrap gap-2">
+                      {['RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'SCHEDULE'].map(sheet => (
+                        <button
+                          key={sheet}
+                          onClick={() => toggleSheet(sheet)}
+                          className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${selectedSheets.includes(sheet) ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
+                        >
+                          {sheet}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                  <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm space-y-6">
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
+                        <span>Status Mesin</span>
+                        <span className="text-emerald-400">Siap</span>
+                      </div>
+                      <div className="h-1.5 bg-white/5 rounded-full overflow-hidden">
+                        <div className="h-full bg-emerald-500 w-full" />
+                      </div>
+                    </div>
+                    <button
+                      onClick={handleConfirmCustomExport}
+                      disabled={loadingPro === 'custom'}
+                      className="w-full py-5 bg-white text-slate-900 rounded-2xl text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
+                    >
+                      {loadingPro === 'custom' ? <Spinner className="w-5 h-5 border-slate-900" /> : <Download className="w-5 h-5" />}
+                      Export Custom .xlsx
+                    </button>
+                  </div>
+                </div>
+              </div>
             </div>
-            <button disabled className="px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
-              Segera Hadir
-            </button>
-          </div>
+          )}
         </>
+      ) : (
+        <div className="space-y-12">
+          {/* ── Import Wizard UI ── */}
+          <div className="bg-white dark:bg-slate-900 rounded-[3rem] p-12 border border-slate-200 dark:border-slate-800 shadow-2xl relative overflow-hidden">
+             <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
+                <div className="space-y-8">
+                   <div className="space-y-4">
+                      <div className="w-16 h-16 bg-emerald-50 dark:bg-emerald-500/10 rounded-3xl flex items-center justify-center">
+                         <Upload className="w-8 h-8 text-emerald-600 dark:text-emerald-400" />
+                      </div>
+                      <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tight">Import Wizard Pro</h3>
+                      <p className="text-slate-500 dark:text-slate-400 leading-relaxed text-sm">
+                         Unggah berkas Excel Anda untuk melakukan migrasi data secara massal. Sistem akan secara cerdas memetakan kolom Excel Anda ke dalam database BuildCalc.
+                      </p>
+                   </div>
+                   
+                   <div className="space-y-4">
+                      {[
+                        { step: 1, text: "Unduh Template Standar BuildCalc" },
+                        { step: 2, text: "Isi data RAB sesuai format kolom" },
+                        { step: 3, text: "Tarik berkas ke area drop zone" }
+                      ].map(s => (
+                        <div key={s.step} className="flex items-center gap-4 group">
+                           <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center text-[10px] font-black text-slate-400 group-hover:bg-emerald-500 group-hover:text-white transition-all">
+                              {s.step}
+                           </div>
+                           <span className="text-xs font-bold text-slate-600 dark:text-slate-300">{s.text}</span>
+                        </div>
+                      ))}
+                   </div>
+
+                   <div className="pt-4 flex gap-4">
+                      <button className="px-6 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-700 hover:bg-white transition-all flex items-center gap-2">
+                         <Download className="w-4 h-4" /> Template .xlsx
+                      </button>
+                   </div>
+                </div>
+
+                <div className="relative">
+                   <div className="aspect-square bg-slate-50 dark:bg-slate-800/50 rounded-[2.5rem] border-4 border-dashed border-slate-200 dark:border-slate-700 flex flex-col items-center justify-center p-10 text-center group hover:border-emerald-500/50 transition-all cursor-pointer">
+                      <div className="w-20 h-20 bg-white dark:bg-slate-800 rounded-3xl shadow-xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
+                         <Upload className="w-10 h-10 text-slate-400 group-hover:text-emerald-500 transition-colors" />
+                      </div>
+                      <p className="text-sm font-black text-slate-400 group-hover:text-slate-900 dark:group-hover:text-white transition-colors">Drag & Drop File Here</p>
+                      <p className="text-[10px] text-slate-400 mt-2 font-bold uppercase tracking-widest">Support: .xlsx, .xls (Max 10MB)</p>
+                   </div>
+                   
+                   {/* Floating Tags */}
+                   <div className="absolute -top-4 -right-4 bg-slate-900 text-white px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-[0.2em] shadow-xl border border-white/10">Beta Version</div>
+                </div>
+             </div>
+          </div>
+
+          <div className="bg-emerald-50 dark:bg-emerald-950/20 border border-emerald-100 dark:border-emerald-500/20 rounded-[2rem] p-8 flex items-center gap-6">
+             <div className="w-12 h-12 bg-emerald-500 rounded-2xl flex items-center justify-center shadow-lg shadow-emerald-500/30">
+                <Info className="w-6 h-6 text-white" />
+             </div>
+             <div className="flex-1">
+                <h4 className="text-sm font-black text-emerald-900 dark:text-emerald-400 uppercase tracking-widest mb-1">Butuh Bantuan Migrasi?</h4>
+                <p className="text-xs text-emerald-700 dark:text-emerald-500/70 leading-relaxed">
+                   Jika format Excel Anda sangat kompleks atau berasal dari software ERP lain, tim kami dapat membantu proses import secara kustom. Hubungi dukungan teknis melalui WhatsApp.
+                </p>
+             </div>
+             <button disabled className="px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
+               Segera Hadir
+             </button>
+          </div>
+        </div>
       )}
     </div>
   );
