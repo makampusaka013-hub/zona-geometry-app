@@ -303,13 +303,23 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
         await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice });
       } else {
-        // Fetch project-specific resource prices (Komponen Harga)
-        const { data: projectPrices } = await supabase
-          .from('view_project_resource_summary')
-          .select('kode_item:key_item, harga_satuan')
-          .eq('project_id', project.id);
+        // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
+        const [projectRes, catalogRes] = await Promise.all([
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan').eq('project_id', project.id),
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+        ]);
+        
+        const pPrices = projectRes.data || [];
+        const cPrices = catalogRes.data || [];
+        
+        // Merge: Project prices override catalog prices
+        const mergedMap = {};
+        cPrices.forEach(p => { mergedMap[p.kode_item] = p.harga_satuan; });
+        pPrices.forEach(p => { mergedMap[p.kode_item] = p.harga_satuan; });
+        
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices: projectPrices || [] });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices });
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
