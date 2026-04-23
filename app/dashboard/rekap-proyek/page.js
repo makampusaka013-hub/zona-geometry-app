@@ -124,6 +124,7 @@ function ProyekContent() {
   const [perubahanSubTab, setPerubahanSubTab] = useState('cco'); // cco | mc
   const [activeCcoVersion, setActiveCcoVersion] = useState(null); // { type, total }
   const [statusSimpan, setStatusSimpan] = useState('ready'); // saving, saved, ready
+  const [exportSubTab, setExportSubTab] = useState('export'); // export | import
 
   const [projectMembers, setProjectMembers] = useState([]);
   const [userSlotRole, setUserSlotRole] = useState(null);
@@ -1220,6 +1221,23 @@ function ProyekContent() {
                 </button>
               </div>
             )}
+
+            {activeTab === 'export' && (
+              <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800 p-0.5 rounded-xl ml-4 border border-slate-200 dark:border-slate-700">
+                <button
+                  onClick={() => setExportSubTab('export')}
+                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${exportSubTab === 'export' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  Export Data
+                </button>
+                <button
+                  onClick={() => setExportSubTab('import')}
+                  className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${exportSubTab === 'import' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' : 'text-slate-400 hover:text-slate-600'}`}
+                >
+                  Import Data
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -1481,7 +1499,7 @@ function ProyekContent() {
           {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab }} />}
           {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
-          {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} />}
+          {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />}
         </div>
       </div>
 
