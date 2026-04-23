@@ -305,7 +305,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       } else {
         // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
         const [projectRes, catalogRes] = await Promise.all([
-          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan').eq('project_id', project.id),
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
         ]);
         
@@ -315,10 +315,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         // Merge: Start with Catalog prices, then override with non-zero Project prices
         const mergedMap = {};
         cPrices.forEach(p => { 
-          if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; 
+          if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
         });
         pPrices.forEach(p => { 
-          if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; 
+          if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
         });
         
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
