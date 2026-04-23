@@ -149,31 +149,37 @@ function ProyekContent() {
     return projects.find(p => p.id === selectedProject) || null;
   }, [projects, selectedProject]);
 
-  // Sync selectedProject with URL search params and localStorage for persistence
+  // ── Unified URL & State Synchronization ──
   useEffect(() => {
-    const idParam = searchParams.get('id');
-    if (idParam) {
-      if (idParam !== selectedProject) setSelectedProject(idParam);
-      localStorage.setItem('bc_last_project', idParam);
-    } else {
-      // Auto-restore from localStorage if no ID in URL
-      const savedId = localStorage.getItem('bc_last_project');
-      if (savedId && projects.some(p => p.id === savedId)) {
-        const params = new URLSearchParams(searchParams.toString());
-        params.set('id', savedId);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-      }
-    }
-  }, [searchParams, selectedProject, projects, pathname, router]);
+    // Skip sync if we are in the middle of creating a project or checking auth
+    if (isCreating || isCheckingAuth.current || loading) return;
 
-  useEffect(() => {
-    if (selectedProject && searchParams.get('id') !== selectedProject) {
+    const urlId = searchParams.get('id');
+    
+    // Direction: URL -> State
+    if (urlId && urlId !== selectedProject) {
+      setSelectedProject(urlId);
+      localStorage.setItem('bc_last_project', urlId);
+      return;
+    }
+
+    // Direction: State -> URL
+    if (selectedProject && urlId !== selectedProject) {
       const params = new URLSearchParams(searchParams.toString());
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
       localStorage.setItem('bc_last_project', selectedProject);
+      return;
     }
-  }, [selectedProject, router, pathname, searchParams]);
+
+    // Auto-restore from localStorage if no ID in URL and no project selected
+    if (!urlId && !selectedProject) {
+      const savedId = localStorage.getItem('bc_last_project');
+      if (savedId && projects.some(p => p.id === savedId)) {
+        setSelectedProject(savedId);
+      }
+    }
+  }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
