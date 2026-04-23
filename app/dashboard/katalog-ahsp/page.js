@@ -1039,17 +1039,19 @@ export default function KatalogAhspPage() {
 
   const loadStats = useCallback(async () => {
     try {
-      // Fetch counts for both complete and incomplete in parallel
-      const [completeRes, incompleteRes] = await Promise.all([
-        supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id', { count: 'exact' }).eq('is_lengkap', true).limit(1),
-        supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id', { count: 'exact' }).eq('is_lengkap', false).limit(1)
+      // Query counts separately for PUPR (Analisa) and Custom to avoid UNION count issues
+      const [puprComplete, puprIncomplete, customComplete, customIncomplete] = await Promise.all([
+        supabase.from('view_analisa_ahsp').select('*', { count: 'exact', head: true }).eq('is_lengkap', true),
+        supabase.from('view_analisa_ahsp').select('*', { count: 'exact', head: true }).eq('is_lengkap', false),
+        supabase.from('view_katalog_ahsp_custom').select('*', { count: 'exact', head: true }).eq('is_lengkap', true),
+        supabase.from('view_katalog_ahsp_custom').select('*', { count: 'exact', head: true }).eq('is_lengkap', false)
       ]);
 
-      if (completeRes.error) console.error('Stats Error (Complete):', completeRes.error);
-      if (incompleteRes.error) console.error('Stats Error (Incomplete):', incompleteRes.error);
+      const totalComplete = (puprComplete.count || 0) + (customComplete.count || 0);
+      const totalIncomplete = (puprIncomplete.count || 0) + (customIncomplete.count || 0);
 
-      setCompleteCount(completeRes.count || 0);
-      setIncompleteCount(incompleteRes.count || 0);
+      setCompleteCount(totalComplete);
+      setIncompleteCount(totalIncomplete);
 
       // Fetch options for the filter
       const { data } = await supabase.from('master_ahsp').select('jenis_pekerjaan').limit(2000);
