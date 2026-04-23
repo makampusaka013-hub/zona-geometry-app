@@ -179,4 +179,22 @@ Penyempurnaan akhir mesin laporan Excel untuk mencapai standar "Siap Cetak" deng
 - **Null Value Enforcement**: Mengganti pengisian string kosong `""` atau `" "` menjadi `null` murni untuk menjamin sel benar-benar kosong.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (23:35)*
+
+# Rekap Perbaikan: Surgical Formatting & Aesthetic Integrity (24 April 2026)
+
+Penyelesaian masalah garis vertikal "hantu" pada Kolom G serta pemulihan integritas visual laporan (Logo, Judul, dan Gaya Huruf).
+
+## 1. Masalah yang Diselesaikan
+- **Destructive Style Reset**: Pembersihan sebelumnya terlalu agresif sehingga menghapus jenis huruf (font), perataan (alignment), dan format cetak tebal (bold) pada baris data.
+- **Header Damage (Logo/Title)**: Penghapusan border pada Baris 1-6 merusak area logo dan judul dinas karena menghapus properti sel yang digabung (merged cells).
+- **Persistent Ghost Lines**: Garis vertikal pada Kolom G (Koef) di area header tetap muncul karena urutan perintah reset gaya yang kurang tepat.
+- **Residual Artifacts**: Masih ditemukannya sisa karakter pembantu `,..` pada sel tersembunyi di sheet AHSP.
+
+## 2. Solusi Teknis & Presisi
+- **Surgical Header Cleaning**: Mengubah logika pembersihan Baris 1-6 agar **hanya** menargetkan Kolom G (index 7). Hal ini memastikan area logo dan judul tetap utuh sementara garis liar pada Kolom G berhasil dihapus.
+- **Formatting Restoration**: Menghapus perintah `cell.style = {}` dari fungsi pembersihan. Sekarang, sistem hanya menghapus Nilai, Border, dan Warna (Fill). Hal ini **mengembalikan seluruh format teks** (font, bold, alignment) sesuai standar profesional.
+- **Absolute Placeholder Removal**: Menghapus sisa karakter `,..` pada sel P (sheet AHSP) untuk memastikan laporan benar-benar bersih dari data sampah.
+- **Correct Style Ordering**: Mengatur ulang urutan eksekusi: reset gaya dilakukan sebelum perintah hapus border, memastikan perintah "No Border" menjadi instruksi terakhir yang diterima oleh Excel.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 24 April 2026 (00:05)*
