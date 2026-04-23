@@ -169,14 +169,11 @@ function ProyekContent() {
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
       }
-      // 3. Auto-restore from localStorage if no ID in URL and no project selected
+      // 3. Auto-restore/Default: Jika URL kosong, ambil dari LocalStorage atau proyek pertama
       else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0) {
-        if (typeof window !== 'undefined') {
-          const savedId = localStorage.getItem('bc_last_project');
-          if (savedId && projects.some(p => p && p.id === savedId)) {
-            setSelectedProject(savedId);
-          }
-        }
+        const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
+        const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
+        setSelectedProject(targetId);
       }
     } catch (err) {
       console.error('URL Sync Error:', err);
@@ -486,30 +483,8 @@ function ProyekContent() {
 
       setProjects(proj || []);
       if (proj && proj.length > 0 && !isCreating) {
-        // Coba ambil dari URL dulu
-        const urlId = searchParams.get('id');
-        let activeId = forcedId || urlId || selectedProject;
-
-        if (activeId && Array.isArray(proj) && !proj.some(p => p && p.id === activeId)) {
-          if (forcedId) {
-             // Keep it
-          } else {
-             activeId = proj[0]?.id;
-          }
-        } else if (!activeId && Array.isArray(proj) && proj.length > 0) {
-          activeId = proj[0]?.id;
-        }
-
-        if (activeId !== selectedProject) {
-          setSelectedProject(activeId);
-        }
-
-        const p = proj.find(x => x.id === activeId) || proj[0];
-        setProjectOwnerId(p.created_by);
-        setMpTargetDurasi(p.manual_duration || 0);
-        setLaborSettings(Object.keys(p.labor_settings || {}).length > 0 ? p.labor_settings : { pekerja: 1, efektivitas: 100 });
-        setProjectStartDate(p.start_date || '');
-        setUserSlotRole(roleMap[activeId] || (p.created_by === user.id ? 'pembuat' : null));
+        // Biarkan Unified URL & State Synchronization yang menangani seleksi proyek
+        // loadData hanya bertugas memperbarui list proyek
       }
     } finally {
       isCheckingAuth.current = false;
@@ -517,7 +492,7 @@ function ProyekContent() {
         setLoading(false);
       }
     }
-  }, [router, isCreating, selectedProject, searchParams]);
+  }, [router, isCreating]);
 
   const handleNewProject = useCallback(() => {
     if (ownedLimitReached) {
