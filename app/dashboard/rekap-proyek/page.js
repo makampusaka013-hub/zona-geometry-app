@@ -299,19 +299,23 @@ function ProyekContent() {
       if (error) throw error;
       
       toast.success('Proyek berhasil dibuat.');
-      setIsCreating(false);
       
-      // Update URL & LocalStorage agar tidak kembali ke proyek lama
+      // Update local state first to prevent loadData from snapping back
+      setProjects(prev => [data, ...prev]);
+      setSelectedProject(data.id);
+      
+      // Update URL & LocalStorage
       const params = new URLSearchParams(searchParams.toString());
       params.set('id', data.id);
       router.push(`${pathname}?${params.toString()}`);
       localStorage.setItem('bc_last_project', data.id);
       
-      setSelectedProject(data.id);
+      setIsCreating(false); // Move this last to unlock loadData logic
       setActiveTab('proyek');
       setSubTabProyek('rab');
       
-      await loadData();
+      // No need to await loadData() here as the local state is updated
+      loadData();
     } catch (err) {
       toast.error('Gagal membuat proyek: ' + err.message);
     } finally {
@@ -478,10 +482,19 @@ function ProyekContent() {
         let activeId = urlId || selectedProject;
 
         if (!proj.some(p => p.id === activeId)) {
-          activeId = proj[0].id;
+          // Hanya snap back jika tidak sedang dalam proses navigasi ke proyek baru
+          if (!activeId || activeId === '') {
+            activeId = proj[0].id;
+          } else {
+            // Jika ID di URL/State tidak ada di list (mungkin baru didelete atau belum terfetch), 
+            // biarkan saja dulu atau snap back jika memang tidak valid
+            // activeId = proj[0].id; 
+          }
         }
 
-        setSelectedProject(activeId);
+        if (activeId !== selectedProject) {
+          setSelectedProject(activeId);
+        }
 
         const p = proj.find(x => x.id === activeId) || proj[0];
         setProjectOwnerId(p.created_by);
