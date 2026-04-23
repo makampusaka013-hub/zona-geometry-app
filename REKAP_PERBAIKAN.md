@@ -156,4 +156,27 @@ Finalisasi mesin laporan Excel untuk mendukung pelaporan tingkat produksi dengan
 - **Automated Sync**: Berhasil melakukan sinkronisasi file `master_template_rab.xlsx` dari workstation lokal ke repositori GitHub pusat.
 
 ---
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (22:15)*
+
+# Rekap Perbaikan: Professional Excel Formatting & Structural Precision (23 April 2026)
+
+Penyempurnaan akhir mesin laporan Excel untuk mencapai standar "Siap Cetak" dengan estetika bersih dan format akuntansi formal.
+
+## 1. Masalah yang Diselesaikan
+- **Border Bleed / Overextension**: Garis tabel seringkali melewati baris terakhir data teks, membuat laporan terlihat kurang rapi.
+- **Accounting Format Gap**: Angka harga pada sheet HSP masih menggunakan format angka biasa, belum mengikuti standar akuntansi formal (Rp rata kiri/kanan).
+- **Inconsistent Numbering**: Penomoran BAB pada sheet HSP belum menggunakan standar angka Romawi yang umum dalam dokumen teknik.
+- **Spurious Cell Values**: Beberapa sel kosong masih mengandung spasi (" ") yang mengganggu logika VLOOKUP atau filter di Excel.
+- **Header Artifacts**: Munculnya tanda `,..` atau `,..,` sebagai sisa logika pembersihan template.
+
+## 2. Solusi Teknis & Estetika
+- **Aggressive Style Reset**: Memperbarui fungsi `clearDataRows` untuk secara eksplisit menghapus seluruh border, fill, dan style dari baris template. Sekarang, garis tabel berhenti **tepat** pada baris data terakhir.
+- **Formal Accounting Format**: Menerapkan format `_(Rp* #,##0.00_);_(Rp* (#,##0.00);_(Rp* "-"??_);_(@_)` pada kolom Harga Satuan Jadi (Kolom F) di sheet HSP.
+- **Structural Mapping Updates**:
+    - **HSP Sheet**: Kode AHSP kini hanya diisi pada Kolom B. Kolom C dikosongkan (diisi `null`) untuk baris data.
+    - **Roman BAB Indexing**: Mengintegrasikan penomoran Romawi (I, II, III, IV...) pada Kolom C untuk setiap header BAB.
+- **Placeholder Cleanup**: Menghapus seluruh logika sisa yang menyisipkan tanda `,..` atau `,..,` di sheet AHSP dan HSP.
+- **Border Boundary Control**: Menetapkan batas mulai border yang sangat spesifik: Baris 6 untuk Harga Satuan, dan Baris 7 untuk HSP/AHSP, memastikan area logo tetap bersih.
+- **Null Value Enforcement**: Mengganti pengisian string kosong `""` atau `" "` menjadi `null` murni untuk menjamin sel benar-benar kosong.
+
+---
+*Dibuat oleh Antigravity untuk Zona Geometry-App - 23 April 2026 (23:35)*
