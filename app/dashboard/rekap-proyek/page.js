@@ -137,86 +137,7 @@ function ProyekContent() {
   const [allRoles, setAllRoles] = useState({}); // { [projectId]: slot_role }
   const [modalStatus, setModalStatus] = useState(null); // { type: 'success'|'error', msg: string }
 
-  // Refs for performance & stale request prevention
   const [localTotalKontrak, setLocalTotalKontrak] = useState(null);
-  const dataVersionRef = useRef(0);
-  const tabVersionRef = useRef(0);
-  const abortControllerRef = useRef(null);
-
-  // ── Penambahan Logic Hub Informasi ──
-  const currentProjectObj = useMemo(() => {
-    if (!projects || projects.length === 0) return null;
-    return projects.find(p => p.id === selectedProject) || null;
-  }, [projects, selectedProject]);
-
-  // ── Unified URL & State Synchronization ──
-  useEffect(() => {
-    // Skip sync if we are in the middle of a transition or loading
-    if (isCreating || isCheckingAuth.current || loading) return;
-
-    try {
-      const urlId = searchParams?.get('id');
-      
-      // 1. Direction: URL -> State
-      if (urlId && urlId !== selectedProject) {
-        setSelectedProject(urlId);
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
-      } 
-      // 2. Direction: State -> URL
-      else if (selectedProject && urlId !== selectedProject) {
-        const params = new URLSearchParams(searchParams?.toString() || '');
-        params.set('id', selectedProject);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
-      }
-      // 3. Auto-restore/Default: Jika URL kosong, ambil dari LocalStorage atau proyek pertama
-      else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0) {
-        const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
-        const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
-        setSelectedProject(targetId);
-      }
-    } catch (err) {
-      console.error('URL Sync Error:', err);
-    }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
-
-  const projectMetrics = useMemo(() => {
-    if (!currentProjectObj) return { total: 0, duration: 0 };
-
-    // GUC: Jika ada perubahan lokal (unsaved), gunakan itu untuk display header
-    if (localTotalKontrak !== null) {
-      return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
-    }
-
-    try {
-      // 1. If there's an approved CCO, use its total
-      if (activeCcoVersion?.total > 0) {
-        const subtotal = activeCcoVersion.total;
-        const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
-        const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-        return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
-      }
-
-      // 2. Fallback to normal AHSP lines total or cached project total
-      const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-      const ppnPercent = currentProjectObj.ppn_percent ?? 12;
-      const ppn = subtotal * (ppnPercent / 100);
-      let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-
-      // If we have no lines yet in tabData, use the cached total from the project object
-      if (total === 0 && currentProjectObj.total_kontrak) {
-        total = currentProjectObj.total_kontrak;
-      }
-
-      return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
-    } catch (e) {
-      console.error('Metrics calc error:', e);
-      return { total: 0, duration: 0 };
-    }
-  }, [currentProjectObj, tabData.ahsp, activeCcoVersion, localTotalKontrak]);
-
-  const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
-
   const [locations, setLocations] = useState([]);
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -233,6 +154,66 @@ function ProyekContent() {
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: ''
   });
+
+  const dataVersionRef = useRef(0);
+  const tabVersionRef = useRef(0);
+  const abortControllerRef = useRef(null);
+  const actionProcessed = useRef(null);
+
+  // ── Memos ──
+  const currentProjectObj = useMemo(() => {
+    if (!projects || projects.length === 0) return null;
+    return projects.find(p => p.id === selectedProject) || null;
+  }, [projects, selectedProject]);
+
+  const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
+
+  const projectMetrics = useMemo(() => {
+    if (!currentProjectObj) return { total: 0, duration: 0 };
+    if (localTotalKontrak !== null) return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
+    try {
+      if (activeCcoVersion?.total > 0) {
+        const subtotal = activeCcoVersion.total;
+        const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
+        const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+        return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
+      }
+      const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
+      const ppnPercent = currentProjectObj.ppn_percent ?? 12;
+      const ppn = subtotal * (ppnPercent / 100);
+      let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+      if (total === 0 && currentProjectObj.total_kontrak) total = currentProjectObj.total_kontrak;
+      return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
+    } catch (e) {
+      console.error('Metrics calc error:', e);
+      return { total: 0, duration: 0 };
+    }
+  }, [currentProjectObj, tabData.ahsp, activeCcoVersion, localTotalKontrak]);
+
+
+
+  // ── Unified URL & State Synchronization ──
+  useEffect(() => {
+    if (isCreating || isCheckingAuth.current || loading) return;
+    try {
+      const urlId = searchParams?.get('id');
+      if (urlId && urlId !== selectedProject) {
+        setSelectedProject(urlId);
+        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
+      } else if (selectedProject && urlId !== selectedProject) {
+        const params = new URLSearchParams(searchParams?.toString() || '');
+        params.set('id', selectedProject);
+        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
+      } else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0) {
+        const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
+        const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
+        setSelectedProject(targetId);
+      }
+    } catch (err) {
+      console.error('URL Sync Error:', err);
+    }
+  }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
