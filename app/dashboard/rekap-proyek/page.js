@@ -148,7 +148,8 @@ function ProyekContent() {
     name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
-    konsultan_name: '', konsultan_supervisor: '', kontraktor_director: ''
+    konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
+    start_date: ''
   });
   const [createForm, setCreateForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
@@ -196,18 +197,24 @@ function ProyekContent() {
 
   // ── Unified URL & State Synchronization ──
   useEffect(() => {
-    if (isCreating || isCheckingAuth.current || loading) return;
+    if (isCheckingAuth.current || loading) return;
     try {
       const urlId = searchParams?.get('id');
-      if (urlId && urlId !== selectedProject) {
-        setSelectedProject(urlId);
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
-      } else if (selectedProject && urlId !== selectedProject) {
+      
+      // 1. Sinkronisasi State ke URL (User memilih dari dropdown) - PRIORITAS UTAMA
+      if (selectedProject && urlId !== selectedProject) {
         const params = new URLSearchParams(searchParams?.toString() || '');
         params.set('id', selectedProject);
         router.replace(`${pathname}?${params.toString()}`, { scroll: false });
         if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
-      } else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0) {
+      } 
+      // 2. Sinkronisasi URL ke State (Load awal atau navigasi browser)
+      else if (urlId && urlId !== selectedProject) {
+        setSelectedProject(urlId);
+        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
+      } 
+      // 3. Fallback: Tidak ada ID di URL maupun State
+      else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0 && !isCreating) {
         const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
         const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
         setSelectedProject(targetId);
@@ -242,7 +249,8 @@ function ProyekContent() {
         pptk_nip: currentProjectObj.pptk_nip || '',
         konsultan_name: currentProjectObj.konsultan_name || '',
         konsultan_supervisor: currentProjectObj.konsultan_supervisor || '',
-        kontraktor_director: currentProjectObj.kontraktor_director || ''
+        kontraktor_director: currentProjectObj.kontraktor_director || '',
+        start_date: currentProjectObj.start_date || ''
       });
     } else if (!selectedProject) {
       // Hanya reset jika user memang berniat membuat baru atau sudah tidak memilih apapun
@@ -251,7 +259,8 @@ function ProyekContent() {
         contract_number: '', hsp_value: 0, ppn_percent: 12,
         program_name: '', activity_name: '', work_name: '',
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
-        konsultan_name: '', konsultan_supervisor: '', kontraktor_director: ''
+        konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
+        start_date: ''
       });
     }
   }, [currentProjectObj, loading, selectedProject]);
@@ -327,7 +336,6 @@ function ProyekContent() {
           fiscal_year: identityForm.fiscal_year,
           contract_number: identityForm.contract_number,
           hsp_value: parseFloat(identityForm.hsp_value) || 0,
-          hsp_value: parseFloat(identityForm.hsp_value) || 0,
           ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
           program_name: identityForm.program_name,
           activity_name: identityForm.activity_name,
@@ -339,6 +347,7 @@ function ProyekContent() {
           konsultan_name: identityForm.konsultan_name,
           konsultan_supervisor: identityForm.konsultan_supervisor,
           kontraktor_director: identityForm.kontraktor_director,
+          start_date: identityForm.start_date || null,
           updated_at: new Date().toISOString()
         })
         .eq('id', selectedProject);
@@ -497,8 +506,10 @@ function ProyekContent() {
       fiscal_year: new Date().getFullYear().toString(),
       contract_number: '',
       hsp_value: 0,
-      ppn_percent: 12
+      ppn_percent: 12,
+      start_date: new Date().toISOString().split('T')[0]
     });
+    setIsCreating(true);
     setIsCreateModalOpen(true);
   }, [ownedLimitReached, member?.role, member?.selected_location_id]);
 
@@ -1756,7 +1767,7 @@ function ProyekContent() {
                 </div>
               </div>
               <button
-                onClick={() => setIsCreateModalOpen(false)}
+                onClick={() => { setIsCreateModalOpen(false); setIsCreating(false); }}
                 className="p-3 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-2xl transition-all active:scale-90"
               >
                 <Plus className="w-6 h-6 rotate-45 text-slate-400" />
@@ -1827,6 +1838,16 @@ function ProyekContent() {
                         <input
                           value={createForm.contract_number}
                           onChange={e => setCreateForm({ ...createForm, contract_number: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Tanggal Mulai <span className="text-rose-500">*</span></label>
+                        <input
+                          required
+                          type="date"
+                          value={createForm.start_date}
+                          onChange={e => setCreateForm({ ...createForm, start_date: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
@@ -1984,6 +2005,16 @@ function ProyekContent() {
                         <input
                           value={identityForm.contract_number}
                           onChange={e => setIdentityForm({ ...identityForm, contract_number: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Tanggal Mulai <span className="text-rose-500">*</span></label>
+                        <input
+                          required
+                          type="date"
+                          value={identityForm.start_date}
+                          onChange={e => setIdentityForm({ ...identityForm, start_date: e.target.value })}
                           className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
