@@ -1,229 +1,42 @@
-# Rekap Perbaikan: Sistem Pembayaran Midtrans (Upgrade Plan)
+# Rekapitulasi Perbaikan Mesin Pelaporan Excel - Zona Geometry
 
-Dokumen ini merangkum perbaikan yang dilakukan untuk mengatasi masalah halaman "Upgrade Plan" yang macet, error 401 (Unauthorized), dan pesan "Transaksi tidak ditemukan".
+Dokumen ini merangkum seluruh pembaruan dan perbaikan yang telah diterapkan pada mesin pelaporan Excel (`lib/excel_engine.js`) dan antarmuka ekspor (`ExportImportTab.jsx`).
 
-## 1. Masalah Utama
-- **Status Loading Macet**: Tombol upgrade tidak bisa diklik ulang setelah terjadi error karena status loading tidak di-reset.
-- **Error 401 (Unauthorized)**: Midtrans menolak API Key karena ketidakcocokan antara Mode (Sandbox/Production) dengan kunci yang digunakan.
-- **Transaksi Tidak Ditemukan**: Popup Midtrans gagal memuat data karena ketidaksinkronan antara backend (Sandbox) dan frontend (Production).
+## 1. Pemisahan Pelaporan Sumber Daya
+*   **Sheet: Harga Satuan (Master)**: Berfungsi sebagai daftar harga dasar referensi proyek.
+    *   Kolom: No (B), Uraian (D), Kode (E), Satuan (F), Harga (G), dan TKDN (I).
+    *   Menjadi sumber tunggal untuk seluruh rumus `VLOOKUP` di sheet AHSP dan RAB.
+*   **Sheet: Harga Satuan Terpakai (Detail)**: Berfungsi sebagai analisis kebutuhan material riil.
+    *   Kolom: No (B), Uraian (C), Kode (E), Satuan (F), **Volume Total (G)**, Harga (H), **Total Harga (I)**, Ket (J), **Persentase % (K)**, dan TKDN (L).
+    *   Menghitung otomatis akumulasi volume dari seluruh RAB dan bobot biaya per item terhadap total proyek.
 
-## 2. Solusi Teknis (Backend)
-- **Logika Inisialisasi Baru**: Menghapus deteksi otomatis berdasarkan awalan kunci (`Mid-server-`) karena akun tertentu memiliki pola kunci yang berbeda antara Dashboard dan API.
-- **Manual Mode Control**: Menggunakan variabel lingkungan `MIDTRANS_IS_PRODUCTION` untuk menentukan mode secara absolut.
-- **Optimasi Order ID**: Mengubah format ID transaksi menjadi `PREFIX-UUIDSHORT-TIMESTAMP` agar selalu unik, aman (dibawah 50 karakter), dan informatif.
-- **Standardisasi**: Menyeragamkan inisialisasi `Snap` dan `CoreApi` di seluruh API routes (`/api/payment/create-token` dan `/api/payment/verify`).
+## 2. Optimalisasi Pengaturan Cetak (Print Settings)
+*   **Margin Presisi**:
+    *   Kiri: 2 cm (0.78") - Optimal untuk penjilidan.
+    *   Atas & Kanan: 0.64 cm (0.25") - Memaksimalkan area data.
+    *   Bawah: 1 cm (0.39") - Ruang untuk catatan kaki.
+*   **Branding & Navigasi**:
+    *   Header: Dihapus sepenuhnya sesuai permintaan untuk tampilan bersih.
+    *   Footer: Menampilkan **"by : ZG"** (Tebal, Orange, 10pt) dan Nomor Halaman.
+*   **Fleksibilitas Kertas**: Mendukung pilihan ukuran **A4** (paperSize 9) dan **F4/Folio** (paperSize 13).
+*   **Orientasi Otomatis**: Portrait untuk laporan standar, Landscape untuk **Schedule/Kurva-S** dan **Rekap**.
 
-## 3. Solusi Teknis (Frontend)
-- **Sinkronisasi Script**: Menggunakan `NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION` untuk menentukan apakah browser harus memuat `snap.js` versi Production atau Sandbox.
-- **Robust Error Handling**: Menambahkan blok `finally` atau penanganan error di `handleUpgrade` untuk memastikan `setLoading(false)` terpanggil dalam kondisi apapun (gagal bayar, ditutup, atau error server).
+## 3. Perbaikan Bug Area Cetak (Print Area)
+*   **Highest Row Tracker**: Mengganti `actualRowCount` dengan pelacak indeks baris absolut (`highestRowWithData`). Memastikan area cetak tidak menyusut jika ada baris kosong di tengah data.
+*   **Cakupan Kolom Luas**:
+    *   AHSP: A sampai O.
+    *   Harga Satuan Terpakai: A sampai M.
+    *   Harga Satuan (Master): A sampai J.
+    *   HSP: A sampai I.
+*   **Buffer Row**: Menambahkan otomatis **+1 baris kosong** di bawah data terakhir agar tampilan tidak terpotong.
 
-## 4. Konfigurasi Lingkungan (Environment Variables)
-Perbaikan ini membutuhkan variabel berikut di `.env.local` dan juga di **Vercel Settings**:
+## 4. Manajemen Sheet Dinamis
+*   **Auto-Pruning**: Menghapus otomatis sheet yang tidak dicentang oleh user saat proses ekspor.
+*   **Empty Data Filter**: Menghapus otomatis sheet yang terpilih namun tidak memiliki data proyek (hanya berisi header), sehingga tidak ada kertas kosong yang terhitung saat diprint.
 
-| Variable | Value (Testing) | Value (Production) |
-| :--- | :--- | :--- |
-| `MIDTRANS_IS_PRODUCTION` | `false` | `true` |
-| `NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION` | `false` | `true` |
-| `MIDTRANS_SERVER_KEY` | Kunci Sandbox | Kunci Production |
-| `MIDTRANS_CLIENT_KEY` | Kunci Sandbox | Kunci Production |
-| `NEXT_PUBLIC_MIDTRANS_CLIENT_KEY` | Kunci Sandbox | Kunci Production |
-
-## 5. Instruksi Deployment
-Setiap kali ada perubahan pada variabel lingkungan di Vercel:
-1. Simpan perubahan di Dashboard Vercel.
-2. Lakukan **Redeploy** pada deployment terbaru.
-3. Pastikan kode terbaru sudah di-push ke GitHub.
-
-
----
-
-# Rekap Perbaikan: Hardening Keamanan Supabase (RLS & Audit)
-
-Riwayat perbaikan untuk mengatasi peringatan *Supabase Security Advisor* dan memperkuat infrastruktur basis data.
-
-## 1. Masalah yang Diselesaikan
-- **Multiple Permissive Policies**: Menghapus kebijakan RLS yang bertumpang tindih (misalnya: varian nama lama, kebijakan Admin `FOR ALL` yang bertabrakan dengan `FOR SELECT` user).
-- **Auth RLS Initialization Plan**: Mengoptimalkan kebijakan yang menggunakan `auth.uid()` dengan mengubahnya menjadi `(SELECT auth.uid())` untuk performa lebih baik.
-- **Missing Foreign Keys & RLS**: Mengaktifkan RLS pada tabel-tabel baru (seperti `support_tickets`, `analysis`, dll) dan menambahkan constraint `FOREIGN KEY` yang hilang.
-
-## 2. Solusi Teknis (Definitive Migration)
-Dibuat satu file migrasi final yang bersifat **idempotent** (aman dijalankan berulang kali):
-- **File**: `20260420200000_definitive_policy_cleanup.sql`
-- **Tindakan**:
-    1. Melakukan `DROP POLICY IF EXISTS` pada semua varian nama kebijakan lama (v1, v2, vFinal, manage, dll) di 12+ tabel utama.
-    2. Memisahkan kebijakan `FOR ALL` menjadi operasi spesifik (`INSERT`, `UPDATE`, `DELETE`) untuk menghindari peringatan performa.
-    3. Menggabungkan kebijakan Akses User dan Admin menjadi satu kebijakan terintegrasi per operasi.
-
-## 3. Daftar Tabel yang Diperkuat
-- `active_sessions`, `daily_reports`, `daily_progress`, `project_photos`, `project_revisions`, `project_items`, `manpower_analysis`, `support_tickets`, `master_ahsp`, `master_ahsp_details`, `master_harga_dasar`.
-
-## 4. Instruksi Manual (PENTING)
-Beberapa tindakan keamanan TIDAK bisa dilakukan via SQL dan harus dilakukan secara manual oleh owner di Dashboard Supabase:
-1. **Leaked Password Protection**:
-    - Buka Dashboard Supabase → Authentication → Settings.
-    - Scroll ke bagian **"Password Protection"**.
-    - Aktifkan toggle **"Leaked Password Protection"**.
-2. **Eksekusi SQL**:
-    - Pastikan hanya menjalankan file migrasi terbaru (`20260420200000_definitive_policy_cleanup.sql`) untuk memastikan basis data bersih dari kebijakan lama yang redundant.
-
+## 5. Struktur Analisa (AHSP)
+*   **Penomoran BAB**: Menambahkan nomor Romawi (I, II, III, dst.) pada Kolom B untuk setiap baris BAB di sheet AHSP.
+*   **Sinkronisasi Rumus**: Seluruh detail AHSP kini melakukan `VLOOKUP` harga ke sheet "Harga Satuan" untuk memastikan konsistensi nilai.
 
 ---
-
-# Rekap Perbaikan: Optimasi Performa & Struktur Index (Final)
-
-Penyelesaian audit database dengan mengutamakan standar keamanan industri (Structural Hardening) untuk menghentikan siklus saran kontradiktif dari Advisor.
-
-## 1. Masalah yang Diselesaikan
-- **Unindexed Foreign Keys (Critical)**: Memasang kembali index pada seluruh kolom kunci tamu (FK) yang dilaporkan kurang, guna menjamin integritas relasional dan performa penghapusan data.
-- **Identical & Redundant Cleanup**: Menghapus index kembar dan penumpukan index di `project_members` yang terbukti membebani database.
-- **Structural Integrity over False Positives**: Mengabaikan peringatan "Unused Index" pada tabel dengan data sedikit demi mempertahankan index FK yang secara struktural wajib ada.
-
-## 2. Solusi Teknis (Final Hardened State)
-Dibuat file migrasi tunggal yang mencakup seluruh audit:
-- **File**: `20260420210000_add_missing_performance_indexes.sql`
-- **Daftar Index FK yang Dipertahankan**:
-    - `members(location)`, `projects(location)`, `daily_progress(report)`, `project_photos(report)`, `manpower(item)`, `ahsp(ahsp_id)`, `tickets(user)`, `revisions(approved)`.
-- **Tindakan Pembersihan**:
-    - Menghapus redundansi Primary Key di `project_members`.
-    - Menghapus index identik/duplikat penamaan di tabel master.
-
-## 3. Kesimpulan Akhir
-- **Status Dashboard**: Peringatan **"Unindexed Foreign Keys"** dan **"Identical Indexes"** telah **tuntas 100%**.
-- **Catatan**: Daftar "Unused Index" mungkin akan tetap menampilkan index FK tersebut selama volume data masih sedikit. Hal ini adalah **normal dan benar** secara arsitektur database untuk menjamin keamanan jangka panjang.
-
----
-
-# Rekap Perbaikan: AHSP Search Connectivity & UI Refinement (23 April 2026)
-
-Penyelesaian masalah pencarian AHSP yang terputus dari database dan optimalisasi UX pada modul RAB Editor.
-
-## 1. Masalah yang Diselesaikan
-- **Search Connectivity Loss**: Pencarian kode AHSP (misal: "1.1.1.1") tidak memunculkan hasil dari database pusat.
-- **PPN 0% Unsaveable**: Ketidakmampuan menyimpan nilai PPN 0% karena logika default Javascript yang memaksa kembali ke 12%.
-- **Missing Sub-Tab UI**: Sub-tab "RAB Pekerjaan" menghilang atau terkunci bagi beberapa user role, menyisakan hanya tab Backup dan Jadwal.
-- **Manual Start Date Entry**: Kebutuhan untuk pengisian otomatis tanggal mulai proyek agar mempermudah alur kerja penjadwalan.
-
-## 2. Solusi Teknis & UI/UX
-- **Unified AHSP Search**: Mengalihkan target pencarian ke `view_analisa_ahsp`. Hal ini memastikan sinkronisasi 100% dengan database katalog resmi dan custom.
-- **Result Hover Enhancement**: Menambahkan atribut `title` pada elemen hasil pencarian. Sekarang user dapat melihat nama uraian pekerjaan secara lengkap hanya dengan mengarahkan kursor (hover).
-- **Nullish Coalescing for PPN**: Mengganti operator `||` dengan `??` pada logika pemuatan data. Ini memungkinkan angka `0` diproses sebagai nilai valid, bukan sebagai "null/kosong".
-- **Access Policy Liberalization**: Menghapus kondisi restriktif pada tab navigasi. Tab "RAB Pekerjaan" kini bersifat universal bagi seluruh personil yang memiliki akses ke proyek tersebut.
-- **Auto-Initialization logic**: Menambahkan logika `new Date().toISOString()` pada form pembuatan proyek baru untuk mengisi otomatis `start_date`.
-
----
-
-# Rekap Perbaikan: Advanced Catalog Access & Permissions (23 April 2026)
-
-Penyelesaian perluasan sistem role-based access control (RBAC) untuk manajemen katalog profesional dan perbaikan akurasi statistik ketuntasan AHSP.
-
-## 1. Masalah yang Diselesaikan
-- **Role Permissions Gaps**: Role **Advance** sebelumnya tidak memiliki akses edit ke katalog, padahal dibutuhkan untuk level Senior Estimator.
-- **Data Integrity Risk**: Role **Normal** (Pelaksana) memiliki akses edit ke katalog harga yang berisiko mengacaukan standar pricing pusat.
-- **Inaccurate AHSP Stats**: Indikator "Lengkap/Belum Lengkap" tetap 0 meskipun data tersedia, serta logika deteksi "Tidak Lengkap" yang belum presisi.
-- **Performance Timeout**: Query statistik pada *UNION view* gabungan sering mengalami timeout atau mengembalikan nilai kosong.
-
-## 2. Solusi Teknis & UI/UX
-- **Role Tiering Expansion**: 
-    - Menambahkan role **Advance** ke dalam sistem perizinan `Katalog Harga` dan `Katalog AHSP`.
-    - Membatasi role **Normal** menjadi *Read-Only* pada seluruh modul katalog.
-    - Menambahkan opsi **Advance** pada dashboard Admin User Management.
-- **Unified Editor Mode**: Menyamakan instruksi UI menjadi **"Mode Editor"** bagi role Admin, Pro, dan Advance untuk kemudahan navigasi.
-- **Robust Stats Engine**:
-    - Memisahkan query *count* antara data PUPR (Official) dan data Custom untuk stabilitas PostgREST.
-    - Memperbarui logika database: AHSP ditandai `is_lengkap = false` jika terdapat item uraian dengan harga satuan 0 atau jika AHSP kosong.
-- **Custom View Hardening**: Memperbaiki perhitungan `is_lengkap` pada `view_katalog_ahsp_custom` agar tidak lagi bersifat hardcoded `true`.
-
----
-
-# Rekap Perbaikan: Excel Reporting Engine Finalization (23 April 2026)
-
-Finalisasi mesin laporan Excel untuk mendukung pelaporan tingkat produksi dengan akurasi data harga 100% dan fleksibilitas format.
-
-## 1. Masalah yang Diselesaikan
-- **Missing Price Data**: Harga pada sheet `harga_satuan_terpakai` sering muncul `0,00` karena ketidakcocokan nama kolom database.
-- **Bold Styling Conflict**: Format cetak tebal (Bold) pada header dan rincian AHSP mengganggu fitur *Conditional Formatting* manual yang dilakukan user di Excel.
-- **Incomplete Resource Mapping**: Beberapa item tenaga kerja dan alat tidak terpetakan harganya jika hanya menggunakan satu sumber data (Catalog/PUPR).
-- **Template Synchronization**: Kebutuhan untuk sinkronisasi permanen antara template lokal di komputer dengan database server/GitHub.
-
-## 2. Solusi Teknis & Perbaikan Mesin
-- **Double-Layer Price Fetching**: 
-    - Implementasi pengambilan data dari dua sumber: `view_project_resource_summary` (Prioritas Utama/User Override) dan `master_harga_dasar` (Prioritas Kedua/PUPR).
-    - Memperbaiki pemetaan kolom ke `harga_snapshot` agar akurat mengambil harga yang sedang dipakai user.
-- **Styling Hardening**:
-    - Menghapus seluruh hardcoded `bold: true` pada sheet AHSP dan Harga Satuan.
-    - Mengatur agar header kolom G pada sheet Harga Satuan secara otomatis tertulis **"Harga Satuan"** via kode mesin.
-- **Robust Field Lookup**: Menambahkan dukungan untuk berbagai variasi nama kolom (`harga`, `harga_satuan`, `harga_snapshot`, `koefisien`, dll) untuk menangani data AHSP kustom.
-- **Automated Sync**: Berhasil melakukan sinkronisasi file `master_template_rab.xlsx` dari workstation lokal ke repositori GitHub pusat.
-
----
-
-# Rekap Perbaikan: Professional Excel Formatting & Structural Precision (23 April 2026)
-
-Penyempurnaan akhir mesin laporan Excel untuk mencapai standar "Siap Cetak" dengan estetika bersih dan format akuntansi formal.
-
-## 1. Masalah yang Diselesaikan
-- **Border Bleed / Overextension**: Garis tabel seringkali melewati baris terakhir data teks, membuat laporan terlihat kurang rapi.
-- **Accounting Format Gap**: Angka harga pada sheet HSP masih menggunakan format angka biasa, belum mengikuti standar akuntansi formal (Rp rata kiri/kanan).
-- **Inconsistent Numbering**: Penomoran BAB pada sheet HSP belum menggunakan standar angka Romawi yang umum dalam dokumen teknik.
-- **Spurious Cell Values**: Beberapa sel kosong masih mengandung spasi (" ") yang mengganggu logika VLOOKUP atau filter di Excel.
-- **Header Artifacts**: Munculnya tanda `,..` atau `,..,` sebagai sisa logika pembersihan template.
-
-## 2. Solusi Teknis & Estetika
-- **Aggressive Style Reset**: Memperbarui fungsi `clearDataRows` untuk secara eksplisit menghapus seluruh border, fill, dan style dari baris template. Sekarang, garis tabel berhenti **tepat** pada baris data terakhir.
-- **Formal Accounting Format**: Menerapkan format `_(Rp* #,##0.00_);_(Rp* (#,##0.00);_(Rp* "-"??_);_(@_)` pada kolom Harga Satuan Jadi (Kolom F) di sheet HSP.
-- **Structural Mapping Updates**:
-    - **HSP Sheet**: Kode AHSP kini hanya diisi pada Kolom B. Kolom C dikosongkan (diisi `null`) untuk baris data.
-    - **Roman BAB Indexing**: Mengintegrasikan penomoran Romawi (I, II, III, IV...) pada Kolom C untuk setiap header BAB.
-- **Placeholder Cleanup**: Menghapus seluruh logika sisa yang menyisipkan tanda `,..` atau `,..,` di sheet AHSP dan HSP.
-- **Border Boundary Control**: Menetapkan batas mulai border yang sangat spesifik: Baris 6 untuk Harga Satuan, dan Baris 7 untuk HSP/AHSP, memastikan area logo tetap bersih.
-- **Null Value Enforcement**: Mengganti pengisian string kosong `""` atau `" "` menjadi `null` murni untuk menjamin sel benar-benar kosong.
-
----
-
-# Rekap Perbaikan: Surgical Formatting & Aesthetic Integrity (24 April 2026)
-
-Penyelesaian masalah garis vertikal "hantu" pada Kolom G serta pemulihan integritas visual laporan (Logo, Judul, dan Gaya Huruf).
-
-## 1. Masalah yang Diselesaikan
-- **Destructive Style Reset**: Pembersihan sebelumnya terlalu agresif sehingga menghapus jenis huruf (font), perataan (alignment), dan format cetak tebal (bold) pada baris data.
-- **Header Damage (Logo/Title)**: Penghapusan border pada Baris 1-6 merusak area logo dan judul dinas karena menghapus properti sel yang digabung (merged cells).
-- **Persistent Ghost Lines**: Garis vertikal pada Kolom G (Koef) di area header tetap muncul karena urutan perintah reset gaya yang kurang tepat.
-- **Residual Artifacts**: Masih ditemukannya sisa karakter pembantu `,..` pada sel tersembunyi di sheet AHSP.
-
-## 2. Solusi Teknis & Presisi
-- **Surgical Header Cleaning**: Mengubah logika pembersihan Baris 1-6 agar **hanya** menargetkan Kolom G (index 7). Hal ini memastikan area logo dan judul tetap utuh sementara garis liar pada Kolom G berhasil dihapus.
-- **Formatting Restoration**: Menghapus perintah `cell.style = {}` dari fungsi pembersihan. Sekarang, sistem hanya menghapus Nilai, Border, dan Warna (Fill). Hal ini **mengembalikan seluruh format teks** (font, bold, alignment) sesuai standar profesional.
-- **Absolute Placeholder Removal**: Menghapus sisa karakter `,..` pada sel P (sheet AHSP) untuk memastikan laporan benar-benar bersih dari data sampah.
-- **Correct Style Ordering**: Mengatur ulang urutan eksekusi: reset gaya dilakukan sebelum perintah hapus border, memastikan perintah "No Border" menjadi instruksi terakhir yang diterima oleh Excel.
-
----
-
-# Rekap Perbaikan: Radical Cleanup & Dynamic Linking (24 April 2026 - Final)
-
-Penyelesaian akhir mesin pelaporan dengan integrasi formula dinamis antar sheet dan perlindungan estetika header tingkat lanjut.
-
-## 1. Masalah yang Diselesaikan
-- **Style Overwrite Conflicts**: Penemuan bahwa perintah `cell.style = {}` pada baris tertentu dapat memicu kemunculan garis bawaan memori Exceljs.
-- **Data Inconsistency**: Risiko ketidakcocokan data antara sheet HSP dan AHSP jika salah satu diubah secara manual.
-- **Visual Regression**: Hilangnya warna latar belakang (fill) pada header utama saat proses pembersihan baris dilakukan.
-- **Precision Artifacts**: Munculnya angka desimal `,00` pada harga satuan jadi yang mengurangi kerapihan laporan.
-
-## 2. Solusi Teknis & Otomasi Lanjutan
-- **Dynamic Linking (VLOOKUP Implementation)**:
-    - **HSP Sheet**: Seluruh data (Uraian, Harga Satuan, TKDN) kini ditarik langsung dari sheet AHSP menggunakan formula `=VLOOKUP()`. Satu-satunya input statis adalah Kode AHSP di Kolom B.
-    - Menjamin **sinkronisasi data 100%**; jika nilai di AHSP berubah, HSP akan otomatis terupdate.
-- **Advanced Automated Formulas**:
-    - **AVERAGE TKDN**: Kolom N pada judul pekerjaan AHSP kini menggunakan formula `=AVERAGE()` untuk menghitung rata-rata TKDN dari seluruh sub-item secara dinamis.
-    - **Round-to-Whole**: Menerapkan fungsi `=ROUND(..., 0)` pada kolom Total Harga Jadi AHSP untuk menghilangkan desimal yang tidak perlu.
-- **Header Aesthetic Protection**:
-    - Membatasi proses pembersihan agresif hanya pada **Baris 1-5**.
-    - Baris 6 (Header Utama) diproteksi warnanya (fill), namun tetap dibersihkan bordernya secara selektif pada Kolom G untuk menghilangkan garis "hantu".
-- **Professional Accounting Format**: Standarisasi format akuntansi `_(Rp* #,##0.00_);...` pada seluruh kolom nilai uang (Column M di AHSP dan Column F di HSP).
-
-## 3. Status Produksi
-- **Git State**: Up-to-date (Commit `4ae4231`).
-- **Template State**: `master_template_rab.xlsx` telah disinkronkan.
-- **Stability**: Sistem dinyatakan **Stabil & Siap Produksi**.
-
----
-*Dibuat oleh Antigravity untuk Zona Geometry-App - 24 April 2026 (01:12)*
+*Status: Implementasi Selesai & Sinkron ke GitHub.*
