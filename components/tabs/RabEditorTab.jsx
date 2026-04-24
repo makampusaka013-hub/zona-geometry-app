@@ -919,7 +919,7 @@ export default function RabEditorTab({
         </div>
         <div className="lg:sticky lg:top-[120px] space-y-4">
            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in duration-700">
-              <div className="bg-slate-900 dark:bg-slate-950 pt-6 pb-5 px-6 text-white text-center">
+              <div className="bg-slate-700 dark:bg-slate-950 pt-6 pb-5 px-6 text-white text-center">
                  <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Harga Kontrak</div>
                  <div className="text-2xl font-mono font-black text-indigo-400 dark:text-orange-400 tracking-tighter drop-shadow-[0_0_10px_rgba(129,140,248,0.2)] dark:drop-shadow-[0_0_10px_rgba(249,115,22,0.2)]">
                    {formatIdr(recap.rounded)}
