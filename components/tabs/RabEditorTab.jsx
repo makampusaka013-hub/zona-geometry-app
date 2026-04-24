@@ -325,6 +325,7 @@ export default function RabEditorTab({
     const { data: proj } = await supabase.from('projects').select('*').eq('id', projectId).maybeSingle();
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
+      setGlobalOverhead(proj.overhead_percent || proj.profit_percent || 15);
       setIdentity({
         name: proj.name || '',
         code: proj.code || '',
@@ -377,7 +378,7 @@ export default function RabEditorTab({
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: '15'
+          profitPercent: String(item.profit_percent || proj?.overhead_percent || 15)
         });
       });
 
@@ -543,6 +544,7 @@ export default function RabEditorTab({
             volume: parseNum(r.volume),
             harga_satuan: parseNum(r.hargaSatuan),
             jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
+            profit_percent: parseNum(r.profitPercent),
             analisa_custom: r.analisaDetails || []
           });
         }
@@ -559,7 +561,8 @@ export default function RabEditorTab({
         fiscal_year: identity.fiscal_year || null,
         contract_number: identity.contract_number || null,
         hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
-        ppn_percent: parseNum(projectMeta.ppn_percent)
+        ppn_percent: parseNum(projectMeta.ppn_percent),
+        overhead_percent: parseNum(globalOverhead)
       };
 
       if (!projectId && !identity.work_name && !identity.name) {
