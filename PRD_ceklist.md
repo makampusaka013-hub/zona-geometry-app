@@ -65,8 +65,8 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | Status | Fitur | Keterangan |
 | :---: | --- | --- |
 | ✅ | **Rekap AHSP Terpakai** | Tab AHSP Terpakai live dari `ahsp_lines` per proyek terpilih. |
-| ✅ | **Rekap Harga Satuan Terpakai** | Tab Harga Satuan join dari `view_project_resource_summary`. |
-| ✅ | **Audit TKDN Proyek** | Tab TKDN pie chart & tabel kontribusi per komponen. |
+| ✅ | **Rekap Harga Satuan Terpakai** | Tab Harga Satuan join dari `view_project_resource_summary`. Lengkap dengan kalkulasi volume agregat & persentase bobot biaya proyek. |
+| ✅ | **Audit TKDN Proyek** | Tab TKDN pie chart & tabel kontribusi per komponen. Terintegrasi di ekspor Excel. |
 | 🔲 | **Live Recalculation** | Jika harga satuan diubah di level proyek → seluruh AHSP terpakai terhitung ulang otomatis. |
 
 ### F. Construction Administration 🔲
@@ -81,7 +81,7 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | ✅ | **Laporan Harian** | Integrasi progres harian ke dalam format pelaporan Excel teknis. |
 | ✅ | **Laporan Mingguan** | Akumulasi cerdas progres 7 harian sesuai periode terpilih. |
 | ✅ | **Laporan Bulanan** | Rekapitulasi progres bulanan untuk syarat termyn/tagihan. |
-| ✅ | **Export Excel** | Premium Excel Reporting Engine dengan area tanda tangan stakeholder. |
+| ✅ | **Export Excel Premium** | Mesin pelaporan Excel profesional dengan dukungan dual-sheet (Master vs Terpakai), kalkulasi volume agregat, dan layout cetak standar audit (2cm margin, branded footer, F4/A4). |
 
 ---
 
@@ -144,7 +144,9 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | 2026-04 | **Catalog Integrity Protection** | Restriksi akses edit katalog bagi role **Normal** untuk menjaga standar pricing perusahaan. |
 | 2026-04 | **Smart AHSP Stats (Logic Fix)** | Perbaikan indikator "Lengkap/Belum Lengkap". AHSP dianggap tidak lengkap jika salah satu item uraian memiliki harga satuan 0. |
 | 2026-04 | **High-Performance Stats Query** | Optimasi query statistik AHSP menggunakan parallel data fetching (pupr vs custom) untuk menghindari timeout pada UNION view. |
-| 2026-04 | **Excel Engine Production-Ready** | Finalisasi mesin ekspor Excel: Sinkronisasi harga otomatis (PUPR + Override), penghapusan format Bold untuk kompatibilitas filter, dan standarisasi header "Harga Satuan". |
+| 2026-04 | **Premium Excel Engine Final** | Finalisasi mesin ekspor: Dual-sheet (Harga Satuan & Terpakai), kalkulasi volume agregat (Bill of Quantities), persentase bobot biaya per item, dan pembersihan otomatis sheet kosong. |
+| 2026-04 | **Professional Print Standards** | Implementasi standar cetak 2cm (L), 0.64cm (T/R), 1cm (B), penghapusan header lama, penambahan branded footer "by : ZG" (10pt Orange Bold), dan dukungan ukuran kertas F4/A4. |
+| 2026-04 | **Smart Print Area Logic** | Implementasi `highestRowWithData` tracker untuk memastikan area cetak (garis biru) mencakup seluruh data meskipun ada spasi/baris kosong di tengah. |
 
 ---
 
