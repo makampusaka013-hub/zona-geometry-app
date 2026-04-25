@@ -105,28 +105,46 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
       const newPrice = parseFloat(harga || 0);
       const newTkdn = parseFloat(tkdn || 0);
 
-      // KUNCI PERBAIKAN: Fallback ekstraksi ID berlapis
-      const validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
+      let validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
+      const itemCode = item.key_item || item.kode_item;
+      
+      // KUNCI UTAMA: Jika ID kosong, cari manual ke tabel aslinya
+      if (!validId && itemCode) {
+        if (item.source_table === 'master_harga_custom') {
+          const { data } = await supabase.from('master_harga_custom').select('id').eq('kode_item', itemCode).limit(1).single();
+          if (data) validId = data.id;
+        } else {
+          const { data } = await supabase.from('master_harga_dasar').select('id').eq('kode_item', itemCode).limit(1).single();
+          if (data) validId = data.id;
+        }
+      }
 
-      if (item.source_table === 'master_harga_dasar') {
+      if (!validId) {
+        alert('Gagal menemukan ID referensi komponen. Pastikan kode item valid.');
+        return;
+      }
+
+      if (item.source_table === 'master_harga_dasar' || !item.source_table) {
         const { error } = await supabase.from('master_harga_custom').upsert({
           overrides_harga_dasar_id: validId,
-          nama_item: item.uraian,
+          nama_item: item.uraian || item.nama_item,
           satuan: item.satuan,
           harga_satuan: newPrice,
           tkdn_percent: newTkdn,
-          kategori_item: item.jenis_komponen,
-          kode_item: item.key_item,
+          kategori_item: item.jenis_komponen || item.kategori_item,
+          kode_item: itemCode,
         }, { onConflict: 'user_id,overrides_harga_dasar_id' });
-        if (error) { alert(error.message); return; }
+        if (error) throw error;
       } else {
         const { error } = await supabase.from('master_harga_custom')
           .update({ harga_satuan: newPrice, tkdn_percent: newTkdn })
           .eq('id', validId);
-        if (error) { alert(error.message); return; }
+        if (error) throw error;
       }
 
       onSaved();
+    } catch (err) {
+      alert(err.message);
     } finally {
       setSaving(false);
     }
@@ -136,22 +154,40 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
     if (!confirm('Reset harga ke nilai PUPR resmi? Override Anda akan dihapus.')) return;
     setResetting(true);
     try {
-      // KUNCI PERBAIKAN: Fallback ekstraksi ID berlapis
-      const validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
+      let validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
+      const itemCode = item.key_item || item.kode_item;
+      
+      // KUNCI UTAMA: Jika ID kosong, cari manual ke tabel aslinya
+      if (!validId && itemCode) {
+        if (item.source_table === 'master_harga_custom') {
+          const { data } = await supabase.from('master_harga_custom').select('id').eq('kode_item', itemCode).limit(1).single();
+          if (data) validId = data.id;
+        } else {
+          const { data } = await supabase.from('master_harga_dasar').select('id').eq('kode_item', itemCode).limit(1).single();
+          if (data) validId = data.id;
+        }
+      }
+
+      if (!validId) {
+         alert("Gagal menemukan ID referensi komponen untuk direset.");
+         return;
+      }
 
       if (item.source_table === 'master_harga_custom') {
         const { error } = await supabase.from('master_harga_custom')
           .delete()
           .eq('id', validId);
-        if (error) { alert(error.message); return; }
+        if (error) throw error;
       } else {
         const { error } = await supabase.from('master_harga_custom')
           .delete()
           .eq('overrides_harga_dasar_id', validId);
-        if (error) { alert(error.message); return; }
+        if (error) throw error;
       }
 
       onSaved();
+    } catch (err) {
+      alert(err.message);
     } finally {
       setResetting(false);
     }
