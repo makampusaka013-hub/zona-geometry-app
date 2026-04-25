@@ -17,6 +17,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import Spinner from '../Spinner';
+import ModernConfirmModal from '../ModernConfirmModal';
 
 function fmt(n) { return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
 
@@ -48,6 +49,7 @@ export default function ProgressTab({
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
   const [selectedRowId, setSelectedRowId] = useState(null);
+  const [confirmModal, setConfirmModal] = useState({ isOpen: false, rowId: null });
 
   // ── Load Existing Progress ──
   useEffect(() => {
@@ -275,20 +277,9 @@ export default function ProgressTab({
                              )}
                              {(isOwner || isAdmin || isAdvance || isPro) && row.status_approval === 'final' && (
                                <button 
-                                 onClick={async (e) => {
+                                 onClick={(e) => {
                                    e.stopPropagation();
-                                   if (window.confirm('Batal final? Item ini akan di-reset ke status DRAFT secara paksa agar bisa diedit kembali.')) {
-                                     setSavingStatus('saving');
-                                     // Bypass RPC dan tembak langsung ke tabel
-                                     const { error } = await supabase.from('ahsp_lines').update({ status_approval: 'draft' }).eq('id', row.id);
-                                     if (error) {
-                                       alert('Gagal membatalkan status final: ' + error.message);
-                                     } else {
-                                       // Muat ulang halaman agar perubahan status segera terlihat
-                                       window.location.reload(); 
-                                     }
-                                     setSavingStatus(null);
-                                   }
+                                   setConfirmModal({ isOpen: true, rowId: row.id });
                                  }}
                                  className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
                                >
@@ -358,6 +349,26 @@ export default function ProgressTab({
           <strong>TIP:</strong> Gunakan tombol arah panah atau Tab untuk berpindah antar hari dengan cepat. Perubahan disimpan otomatis dalam rentang 1.5 detik setelah Anda berhenti mengetik. Data progres ini akan menyusun rekapitulasi Laporan Harian secara otomatis.
         </p>
       </div>
+
+      <ModernConfirmModal
+        isOpen={confirmModal.isOpen}
+        onClose={() => setConfirmModal({ isOpen: false, rowId: null })}
+        onConfirm={async () => {
+          if (!confirmModal.rowId) return;
+          setSavingStatus('saving');
+          const { error } = await supabase.from('ahsp_lines').update({ status_approval: 'draft' }).eq('id', confirmModal.rowId);
+          if (error) {
+            alert('Gagal membatalkan status final: ' + error.message);
+          } else {
+            window.location.reload();
+          }
+          setSavingStatus(null);
+        }}
+        title="Batal Final?"
+        message="Item ini akan di-reset ke status DRAFT secara paksa agar bisa diedit kembali."
+        confirmText="Ya, Reset ke Draft"
+        type="warning"
+      />
     </div>
   );
 }
