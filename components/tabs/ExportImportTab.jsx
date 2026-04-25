@@ -25,6 +25,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   const [headerImage, setHeaderImage] = useState(null);
   const [exportLocation, setExportLocation] = useState({ id: '', name: '' });
   const [pendingToolId, setPendingToolId] = useState(null);
+  const [locations, setLocations] = useState([]);
+
+  useEffect(() => {
+    async function fetchLocations() {
+      const { data } = await supabase.from('locations').select('*').order('name');
+      if (data) setLocations(data);
+    }
+    fetchLocations();
+  }, []);
 
   const handleHeaderImageUpload = (e) => {
     const file = e.target.files[0];
@@ -835,7 +844,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                     <h4 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Pilih Wilayah Katalog</h4>
                   </div>
                   <LocationSelect 
-                    value={exportLocation.id}
+                    value={exportLocation.name}
+                    locationId={exportLocation.id}
+                    locations={locations}
                     onChange={(id, name) => setExportLocation({ id, name })}
                   />
                 </div>

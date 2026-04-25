@@ -120,7 +120,6 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
         }, { onConflict: 'user_id,overrides_harga_dasar_id' });
         if (error) { alert(error.message); return; }
       } else {
-        // Item custom — update langsung menggunakan validId
         const { error } = await supabase.from('master_harga_custom')
           .update({ harga_satuan: newPrice, tkdn_percent: newTkdn })
           .eq('id', validId);
@@ -146,7 +145,6 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
           .eq('id', validId);
         if (error) { alert(error.message); return; }
       } else {
-        // hapus berdasarkan overrides_harga_dasar_id milik user ini
         const { error } = await supabase.from('master_harga_custom')
           .delete()
           .eq('overrides_harga_dasar_id', validId);
