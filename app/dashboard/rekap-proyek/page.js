@@ -175,19 +175,21 @@ function ProyekContent() {
     if (!currentProjectObj) return { total: 0, duration: 0 };
     if (localTotalKontrak !== null) return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
     try {
-        const subtotal = activeCcoVersion.total;
+      if (activeCcoVersion?.total > 0) {
+        const subtotalCco = activeCcoVersion.total;
         const ppnPct = currentProjectObj.ppn_percent ?? 12;
-        const ppn = subtotal * (ppnPct / 100);
-        const total = Math.round(subtotal + ppn);
-        const rounded = Math.ceil(total / 1000) * 1000;
-        return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
+        const ppn = subtotalCco * (ppnPct / 100);
+        const totalExact = Math.round(subtotalCco + ppn);
+        const totalRounded = Math.ceil(totalExact / 1000) * 1000;
+        return { total: totalRounded, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
-      const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-      const ppnPercent = currentProjectObj.ppn_percent ?? 12;
-      const ppn = subtotal * (ppnPercent / 100);
-      let total = Math.ceil((subtotal + ppn) / 1000) * 1000;
-      if (total === 0 && currentProjectObj.total_kontrak) total = currentProjectObj.total_kontrak;
-      return { total, duration: currentProjectObj.manual_duration || 0, isCco: false };
+      const subtotalRab = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
+      const ppnPct = currentProjectObj.ppn_percent ?? 12;
+      const ppn = subtotalRab * (ppnPct / 100);
+      const totalExact = Math.round(subtotalRab + ppn);
+      let totalRounded = Math.ceil(totalExact / 1000) * 1000;
+      if (totalRounded === 0 && currentProjectObj.total_kontrak) totalRounded = currentProjectObj.total_kontrak;
+      return { total: totalRounded, duration: currentProjectObj.manual_duration || 0, isCco: false };
     } catch (e) {
       console.error('Metrics calc error:', e);
       return { total: 0, duration: 0 };
@@ -1347,10 +1349,10 @@ function ProyekContent() {
 
                       // Calculate Total for this project
                       const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-                      const ppnPct = p.ppn_percent ?? 12; // Gunakan Nullish Coalescing (??) agar angka 0 tidak diubah ke 12
+                      const ppnPct = p.ppn_percent ?? 12;
                       const ppn = subtotal * (ppnPct / 100);
-                      const total = Math.round(subtotal + ppn);
-                      const rounded = Math.ceil(total / 1000) * 1000;
+                      const totalExact = Math.round(subtotal + ppn);
+                      const rounded = Math.ceil((totalExact || 0) / 1000) * 1000;
 
                       return (
                         <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">
