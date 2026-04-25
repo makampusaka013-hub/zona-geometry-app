@@ -17,9 +17,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
   });
-  const [loadingPro, setLoadingPro] = useState(null); // 'catalog' | 'ahsp' | 'scurve' | 'rab' | 'used_res' | 'used_ahsp'
-  const [headerImage, setHeaderImage] = useState(null); // base64 image string
   const [paperSize, setPaperSize] = useState('A4'); // 'A4' | 'F4'
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [pendingExportFn, setPendingExportFn] = useState(null);
 
   if (tabLoading) {
     return (
@@ -83,327 +83,225 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   }
 
   async function handleExportExcel() {
-    if (!project || !ahspLines || ahspLines.length === 0) {
-      toast.warning('Data RAB kosong. Tidak ada yang bisa diekspor.');
-      return;
-    }
-    setLoadingPro('rab');
-    try {
-      // Reuse logic from Custom Export
-      const enrichedLines = [...ahspLines];
-      const missingDetailIds = enrichedLines
-        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0))
-        .map(l => l.master_ahsp_id);
-
-      if (missingDetailIds.length > 0) {
-        const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
-        if (detailsData) {
-          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-          enrichedLines.forEach(l => {
-            if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) {
-              if (!l.master_ahsp) l.master_ahsp = {};
-              l.master_ahsp.details = detailMap[l.master_ahsp_id];
-            }
-          });
-        }
+    handleStartExport(async (hImg) => {
+      if (!project || !ahspLines || ahspLines.length === 0) {
+        toast.warning('Data RAB kosong. Tidak ada yang bisa diekspor.');
+        return;
       }
+      setLoadingPro('rab');
+      try {
+        const enrichedLines = [...ahspLines];
+        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
+        if (missingDetailIds.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+          if (detailsData) {
+            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+          }
+        }
+        const [projectRes, catalogRes] = await Promise.all([
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+        ]);
+        const mergedMap = {};
+        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-      const [projectRes, catalogRes] = await Promise.all([
-        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
-      ]);
-      const mergedMap = {};
-      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-
-      await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
-        projectPrices,
-        headerImage, 
-        paperSize 
-      });
-      toast.success('RAB Berhasil diunduh.');
-    } catch (err) {
-      toast.error('Gagal mengekspor RAB: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
+        await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { projectPrices, headerImage: hImg, paperSize });
+        toast.success('RAB Berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal mengekspor RAB: ' + err.message);
+      } finally {
+        setLoadingPro(null);
+      }
+    });
   }
 
   async function handleExportUsedAhsp() {
-    if (!project || !ahspLines || ahspLines.length === 0) return;
-    setLoadingPro('used_ahsp');
-    try {
-      const enrichedLines = [...ahspLines];
-      const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-      if (missingDetailIds.length > 0) {
-        const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
-        if (detailsData) {
-          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-          enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+    handleStartExport(async (hImg) => {
+      if (!project || !ahspLines || ahspLines.length === 0) return;
+      setLoadingPro('used_ahsp');
+      try {
+        const enrichedLines = [...ahspLines];
+        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
+        if (missingDetailIds.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+          if (detailsData) {
+            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+          }
         }
+        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { headerImage: hImg, paperSize });
+        toast.success('Analisa AHSP Terpakai berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal mengekspor AHSP: ' + err.message);
+      } finally {
+        setLoadingPro(null);
       }
-      await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { headerImage, paperSize });
-      toast.success('Analisa AHSP Terpakai berhasil diunduh.');
-    } catch (err) {
-      toast.error('Gagal mengekspor AHSP: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
+    });
   }
 
   async function handleExportUsedResources() {
-    if (!project || !ahspLines || ahspLines.length === 0) return;
-    setLoadingPro('used_res');
-    try {
-      const [projectRes, catalogRes] = await Promise.all([
-        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
-      ]);
-      const mergedMap = {};
-      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-
-      await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { projectPrices, headerImage, paperSize });
-      toast.success('Komponen Harga berhasil diunduh.');
-    } catch (err) {
-      toast.error('Gagal mengekspor Komponen Harga: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
-  }
-
-  function handleSetCurrentPeriod() {
-    const now = new Date();
-    let start, end;
-
-    if (reportType === 'harian') {
-      start = now;
-      end = now;
-    } else if (reportType === 'mingguan') {
-      const day = now.getDay();
-      const diffStart = now.getDate() - day + (day === 0 ? -6 : 1); 
-      start = new Date(now.setDate(diffStart));
-      end = new Date(now.setDate(start.getDate() + 6));
-    } else {
-      start = new Date(now.getFullYear(), now.getMonth(), 1);
-      end = new Date(now.getFullYear(), now.getMonth() + 1, 0);
-    }
-
-    setDateRange({
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0]
+    handleStartExport(async (hImg) => {
+      if (!project || !ahspLines || ahspLines.length === 0) return;
+      setLoadingPro('used_res');
+      try {
+        const [projectRes, catalogRes] = await Promise.all([
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+        ]);
+        const mergedMap = {};
+        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+        await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { projectPrices, headerImage: hImg, paperSize });
+        toast.success('Komponen Harga berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal mengekspor Komponen Harga: ' + err.message);
+      } finally {
+        setLoadingPro(null);
+      }
     });
-
-    toast.info(`Periode ${reportType} telah disesuaikan.`);
-  }
-  
-  function handleHeaderImageUpload(e) {
-    const file = e.target.files[0];
-    if (!file) return;
-    if (!file.type.startsWith('image/')) {
-      toast.error('File harus berupa gambar.');
-      return;
-    }
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      setHeaderImage(event.target.result);
-      toast.success('Kop gambar berhasil diimpor.');
-    };
-    reader.readAsDataURL(file);
   }
 
   async function handleExportRegionalCatalog() {
-    if (!project?.location_id || !project?.location) {
-      toast.warning('Lokasi proyek belum ditentukan.');
-      return;
-    }
-    setLoadingPro('catalog');
-    try {
-      const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-      if (!catPrice || catPrice.length === 0) {
-        toast.warning(`Tidak ada data katalog untuk wilayah ${project.location}`);
+    handleStartExport(async (hImg) => {
+      if (!project?.location_id || !project?.location) {
+        toast.warning('Lokasi proyek belum ditentukan.');
         return;
       }
-      await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { 
-        isCatalog: true, 
-        catPrice, 
-        headerImage, 
-        paperSize 
-      });
-      toast.success('Katalog Wilayah berhasil diunduh.');
-    } catch (err) {
-      toast.error('Gagal mengambil katalog: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
+      setLoadingPro('catalog');
+      try {
+        const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
+        if (!catPrice || catPrice.length === 0) {
+          toast.warning(`Tidak ada data katalog untuk wilayah ${project.location}`);
+          return;
+        }
+        await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { isCatalog: true, catPrice, headerImage: hImg, paperSize });
+        toast.success('Katalog Wilayah berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal mengambil katalog: ' + err.message);
+      } finally {
+        setLoadingPro(null);
+      }
+    });
   }
 
   async function handleExportMasterAhsp() {
-    setLoadingPro('ahsp');
-    try {
-      const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
-      await generateProjectReport(project, userMember, [], ['AHSP'], { 
-        isCatalog: true, 
-        catAhsp, 
-        headerImage, 
-        paperSize 
-      });
-      toast.success('Master AHSP berhasil diunduh.');
-    } catch (err) {
-      toast.error('Gagal mengambil master AHSP: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
+    handleStartExport(async (hImg) => {
+      setLoadingPro('ahsp');
+      try {
+        const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
+        await generateProjectReport(project, userMember, [], ['AHSP'], { isCatalog: true, catAhsp, headerImage: hImg, paperSize });
+        toast.success('Master AHSP berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal mengambil master AHSP: ' + err.message);
+      } finally {
+        setLoadingPro(null);
+      }
+    });
   }
 
   async function handleExportScurve() {
-    if (!ahspLines || ahspLines.length === 0) {
-      toast.warning('Data proyek kosong.');
-      return;
-    }
-    setLoadingPro('scurve');
-    try {
-      const ahspIds = [...new Set(ahspLines.map(l => l.master_ahsp_id).filter(Boolean))];
-      const { data: catalogData } = ahspIds.length > 0 
-        ? await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds)
-        : { data: [] };
-      
-      const catMap = {};
-      (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
-
-      const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
-      const manpower = computeManpower(ahspLines, catMap, project.labor_settings || {});
-      const sequenced = getSequencedSchedule(manpower, project.start_date);
-
-      // Fetch Prices for correct percentage calculations
-      const [projectRes, catalogRes] = await Promise.all([
-        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
-      ]);
-      const mergedMap = {};
-      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-
-      await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
-        scheduleData: sequenced,
-        progressData: progData,
-        projectPrices,
-        paperSize: paperSize || 'A4',
-        headerImage: headerImage 
-      });
-    } catch (err) {
-      toast.error('Gagal memproses Kurva-S: ' + err.message);
-    } finally {
-      setLoadingPro(null);
-    }
-  }
-
-  async function handleConfirmCustomExport() {
-    if (selectedSheets.length === 0) {
-       toast.warning('Pilih minimal satu sheet untuk diekspor.');
-       return;
-    }
-    setLoadingPro('custom');
-    try {
-      // Enrich ahspLines with details for export if missing
-      const enrichedLines = [...ahspLines];
-      const missingDetailIds = enrichedLines
-        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0))
-        .map(l => l.master_ahsp_id);
-
-      if (missingDetailIds.length > 0) {
-        const { data: detailsData } = await supabase
-          .from('view_katalog_ahsp_lengkap')
-          .select('master_ahsp_id, details')
-          .in('master_ahsp_id', missingDetailIds);
-        
-        if (detailsData) {
-          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-          enrichedLines.forEach(l => {
-            if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) {
-              if (!l.master_ahsp) l.master_ahsp = {};
-              l.master_ahsp.details = detailMap[l.master_ahsp_id];
-            }
-          });
-        }
+    handleStartExport(async (hImg) => {
+      if (!ahspLines || ahspLines.length === 0) {
+        toast.warning('Data proyek kosong.');
+        return;
       }
-
-      // 1. Generate Schedule Data (Cek secara case-insensitive)
-      let scheduleData = [];
-      const isScheduleSelected = selectedSheets.some(s => s.toLowerCase() === 'schedule');
-      
-      if (isScheduleSelected) {
-        const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
-        const { data: catalogData } = ahspIds.length > 0
+      setLoadingPro('scurve');
+      try {
+        const ahspIds = [...new Set(ahspLines.map(l => l.master_ahsp_id).filter(Boolean))];
+        const { data: catalogData } = ahspIds.length > 0 
           ? await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds)
           : { data: [] };
         
         const catMap = {};
         (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
-
         const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
-        const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
-        scheduleData = getSequencedSchedule(manpower, project.start_date);
-      }
-
-      // 2. Fetch Progress Data (untuk baris AKTUAL di Schedule)
-      const { data: progData } = await supabase
-        .from('project_progress_daily')
-        .select('*')
-        .eq('project_id', project.id);
-
-      // 3. Eksekusi Export sesuai Mode (Scope aman)
-      if (exportMode === 'catalog') {
-        const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
-        const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
-          isCatalog: true, 
-          catAhsp, 
-          catPrice, 
-          headerImage, 
-          paperSize, 
-          scheduleData,
-          progressData: progData 
-        });
-      } else {
-        // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
+        const manpower = computeManpower(ahspLines, catMap, project.labor_settings || {});
+        const sequenced = getSequencedSchedule(manpower, project.start_date);
+        const { data: progData } = await supabase.from('project_progress_daily').select('*').eq('project_id', project.id);
         const [projectRes, catalogRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
         ]);
-        
-        const pPrices = projectRes.data || [];
-        const cPrices = catalogRes.data || [];
-        
-        // Merge: Start with Catalog prices, then override with non-zero Project prices
         const mergedMap = {};
-        cPrices.forEach(p => { 
-          if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
-        });
-        pPrices.forEach(p => { 
-          if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
-        });
-        
+        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-          
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
-          projectPrices, 
-          globalOverhead: project.ppn_percent || 12, 
-          headerImage, 
-          paperSize, 
-          scheduleData,
-          progressData: progData 
-        });
+
+        await generateProjectReport(project, userMember, ahspLines, ['schedule'], { scheduleData: sequenced, progressData: progData, projectPrices, paperSize: paperSize || 'A4', headerImage: hImg });
+      } catch (err) {
+        toast.error('Gagal memproses Kurva-S: ' + err.message);
+      } finally {
+        setLoadingPro(null);
       }
-      toast.success('Laporan kustom berhasil diunduh.');
-    } catch (err) {
-      console.error(err);
-      toast.error('Gagal membuat laporan: ' + err.message);
-    } finally {
-      setLoadingPro(null);
+    });
+  }
+
+  async function handleConfirmCustomExport() {
+    handleStartExport(async (hImg) => {
+      if (selectedSheets.length === 0) {
+         toast.warning('Pilih minimal satu sheet untuk diekspor.');
+         return;
+      }
+      setLoadingPro('custom');
+      try {
+        const enrichedLines = [...ahspLines];
+        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
+        if (missingDetailIds.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+          if (detailsData) {
+            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+          }
+        }
+        let scheduleData = [];
+        if (selectedSheets.some(s => s.toLowerCase() === 'schedule')) {
+          const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
+          const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds);
+          const catMap = {};
+          (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
+          const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
+          const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
+          scheduleData = getSequencedSchedule(manpower, project.start_date);
+        }
+        const { data: progData } = await supabase.from('project_progress_daily').select('*').eq('project_id', project.id);
+        if (exportMode === 'catalog') {
+          const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
+          const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+        } else {
+          const [projectRes, catalogRes] = await Promise.all([
+            supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+            supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+          ]);
+          const mergedMap = {};
+          (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+          (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+          const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices, globalOverhead: project.ppn_percent || 12, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+        }
+        toast.success('Laporan kustom berhasil diunduh.');
+      } catch (err) {
+        toast.error('Gagal membuat laporan: ' + err.message);
+      } finally {
+        setLoadingPro(null);
+      }
+    });
+  }
+
+  function handleStartExport(fn) {
+    setPendingExportFn(() => fn);
+    setIsExportModalOpen(true);
+  }
+
+  function handleExecutePendingExport(withLogo = true) {
+    const finalImage = withLogo ? headerImage : null;
+    setIsExportModalOpen(false);
+    if (pendingExportFn) {
+      pendingExportFn(finalImage);
     }
   }
 
@@ -808,6 +706,102 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
              <button disabled className="px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest cursor-not-allowed">
                Segera Hadir
              </button>
+          </div>
+        </div>
+      )}
+      {/* MODAL PENGATURAN EKSPOR */}
+      {isExportModalOpen && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setIsExportModalOpen(false)} />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in duration-300">
+            {/* Header Modal */}
+            <div className="p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-between">
+              <div>
+                <h3 className="text-2xl font-black tracking-tighter">Pengaturan Ekspor</h3>
+                <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mt-1">Logo & Format Dokumen</p>
+              </div>
+              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+                <FileSpreadsheet className="w-7 h-7 text-white" />
+              </div>
+            </div>
+
+            <div className="p-10 space-y-8">
+              {/* Logo Upload Section */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">KOP Proyek / Logo Perusahaan</label>
+                <div className="flex flex-col items-center gap-6 p-8 bg-slate-50 dark:bg-slate-800/50 rounded-[2rem] border-2 border-dashed border-slate-200 dark:border-slate-700 relative group transition-all">
+                  {headerImage ? (
+                    <div className="relative w-full aspect-[4/1] bg-white rounded-xl overflow-hidden shadow-lg border border-slate-200">
+                      <img src={headerImage} alt="KOP Logo" className="w-full h-full object-contain p-2" />
+                      <button 
+                        onClick={() => setHeaderImage(null)}
+                        className="absolute top-2 right-2 w-8 h-8 bg-rose-500 text-white rounded-lg flex items-center justify-center shadow-lg hover:scale-110 transition-transform"
+                      >
+                        <Check className="w-4 h-4 rotate-45" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center text-center">
+                      <div className="w-16 h-16 bg-white dark:bg-slate-800 rounded-2xl flex items-center justify-center mb-4 shadow-sm border border-slate-100 dark:border-slate-700 group-hover:scale-110 transition-transform">
+                        <Upload className="w-8 h-8 text-indigo-500" />
+                      </div>
+                      <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Upload KOP / Logo</p>
+                      <p className="text-[9px] text-slate-500">Format PNG/JPG, rekomendasi 800x200px</p>
+                    </div>
+                  )}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={handleHeaderImageUpload}
+                    className="absolute inset-0 opacity-0 cursor-pointer"
+                  />
+                </div>
+              </div>
+
+              {/* Paper Size Section */}
+              <div className="space-y-4">
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Ukuran Kertas</label>
+                <div className="grid grid-cols-2 gap-4">
+                  {['A4', 'F4'].map(size => (
+                    <button
+                      key={size}
+                      onClick={() => setPaperSize(size)}
+                      className={`py-4 rounded-2xl border-2 font-black transition-all ${
+                        paperSize === size 
+                          ? 'bg-indigo-600 border-indigo-600 text-white shadow-xl translate-y-[-2px]' 
+                          : 'bg-white dark:bg-slate-800 border-slate-100 dark:border-slate-700 text-slate-400 dark:text-slate-600'
+                      }`}
+                    >
+                      {size}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="flex flex-col gap-3 pt-4">
+                <button 
+                  onClick={() => handleExecutePendingExport(true)}
+                  className="w-full py-5 bg-slate-900 dark:bg-white text-white dark:text-slate-900 rounded-[1.5rem] text-xs font-black uppercase tracking-[0.2em] shadow-xl hover:translate-y-[-2px] transition-all flex items-center justify-center gap-3"
+                >
+                  <Download className="w-5 h-5" /> LANJUTKAN EKSPOR
+                </button>
+                <div className="flex gap-3">
+                  <button 
+                    onClick={() => handleExecutePendingExport(false)}
+                    className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 transition-colors"
+                  >
+                    TANPA KOP
+                  </button>
+                  <button 
+                    onClick={() => setIsExportModalOpen(false)}
+                    className="px-8 py-4 bg-white dark:bg-slate-900 text-slate-400 rounded-2xl text-[10px] font-black uppercase tracking-widest border border-slate-200 dark:border-slate-800 hover:text-rose-500 transition-colors"
+                  >
+                    BATAL
+                  </button>
+                </div>
+              </div>
+            </div>
           </div>
         </div>
       )}
