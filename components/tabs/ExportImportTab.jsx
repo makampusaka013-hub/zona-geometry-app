@@ -20,6 +20,22 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   const [paperSize, setPaperSize] = useState('A4'); // 'A4' | 'F4'
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [pendingExportFn, setPendingExportFn] = useState(null);
+  const [loadingPro, setLoadingPro] = useState(null);
+  const [headerImage, setHeaderImage] = useState(null);
+
+  const handleHeaderImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onload = (event) => setHeaderImage(event.target.result);
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSetCurrentPeriod = () => {
+    const today = new Date().toISOString().split('T')[0];
+    setDateRange({ start: today, end: today });
+  };
 
   if (tabLoading) {
     return (
