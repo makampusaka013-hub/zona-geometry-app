@@ -383,10 +383,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
         });
         
-        const priceMap = mergedMap;
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
         await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
-          priceMap, 
+          projectPrices, 
           globalOverhead: project.ppn_percent || 12, 
           headerImage, 
           paperSize, 
