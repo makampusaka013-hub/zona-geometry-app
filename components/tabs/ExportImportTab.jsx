@@ -315,10 +315,28 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         }
       }
 
+      // 1. Generate Schedule Data (Cek secara case-insensitive)
+      let scheduleData = [];
+      const isScheduleSelected = selectedSheets.some(s => s.toLowerCase() === 'schedule');
+      
+      if (isScheduleSelected) {
+        const { data: catalogData } = await supabase
+          .from('view_katalog_ahsp_lengkap')
+          .select('master_ahsp_id, details');
+        
+        const catMap = {};
+        (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
+
+        const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
+        const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
+        scheduleData = getSequencedSchedule(manpower, project.start_date);
+      }
+
+      // 2. Eksekusi Export sesuai Mode (Scope aman)
       if (exportMode === 'catalog') {
         const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage, paperSize });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage, paperSize, scheduleData });
       } else {
         // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
         const [projectRes, catalogRes] = await Promise.all([
@@ -338,23 +356,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
         });
         
-        let scheduleData = [];
-        if (selectedSheets.includes('schedule')) {
-          try {
-            const { data: catalogData } = await supabase
-              .from('view_katalog_ahsp_lengkap')
-              .select('master_ahsp_id, details');
-            
-            const catMap = {};
-            (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
-
-            const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
-            const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
-            scheduleData = getSequencedSchedule(manpower, project.start_date);
-          } catch (e) {
-            console.error('Gagal memproses data schedule:', e);
-          }
-        }
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
         await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices, headerImage, paperSize, scheduleData });
       }
