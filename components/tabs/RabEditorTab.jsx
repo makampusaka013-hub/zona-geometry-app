@@ -362,29 +362,24 @@ export default function RabEditorTab({
         const bab = item.bab_pekerjaan || 'UMUM';
         if (!grouped[bab]) grouped[bab] = [];
         
-        // 1. Ambil harga dari katalog dan harga yang tersimpan di DB
+        // 1. Tentukan Profit (Prioritas: Profit Per Item -> Profit Global -> Default 15%)
+        const savedProfit = item.profit_percent;
+        const finalProfit = (savedProfit !== null && savedProfit !== undefined) 
+          ? savedProfit 
+          : (proj?.overhead_percent || proj?.profit_percent || 15);
+
+        // 2. KUNCI UTAMA: Tentukan HARGA DASAR murni
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
-        const currentSavedPrice = item.harga_satuan;
+        let basePrice = parseNum(freshPrice);
         
-        // 2. Tentukan harga aktif (prioritaskan yang tersimpan di DB)
-        const activePrice = (currentSavedPrice !== null && parseNum(currentSavedPrice) > 0) 
-          ? currentSavedPrice 
-          : (freshPrice || 0);
-
-        // 3. HITUNG MUNDUR PROFIT (Jika DB kosong, hitung dari selisih harga)
-        let calculatedProfit = item.profit_percent;
-        
-        if ((calculatedProfit === null || calculatedProfit === undefined) && freshPrice && parseNum(freshPrice) > 0) {
-          // Rumus: ((Harga Jual / Harga Dasar) - 1) * 100
-          calculatedProfit = Math.round(((parseNum(activePrice) / parseNum(freshPrice)) - 1) * 100);
+        if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
+            // Reverse-engineer Harga Dasar dari Harga Final untuk item Lumpsum
+            basePrice = parseNum(item.harga_satuan) / (1 + (parseNum(finalProfit) / 100));
         }
-        
-        // 4. Gunakan hasil hitung, jika gagal baru gunakan default proyek (15%)
-        const finalProfit = (calculatedProfit !== null && !isNaN(calculatedProfit)) 
-          ? calculatedProfit 
-          : (proj?.overhead_percent || 15);
 
-        // 5. Masukkan ke dalam state grouped
+        // 3. Kalkulasi ulang Harga Final secara ketat
+        const activePrice = Math.ceil(basePrice * (1 + (parseNum(finalProfit) / 100)));
+
         grouped[bab].push({
           key: item.id,
           masterAhspId: item.master_ahsp_id,
@@ -393,8 +388,8 @@ export default function RabEditorTab({
           uraianCustom: item.uraian_custom,
           satuan: item.satuan,
           volume: String(item.volume),
-          hargaSatuan: String(activePrice),
-          baseSubtotal: String(freshPrice || activePrice),
+          baseSubtotal: String(basePrice),   // HARGA DASAR TERKUNCI
+          hargaSatuan: String(activePrice),  // HARGA FINAL (+PROFIT)
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
@@ -449,6 +444,11 @@ export default function RabEditorTab({
             const hs = calculateHargaSatuan(sum, updated.profitPercent || globalOverhead);
             updated.hargaSatuan = String(hs);
             updated.baseSubtotal = String(sum);
+          } else if (patch.hargaSatuan !== undefined) {
+            // User mengedit Harga Satuan manual. Kita hitung mundur Harga Dasarnya agar aman.
+            const prf = parseNum(updated.profitPercent);
+            const hrg = parseNum(patch.hargaSatuan);
+            updated.baseSubtotal = String(hrg / (1 + (prf / 100)));
           }
           return updated;
         }
@@ -465,41 +465,24 @@ export default function RabEditorTab({
         ...s,
         lines: s.lines.map(r => {
           if (r.key !== rowKey) return r;
-          // Cari harga dasar asli. Jika kosong, reverse-engineer dari harga saat ini dikurangi profit saat ini.
-          const currentBase = parseNum(r.baseSubtotal) > 0 
-            ? parseNum(r.baseSubtotal) 
-            : (parseNum(r.hargaSatuan) / (1 + (parseNum(r.profitPercent || 0) / 100)));
-          
+          // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
+          const currentBase = parseNum(r.baseSubtotal);
           const newHarga = Math.ceil(currentBase * (1 + (val / 100)));
-          return { 
-            ...r, 
-            profitPercent: String(val), 
-            hargaSatuan: String(newHarga), 
-            baseSubtotal: String(currentBase) // Kunci harga dasar agar tidak amnesia
-          };
+          return { ...r, profitPercent: String(val), hargaSatuan: String(newHarga) };
         })
       };
     }));
   };
 
   const applyGlobalOverheadToAllRows = () => {
+    const profitPct = parseNum(globalOverhead);
     setSections(prev => prev.map(s => ({
       ...s,
       lines: s.lines.map(r => {
-        // Cari harga dasar asli. Jika kosong, reverse-engineer dari harga saat ini dikurangi profit saat ini.
-        const currentBase = parseNum(r.baseSubtotal) > 0 
-          ? parseNum(r.baseSubtotal) 
-          : (parseNum(r.hargaSatuan) / (1 + (parseNum(r.profitPercent || 0) / 100)));
-          
-        const profitPct = parseNum(globalOverhead);
+        // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
+        const currentBase = parseNum(r.baseSubtotal);
         const newHarga = Math.ceil(currentBase * (1 + (profitPct / 100)));
-        
-        return {
-          ...r,
-          profitPercent: String(profitPct),
-          hargaSatuan: String(newHarga),
-          baseSubtotal: String(currentBase) // Kunci harga dasar agar tidak amnesia
-        };
+        return { ...r, profitPercent: String(profitPct), hargaSatuan: String(newHarga) };
       })
     })));
   };
@@ -598,6 +581,7 @@ export default function RabEditorTab({
         hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
         overhead_percent: parseNum(globalOverhead),
+        profit_percent: parseNum(globalOverhead), // <--- WAJIB ADA AGAR DB MEMBACA PROFIT PROYEK
         start_date: identity.start_date || new Date().toISOString().split('T')[0]
       };
 
