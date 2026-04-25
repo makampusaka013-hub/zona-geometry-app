@@ -601,7 +601,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
-                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'sky' },
+                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
                   { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
                   { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, color: 'indigo' }
                 ].map(tool => (
@@ -611,7 +611,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                     disabled={loadingPro === tool.id}
                     className="group bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl hover:translate-y-[-4px] transition-all text-center flex flex-col items-center gap-4 disabled:opacity-50"
                   >
-                    <div className={`w-14 h-14 bg-${tool.color}-50 dark:bg-${tool.color}-500/10 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+                    <div className={`w-14 h-14 bg-${tool.color}-50 dark:bg-${tool.color}-500/20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
                       <tool.icon className={`w-7 h-7 text-${tool.color}-600 dark:text-${tool.color}-400`} />
                     </div>
                     <span className="text-[10px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest leading-tight">{tool.label}</span>
