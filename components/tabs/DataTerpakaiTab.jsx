@@ -105,9 +105,12 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
       const newPrice = parseFloat(harga || 0);
       const newTkdn = parseFloat(tkdn || 0);
 
+      // KUNCI PERBAIKAN: Fallback ekstraksi ID berlapis
+      const validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
+
       if (item.source_table === 'master_harga_dasar') {
         const { error } = await supabase.from('master_harga_custom').upsert({
-          overrides_harga_dasar_id: item.item_dasar_id,
+          overrides_harga_dasar_id: validId,
           nama_item: item.uraian,
           satuan: item.satuan,
           harga_satuan: newPrice,
@@ -117,11 +120,10 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
         }, { onConflict: 'user_id,overrides_harga_dasar_id' });
         if (error) { alert(error.message); return; }
       } else {
-        // Item custom — update langsung
-        const targetId = item.overrides_id || item.item_dasar_id;
+        // Item custom — update langsung menggunakan validId
         const { error } = await supabase.from('master_harga_custom')
           .update({ harga_satuan: newPrice, tkdn_percent: newTkdn })
-          .eq('id', targetId);
+          .eq('id', validId);
         if (error) { alert(error.message); return; }
       }
 
@@ -135,20 +137,19 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
     if (!confirm('Reset harga ke nilai PUPR resmi? Override Anda akan dihapus.')) return;
     setResetting(true);
     try {
-      const targetId = item.source_table === 'master_harga_custom'
-        ? item.item_dasar_id
-        : null;
+      // KUNCI PERBAIKAN: Fallback ekstraksi ID berlapis
+      const validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
 
-      if (targetId) {
+      if (item.source_table === 'master_harga_custom') {
         const { error } = await supabase.from('master_harga_custom')
           .delete()
-          .eq('id', targetId);
+          .eq('id', validId);
         if (error) { alert(error.message); return; }
-      } else if (item.overrides_id) {
+      } else {
         // hapus berdasarkan overrides_harga_dasar_id milik user ini
         const { error } = await supabase.from('master_harga_custom')
           .delete()
-          .eq('overrides_harga_dasar_id', item.item_dasar_id);
+          .eq('overrides_harga_dasar_id', validId);
         if (error) { alert(error.message); return; }
       }
 
