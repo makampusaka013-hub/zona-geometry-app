@@ -597,42 +597,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       ))}
                     </div>
                     
-                    <div className="pt-4 space-y-3">
-                      <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Header / Kop Gambar (Opsional)</p>
-                      <div className="flex items-center gap-4">
-                        <label className="flex items-center gap-2 px-4 py-2 bg-white/5 border border-white/10 rounded-xl cursor-pointer hover:bg-white/10 transition-all">
-                          <Upload className="w-4 h-4 text-indigo-400" />
-                          <span className="text-[10px] font-black uppercase tracking-widest text-white">Import Kop</span>
-                          <input type="file" accept="image/*" className="hidden" onChange={handleHeaderImageUpload} />
-                        </label>
-                        {headerImage && (
-                          <div className="flex items-center gap-2">
-                             <div className="w-8 h-8 bg-emerald-500/20 rounded-lg flex items-center justify-center border border-emerald-500/30">
-                                <Check className="w-4 h-4 text-emerald-400" />
-                             </div>
-                             <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">Kop Siap</span>
-                             <button onClick={() => setHeaderImage(null)} className="text-[9px] font-bold text-rose-400 hover:text-rose-300 uppercase tracking-widest ml-2">Hapus</button>
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="pt-4 space-y-3">
-                        <p className="text-[10px] text-slate-500 font-black uppercase tracking-widest">Ukuran Kertas</p>
-                        <div className="flex gap-2">
-                          {['A4', 'F4'].map(size => (
-                            <button
-                              key={size}
-                              onClick={() => setPaperSize(size)}
-                              className={`px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest border transition-all ${paperSize === size ? 'bg-indigo-500 text-white border-indigo-400' : 'bg-white/5 text-white/40 border-white/10 hover:border-white/20'}`}
-                            >
-                              {size}
-                            </button>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
                   </div>
-                  <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm space-y-6">
+                  <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm space-y-6 flex flex-col justify-center">
                     <div className="space-y-3">
                       <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-widest text-slate-400">
                         <span>Status Mesin</span>
