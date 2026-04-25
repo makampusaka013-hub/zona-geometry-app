@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, Upload, Download, FileText, Calendar, Users, ChevronRight, MapPin, TrendingUp, Wallet, ClipboardList, Check, LayoutGrid, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Spinner from '../Spinner';
+import LocationSelect from '../LocationSelect';
 import { toast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
@@ -22,6 +23,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   const [pendingExportFn, setPendingExportFn] = useState(null);
   const [loadingPro, setLoadingPro] = useState(null);
   const [headerImage, setHeaderImage] = useState(null);
+  const [exportLocation, setExportLocation] = useState({ id: '', name: '' });
+  const [pendingToolId, setPendingToolId] = useState(null);
 
   const handleHeaderImageUpload = (e) => {
     const file = e.target.files[0];
@@ -140,10 +143,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     });
   }
 
-  async function handleExportUsedAhsp() {
+  async function handleExportUsedAhspHsp() {
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) return;
-      setLoadingPro('used_ahsp');
+      setLoadingPro('used_ahsp_hsp');
       try {
         const enrichedLines = [...ahspLines];
         const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
@@ -154,8 +157,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        
-        // Tambahkan Peta Harga Proyek agar kalkulasi profit & TKDN di Excel Engine tidak kosong
         const [projectRes, catalogRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
@@ -165,26 +166,25 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { 
+        await generateProjectReport(project, userMember, enrichedLines, ['AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
           isStandalone: true,
           fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
         });
-        toast.success('Analisa AHSP Terpakai berhasil diunduh.');
+        toast.success('AHSP & Harga Terpakai berhasil diunduh.');
       } catch (err) {
-        toast.error('Gagal mengekspor AHSP: ' + err.message);
+        toast.error('Gagal mengekspor AHSP & Harga: ' + err.message);
       } finally {
         setLoadingPro(null);
       }
-    });
+    }, 'used_ahsp_hsp');
   }
 
-  async function handleExportUsedResources() {
+  async function handleExportAhspHsp() {
     handleStartExport(async (hImg) => {
-      if (!project || !ahspLines || ahspLines.length === 0) return;
-      setLoadingPro('used_res');
+      setLoadingPro('ahsp_hsp');
       try {
         const [projectRes, catalogRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
@@ -194,33 +194,37 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-        await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { 
+
+        await generateProjectReport(project, userMember, ahspLines, ['AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
           isStandalone: true,
           fileName: "AHSP & HSP"
         });
-        toast.success('Komponen Harga berhasil diunduh.');
+        toast.success('AHSP & HSP berhasil diunduh.');
       } catch (err) {
-        toast.error('Gagal mengekspor Komponen Harga: ' + err.message);
+        toast.error('Gagal mengekspor AHSP & HSP: ' + err.message);
       } finally {
         setLoadingPro(null);
       }
-    });
+    }, 'ahsp_hsp');
   }
 
   async function handleExportRegionalCatalog() {
-    handleStartExport(async (hImg) => {
-      if (!project?.location_id || !project?.location) {
-        toast.warning('Lokasi proyek belum ditentukan.');
+    handleStartExport(async (hImg, loc) => {
+      const locationId = loc?.id || project?.location_id;
+      const locationName = loc?.name || project?.location;
+
+      if (!locationId) {
+        toast.warning('Lokasi belum ditentukan.');
         return;
       }
-      setLoadingPro('catalog');
+      setLoadingPro('catalog_region');
       try {
-        const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
+        const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', locationId);
         if (!catPrice || catPrice.length === 0) {
-          toast.warning(`Tidak ada data katalog untuk wilayah ${project.location}`);
+          toast.warning(`Tidak ada data katalog untuk wilayah ${locationName}`);
           return;
         }
         await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { 
@@ -228,7 +232,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           catPrice, 
           headerImage: hImg, 
           paperSize,
-          fileName: `Harga Satuan ${project.location || ''}`
+          isStandalone: true,
+          fileName: `Harga Satuan ${locationName || ''}`
         });
         toast.success('Katalog Wilayah berhasil diunduh.');
       } catch (err) {
@@ -236,7 +241,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       } finally {
         setLoadingPro(null);
       }
-    });
+    }, 'catalog_region');
   }
 
   async function handleExportMasterAhsp() {
@@ -359,16 +364,28 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     });
   }
 
-  function handleStartExport(fn) {
+  function handleStartExport(fn, toolId = null) {
     setPendingExportFn(() => fn);
+    setPendingToolId(toolId);
+    if (toolId === 'catalog_region') {
+      setExportLocation({ id: project?.location_id || '', name: project?.location || '' });
+    }
     setIsExportModalOpen(true);
   }
 
   function handleExecutePendingExport(withLogo = true) {
     const finalImage = withLogo ? headerImage : null;
+    
+    if (pendingToolId === 'catalog_region') {
+      if (!exportLocation.id) {
+        toast.warning('Silakan pilih wilayah terlebih dahulu.');
+        return;
+      }
+    }
+
     setIsExportModalOpen(false);
     if (pendingExportFn) {
-      pendingExportFn(finalImage);
+      pendingExportFn(finalImage, exportLocation);
     }
   }
 
@@ -601,9 +618,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, bg: 'bg-emerald-50 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400' },
-                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, bg: 'bg-blue-50 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' },
-                  { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, bg: 'bg-amber-50 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400' },
-                  { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, bg: 'bg-indigo-50 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400' }
+                  { id: 'used_ahsp_hsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhspHsp, bg: 'bg-blue-50 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' },
+                  { id: 'ahsp_hsp', label: 'AHSP & HSP', icon: Wallet, action: handleExportAhspHsp, bg: 'bg-amber-50 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400' },
+                  { id: 'catalog_region', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, bg: 'bg-indigo-50 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400' }
                 ].map(tool => (
                   <button
                     key={tool.id}
@@ -810,6 +827,19 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                   ))}
                 </div>
               </div>
+
+              {pendingToolId === 'catalog_region' && (
+                <div className="bg-slate-50 dark:bg-slate-800/50 p-6 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <MapPin className="w-4 h-4 text-indigo-500" />
+                    <h4 className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">Pilih Wilayah Katalog</h4>
+                  </div>
+                  <LocationSelect 
+                    value={exportLocation.id}
+                    onChange={(id, name) => setExportLocation({ id, name })}
+                  />
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex flex-col gap-3 pt-4">
