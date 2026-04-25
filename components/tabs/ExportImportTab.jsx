@@ -124,7 +124,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { projectPrices, headerImage: hImg, paperSize, isStandalone: true });
+        await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
+          projectPrices, 
+          headerImage: hImg, 
+          paperSize, 
+          isStandalone: true,
+          fileName: `RAB ${project.name || ''}`
+        });
         toast.success('RAB Berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor RAB: ' + err.message);
@@ -159,7 +165,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { projectPrices, headerImage: hImg, paperSize, isStandalone: true });
+        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { 
+          projectPrices, 
+          headerImage: hImg, 
+          paperSize, 
+          isStandalone: true,
+          fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
+        });
         toast.success('Analisa AHSP Terpakai berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor AHSP: ' + err.message);
@@ -182,7 +194,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-        await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { projectPrices, headerImage: hImg, paperSize, isStandalone: true });
+        await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { 
+          projectPrices, 
+          headerImage: hImg, 
+          paperSize, 
+          isStandalone: true,
+          fileName: "AHSP & HSP"
+        });
         toast.success('Komponen Harga berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor Komponen Harga: ' + err.message);
@@ -205,7 +223,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           toast.warning(`Tidak ada data katalog untuk wilayah ${project.location}`);
           return;
         }
-        await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { isCatalog: true, catPrice, headerImage: hImg, paperSize });
+        await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { 
+          isCatalog: true, 
+          catPrice, 
+          headerImage: hImg, 
+          paperSize,
+          fileName: `Harga Satuan ${project.location || ''}`
+        });
         toast.success('Katalog Wilayah berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengambil katalog: ' + err.message);
@@ -258,7 +282,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, ahspLines, ['schedule'], { scheduleData: sequenced, progressData: progData, projectPrices, paperSize: paperSize || 'A4', headerImage: hImg, isStandalone: true });
+        await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
+          scheduleData: sequenced, 
+          progressData: progData, 
+          projectPrices, 
+          paperSize: paperSize || 'A4', 
+          headerImage: hImg, 
+          isStandalone: true,
+          fileName: `Kurva-S ${project.name || ''}`
+        });
       } catch (err) {
         toast.error('Gagal memproses Kurva-S: ' + err.message);
       } finally {
@@ -308,7 +340,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices, globalOverhead: project.ppn_percent || 12, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+            projectPrices, 
+            globalOverhead: project.ppn_percent || 12, 
+            headerImage: hImg, 
+            paperSize, 
+            scheduleData, 
+            progressData: progData,
+            fileName: `Proyek ${project.name || ''}`
+          });
         }
         toast.success('Laporan kustom berhasil diunduh.');
       } catch (err) {
@@ -560,9 +600,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               {/* Additional Tools */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
-                  { id: 'scurve', label: 'Kurva-S & Jadwal', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
-                  { id: 'used_ahsp', label: 'AHSP Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
-                  { id: 'used_res', label: 'Komponen Harga', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
+                  { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
+                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
+                  { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
                   { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, color: 'indigo' }
                 ].map(tool => (
                   <button
@@ -589,7 +629,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         <LayoutGrid className="w-7 h-7 text-white" />
                       </div>
                       <div>
-                        <h3 className="text-2xl font-black tracking-tight">Kustomisasi Laporan</h3>
+                        <h3 className="text-2xl font-black tracking-tight">Ekspor Kustom</h3>
                         <p className="text-[10px] text-indigo-300 font-black uppercase tracking-widest">Master Template Engine v2.0</p>
                       </div>
                     </div>
