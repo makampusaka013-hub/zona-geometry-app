@@ -373,8 +373,9 @@ export default function RabEditorTab({
       const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
       let masterPrices = {};
       if (ahspIds.length > 0) {
-        const { data: masters } = await supabase.from('view_katalog_ahsp_gabungan').select('master_ahsp_id, total_subtotal').in('master_ahsp_id', ahspIds);
-        (masters || []).forEach(m => { masterPrices[m.master_ahsp_id] = m.total_subtotal; });
+        // Gunakan view_analisa_ahsp dan cocokkan dengan kolom 'id'
+        const { data: masters } = await supabase.from('view_analisa_ahsp').select('id, total_subtotal').in('id', ahspIds);
+        (masters || []).forEach(m => { masterPrices[m.id] = m.total_subtotal; });
       }
 
       const grouped = {};
@@ -392,9 +393,15 @@ export default function RabEditorTab({
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
         let basePrice = parseNum(freshPrice);
         
-        if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
-            // Reverse-engineer Harga Dasar dari Harga Final untuk item Lumpsum
-            basePrice = parseNum(item.harga_satuan) / (1 + (parseNum(finalProfit) / 100));
+        if (basePrice === 0) {
+            // Coba hitung mundur dari rincian komponen jika tersedia (Sangat Akurat)
+            if (item.analisa_custom && item.analisa_custom.length > 0) {
+               basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
+            } 
+            // Hitung mundur dari Harga Final jika item Lumsum
+            else if (parseNum(item.harga_satuan) > 0) {
+               basePrice = parseNum(item.harga_satuan) / (1 + (parseNum(finalProfit) / 100));
+            }
         }
 
         // 3. Kalkulasi ulang Harga Final secara ketat
