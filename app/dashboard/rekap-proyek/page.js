@@ -175,11 +175,11 @@ function ProyekContent() {
     if (!currentProjectObj) return { total: 0, duration: 0 };
     if (localTotalKontrak !== null) return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
     try {
-      if (activeCcoVersion?.total > 0) {
         const subtotal = activeCcoVersion.total;
         const ppnPct = currentProjectObj.ppn_percent ?? 12;
         const ppn = subtotal * (ppnPct / 100);
-        const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
+        const total = Math.round(subtotal + ppn);
+        const rounded = Math.ceil(total / 1000) * 1000;
         return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
       const subtotal = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
@@ -1349,8 +1349,8 @@ function ProyekContent() {
                       const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
                       const ppnPct = p.ppn_percent ?? 12; // Gunakan Nullish Coalescing (??) agar angka 0 tidak diubah ke 12
                       const ppn = subtotal * (ppnPct / 100);
-                      const total = subtotal + ppn;
-                      const rounded = Math.ceil((total || 0) / 1000) * 1000;
+                      const total = Math.round(subtotal + ppn);
+                      const rounded = Math.ceil(total / 1000) * 1000;
 
                       return (
                         <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">
