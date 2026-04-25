@@ -92,7 +92,7 @@ function createEmptySection(name, currentSections = []) {
 function calculateHargaSatuan(baseSubtotal, profitPercent) {
   const base = parseNum(baseSubtotal);
   const profit = parseNum(profitPercent);
-  const total = Math.floor(base * (1 + (profit / 100)));
+  const total = Math.round(base * (1 + (profit / 100)));
   return total;
 }
 
@@ -426,7 +426,7 @@ export default function RabEditorTab({
         }
 
         // 4. Sinkronisasi Harga Final
-        const activePrice = Math.floor(basePrice * (1 + (finalProfit / 100)));
+        const activePrice = Math.round(basePrice * (1 + (finalProfit / 100)));
 
         grouped[bab].push({
           key: item.id,
@@ -526,7 +526,7 @@ export default function RabEditorTab({
           if (r.key !== rowKey) return r;
           // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
           const currentBase = parseNum(r.baseSubtotal);
-          const newHarga = Math.floor(currentBase * (1 + (val / 100)));
+          const newHarga = Math.round(currentBase * (1 + (val / 100)));
           return { ...r, profitPercent: String(val), hargaSatuan: String(newHarga) };
         })
       };
@@ -540,7 +540,7 @@ export default function RabEditorTab({
       lines: s.lines.map(r => {
         // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
         const currentBase = parseNum(r.baseSubtotal);
-        const newHarga = Math.floor(currentBase * (1 + (profitPct / 100)));
+        const newHarga = Math.round(currentBase * (1 + (profitPct / 100)));
         return { ...r, profitPercent: String(profitPct), hargaSatuan: String(newHarga) };
       })
     })));
