@@ -11,7 +11,7 @@ import { generateProjectReport } from '@/lib/excel_engine';
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
   const [exportMode, setExportMode] = useState('project'); // 'project' | 'catalog'
-  const [selectedSheets, setSelectedSheets] = useState(['RAB', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']);
+  const [selectedSheets, setSelectedSheets] = useState(['RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']);
   const [reportType, setReportType] = useState('harian');
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().split('T')[0],
