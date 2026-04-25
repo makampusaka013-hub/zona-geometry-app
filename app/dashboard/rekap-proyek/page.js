@@ -227,6 +227,13 @@ function ProyekContent() {
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
 
+  // Reset data tab setiap kali proyek berganti agar memicu fetch data baru
+  useEffect(() => {
+    if (selectedProject) {
+      setTabData({ ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] });
+    }
+  }, [selectedProject]);
+
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
     // PROTEKSI: Jangan reset form ke kosong jika data proyek sedang dimuat atau belum ada
