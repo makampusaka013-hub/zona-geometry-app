@@ -199,18 +199,22 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       setLoadingPro('ahsp_hsp');
       try {
-        const [projectRes, catalogRes, overrideRes] = await Promise.all([
+        const [catalogAhspRes, projectRes, catalogRes, overrideRes] = await Promise.all([
+          supabase.from('view_katalog_ahsp_lengkap').select('*'),
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
           supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
+        
         const mergedMap = {};
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, ahspLines, ['AHSP', 'HSP'], { 
+        await generateProjectReport(project, userMember, [], ['AHSP', 'HSP'], { 
+          isCatalog: true,
+          catAhsp: catalogAhspRes.data || [],
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
@@ -237,8 +241,27 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       }
       setLoadingPro('catalog_region');
       try {
-        const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', locationId);
-        if (!catPrice || catPrice.length === 0) {
+        const [catalogRes, overrideRes] = await Promise.all([
+          supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', locationId),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan, tkdn_percent')
+        ]);
+        
+        let catPrice = catalogRes.data || [];
+        if (overrideRes.data && overrideRes.data.length > 0) {
+          const overrideMap = Object.fromEntries(overrideRes.data.map(o => [o.kode_item, o]));
+          catPrice = catPrice.map(p => {
+            if (overrideMap[p.kode_item]) {
+              return { 
+                ...p, 
+                harga_satuan: overrideMap[p.kode_item].harga_satuan,
+                tkdn_percent: overrideMap[p.kode_item].tkdn_percent 
+              };
+            }
+            return p;
+          });
+        }
+
+        if (catPrice.length === 0) {
           toast.warning(`Tidak ada data katalog untuk wilayah ${locationName}`);
           return;
         }
