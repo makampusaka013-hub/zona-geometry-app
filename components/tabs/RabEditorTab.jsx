@@ -92,7 +92,7 @@ function createEmptySection(name, currentSections = []) {
 function calculateHargaSatuan(baseSubtotal, profitPercent) {
   const base = parseNum(baseSubtotal);
   const profit = parseNum(profitPercent);
-  const total = Math.round(base + base * (profit / 100));
+  const total = Math.ceil(base * (1 + (profit / 100)));
   return total;
 }
 
@@ -461,14 +461,25 @@ export default function RabEditorTab({
           const updated = { ...r, ...patch };
           if (updated.analisaDetails && updated.analisaDetails.length > 0) {
             const sum = updated.analisaDetails.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga)), 0);
-            const hs = calculateHargaSatuan(sum, updated.profitPercent || globalOverhead);
+            const hs = calculateHargaSatuan(sum, updated.profitPercent);
             updated.hargaSatuan = String(hs);
             updated.baseSubtotal = String(sum);
           } else if (patch.hargaSatuan !== undefined) {
-            // User mengedit Harga Satuan manual. Kita hitung mundur Harga Dasarnya agar aman.
-            const prf = parseNum(updated.profitPercent);
-            const hrg = parseNum(patch.hargaSatuan);
-            updated.baseSubtotal = String(hrg / (1 + (prf / 100)));
+            // User mengedit Harga Satuan manual.
+            // KUNCI: Harga Dasar (baseSubtotal) TIDAK BOLEH BERUBAH.
+            // Kita hitung ulang profitPercent agar sinkron.
+            const base = parseNum(updated.baseSubtotal);
+            const newHarga = parseNum(patch.hargaSatuan);
+            if (base > 0) {
+              const newProfit = ((newHarga / base) - 1) * 100;
+              updated.profitPercent = String(Math.round(newProfit * 100) / 100); // Simpan 2 desimal agar akurat
+              updated.hargaSatuan = String(newHarga);
+            } else {
+              // Jika base masih 0 (lumpsum baru), jadikan harga ini sebagai base
+              updated.baseSubtotal = String(newHarga);
+              updated.hargaSatuan = String(newHarga);
+              updated.profitPercent = "0";
+            }
           }
           return updated;
         }
