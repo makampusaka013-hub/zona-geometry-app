@@ -271,6 +271,14 @@ export default function ProgressTab({
                                  Reject
                                </button>
                              )}
+                             {isOwner && row.status_approval === 'final' && (
+                               <button 
+                                 onClick={(e) => handleStatusUpdate(e, row.id, 'verified')}
+                                 className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
+                               >
+                                 Batal Final
+                               </button>
+                             )}
                              {canApproveFinal && row.status_approval === 'verified' && (
                                <button 
                                  onClick={(e) => handleStatusUpdate(e, row.id, 'final')}
