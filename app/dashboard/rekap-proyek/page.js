@@ -1365,23 +1365,19 @@ function ProyekContent() {
                             {formatIdr(rounded)}
                           </td>
                           <td className="px-6 py-5 text-center">
-                            {p.manual_duration > 0 ? (
-                              <div className="flex flex-col items-center gap-1">
-                                <span className="font-black text-sm text-slate-800 dark:text-white">
-                                  {p.manual_duration} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0}
-                                  <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
+                            <div className="flex flex-col items-center gap-1">
+                              <span className="font-black text-sm text-slate-800 dark:text-white">
+                                {p.manual_duration || 0} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0}
+                                <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
+                              </span>
+                              {p.start_date ? (
+                                <span className="text-[9px] text-slate-400 font-mono">
+                                  {safeFormatDate(p.start_date)}
                                 </span>
-                                {p.start_date ? (
-                                  <span className="text-[9px] text-slate-400 font-mono">
-                                    {safeFormatDate(p.start_date)}
-                                  </span>
-                                ) : (
-                                  <span className="text-[9px] text-amber-500 font-semibold">Tgl mulai belum diset</span>
-                                )}
-                              </div>
-                            ) : (
-                              <span className="text-[9px] text-slate-400 italic">— Belum diset —</span>
-                            )}
+                              ) : (
+                                <span className="text-[9px] text-amber-500 font-semibold italic">Tgl belum diset</span>
+                              )}
+                            </div>
                           </td>
                           <td className="px-6 py-5 text-center">
                             {p.created_by === member?.user_id ?

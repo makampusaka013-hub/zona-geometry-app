@@ -253,7 +253,8 @@ export default function RabEditorTab({
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [identity, setIdentity] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
-    hsp_value: 0, ppn_percent: 12, program_name: '', activity_name: '', work_name: ''
+    hsp_value: 0, ppn_percent: 12, program_name: '', activity_name: '', work_name: '',
+    start_date: new Date().toISOString().split('T')[0]
   });
 
   useEffect(() => {
@@ -337,7 +338,8 @@ export default function RabEditorTab({
         fiscal_year: proj.fiscal_year || '',
         contract_number: proj.contract_number || '',
         hsp_value: proj.hsp_value || 0,
-        ppn_percent: proj.ppn_percent ?? 12
+        ppn_percent: proj.ppn_percent ?? 12,
+        start_date: proj.start_date || ''
       });
     }
 
@@ -578,7 +580,8 @@ export default function RabEditorTab({
         contract_number: identity.contract_number || null,
         hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
-        overhead_percent: parseNum(globalOverhead)
+        overhead_percent: parseNum(globalOverhead),
+        start_date: identity.start_date || new Date().toISOString().split('T')[0]
       };
 
       if (!projectId && !identity.work_name && !identity.name) {
