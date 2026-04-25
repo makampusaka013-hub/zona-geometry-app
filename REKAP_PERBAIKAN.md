@@ -40,3 +40,8 @@ Dokumen ini merangkum seluruh pembaruan dan perbaikan yang telah diterapkan pada
 
 ---
 *Status: Implementasi Selesai & Sinkron ke GitHub.*
+
+## 6. Sinkronisasi Profit & Harga Satuan (Advanced Mode)
+*   **Persistensi Profit**: Memperbaiki bug di mana nilai Profit/Overhead selalu teriset menjadi 15% saat proses simpan. Sekarang sistem menyimpan `overhead_percent` pada level proyek dan `profit_percent` pada level baris pekerjaan secara persisten.
+*   **Prioritas Harga (Overwriting Auto-Sync)**: Mengubah logika pemuatan data agar memprioritaskan harga yang sudah tersimpan di database (`currentSavedPrice`) daripada harga katalog (`freshPrice`). Hal ini melindungi kustomisasi harga dan profit yang telah dilakukan user agar tidak tertimpa otomatis saat proyek dimuat ulang.
+*   **Estetika UI (Light Mode)**: Mengubah aksen warna hitam pekat (`bg-slate-900`) pada header 'Total Harga Kontrak' dan badge 'Tab Proyek' menjadi abu-abu (`bg-slate-700`) untuk meningkatkan harmoni visual pada tema terang.

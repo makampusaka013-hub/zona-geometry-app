@@ -368,6 +368,19 @@ export default function RabEditorTab({
           ? currentSavedPrice 
           : (freshPrice || 0);
 
+        // ----------------------------------------------------
+        // REVERSE-ENGINEER PROFIT PERCENTAGE
+        // Jika profit dari DB kosong, hitung mundur dari harga
+        // ----------------------------------------------------
+        let realProfit = item.profit_percent;
+        if ((realProfit === null || realProfit === undefined) && freshPrice && parseNum(freshPrice) > 0 && activePrice) {
+          realProfit = Math.round(((parseNum(activePrice) / parseNum(freshPrice)) - 1) * 100);
+        }
+        
+        const finalProfit = (realProfit !== null && realProfit !== undefined && !isNaN(realProfit)) 
+          ? realProfit 
+          : (proj?.overhead_percent || 15);
+
         grouped[bab].push({
           key: item.id,
           masterAhspId: item.master_ahsp_id,
@@ -381,7 +394,7 @@ export default function RabEditorTab({
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: String(item.profit_percent || proj?.overhead_percent || 15)
+          profitPercent: String(finalProfit)
         });
       });
 

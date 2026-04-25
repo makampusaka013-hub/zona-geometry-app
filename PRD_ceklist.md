@@ -41,6 +41,7 @@ Dokumen ini melacak status pengerjaan fitur berdasarkan dokumen `PRD.md` dan kon
 | :---: | --- | --- |
 | ✅ | **Struktur Pekerjaan (WBS)** | Drag & Drop, Hapus, Kolom Harga Satuan Detail — solid tanpa error React Hook. |
 | ✅ | **Input Volume & Calculation** | Kalkulasi Harga Satuan AHSP, presisi desimal tanpa pembulatan dini. |
+| ✅ | **Profit & Price Persistence** | Sinkronisasi profit/overhead level proyek & item. Proteksi kustomisasi harga agar tidak tertimpa data katalog (Auto-Sync Fix). |
 | ✅ | **Lumpsum Mode** | Tombol `+ Custom` mencetak Item Manual Lumpsum (Nama & Harga Bebas). |
 
 ### C. Katalog Harga Custom (Pro) 🆕 ✅

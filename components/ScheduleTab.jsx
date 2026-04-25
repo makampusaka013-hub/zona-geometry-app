@@ -35,7 +35,9 @@ export default function ScheduleTab({
   saveItemDurasi,
   savingField,
   userSlotRole,
-  isAdmin
+  isAdmin,
+  isAdvance,
+  isPro
 }) {
   const [showGantt, setShowGantt] = React.useState(false);
   const [showGlobalLabor, setShowGlobalLabor] = React.useState(false);
@@ -119,7 +121,7 @@ export default function ScheduleTab({
           <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-orange-500" />
             <input type="date" value={projectStartDate} 
-              disabled={!isAdmin && userSlotRole !== 'kontraktor'}
+              disabled={userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro}
               onChange={e => setProjectStartDate(e.target.value)}
               className="text-xs font-black bg-transparent border-0 focus:ring-0 p-0 text-slate-700 dark:text-white disabled:opacity-50" />
             <CalendarDays className="w-4 h-4 text-slate-400" />
@@ -255,7 +257,7 @@ export default function ScheduleTab({
                    <td className="px-4 py-3 text-center">
                     <div className="relative inline-block scale-90 origin-center">
                       <input type="number" defaultValue={r.pekerja_input || ''} placeholder="auto"
-                        disabled={r.status_approval === 'final' || (!isAdmin && userSlotRole !== 'kontraktor')}
+                        disabled={r.status_approval === 'final' || (userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro) || !!r.durasi_input}
                         onBlur={e => saveItemWorkers(r.id, e.target.value)}
                         className="w-20 text-center text-[10px] font-black bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl py-2 focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-orange-500/20 focus:border-indigo-500 transition-all outline-none disabled:opacity-30" />
                       {r.pekerja !== null && <div className="text-[9px] font-black mt-1 text-indigo-400 dark:text-orange-400">{r.pekerja} OH</div>}
@@ -266,7 +268,7 @@ export default function ScheduleTab({
                   <td className="px-4 py-3 text-center">
                     <div className="relative inline-block scale-90 origin-center">
                       <input type="number" defaultValue={r.durasi_input || ''} placeholder="auto"
-                        disabled={r.status_approval === 'final' || (!isAdmin && userSlotRole !== 'kontraktor')}
+                        disabled={r.status_approval === 'final' || (userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro) || !!r.pekerja_input}
                         onBlur={e => saveItemDurasi(r.id, e.target.value)}
                         className="w-20 text-center text-[10px] font-black bg-slate-50 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 rounded-xl py-2 focus:ring-2 focus:ring-indigo-500/20 dark:focus:ring-orange-500/20 focus:border-indigo-500 transition-all outline-none disabled:opacity-30" />
                       {r.durasi_hari !== null && <div className="text-[9px] font-black mt-1 text-indigo-400 dark:text-orange-400">{r.durasi_hari} H</div>}
@@ -278,7 +280,7 @@ export default function ScheduleTab({
                     <div className="flex flex-col items-center gap-0.5">
                       <div className="flex items-center gap-1.5 opacity-80">
                         <input type="date" value={startDates?.[r.id] || r.seq_start || ''}
-                          disabled={r.status_approval === 'final' || (!isAdmin && userSlotRole !== 'kontraktor')}
+                          disabled={r.status_approval === 'final' || (userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro)}
                           onChange={e => saveStartDate?.(r.id, e.target.value)}
                           className="text-[10px] font-bold bg-transparent border-0 focus:ring-0 p-0 text-slate-600 dark:text-slate-300 disabled:opacity-30 w-18" />
                       </div>

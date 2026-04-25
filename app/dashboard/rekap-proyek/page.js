@@ -398,8 +398,8 @@ function ProyekContent() {
   const isModeNormal = member?.role === 'normal';
 
   const canInputProgress = (userSlotRole === 'pembuat' || isOwner) && !isExpired;
-  const canApproveFinal = userSlotRole === 'pengecek' || isAdmin || (isOwner && !isModeNormal);
-  const canVerify = userSlotRole === 'pembuat' || isAdmin || (isOwner && !isModeNormal);
+  const canApproveFinal = userSlotRole === 'pengecek' || isAdmin || isAdvance || isPro || (isOwner && !isModeNormal);
+  const canVerify = userSlotRole === 'pembuat' || isAdmin || isAdvance || isPro || (isOwner && !isModeNormal);
 
   const visibleTabs = useMemo(() => {
     const filterRbac = (tabs) => {
@@ -1492,7 +1492,7 @@ function ProyekContent() {
                   onSelectLineId: setSelectedBackupLineId
                 }} />
               ) : (
-                <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin }} />
+                <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
               )}
             </div>
           )}
