@@ -1051,11 +1051,12 @@ function ProyekContent() {
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto flex-1 lg:flex-initial no-scrollbar">
+            <div className="flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 flex-nowrap lg:flex-initial overflow-visible">
               {visibleTabs.map(tab => (
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
                     onClick={() => setActiveTab(tab.id)}
+                    title={tab.label}
                     className={`p-2 rounded-xl transition-all duration-300 ${activeTab === tab.id
                       ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105'
                       : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400'
@@ -1063,9 +1064,10 @@ function ProyekContent() {
                   >
                     <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  {/* Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[8px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
+                  {/* Custom Tooltip */}
+                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
                     {tab.label}
+                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
                   </div>
                 </div>
               ))}
