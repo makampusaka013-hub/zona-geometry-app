@@ -18,8 +18,8 @@ export function ThemeToggle() {
           <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path></svg>
         </button>
         {/* Tooltip Kustom di Bawah */}
-        <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">
-          Ubah Tema
+        <span className="absolute top-[45px] left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">
+          Ubah ke Mode Gelap
         </span>
       </div>
     )
@@ -40,8 +40,8 @@ export function ThemeToggle() {
         )}
       </button>
       {/* Tooltip Kustom di Bawah */}
-      <span className="absolute top-full mt-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">
-        {isDark ? "Mode Terang" : "Mode Gelap"}
+      <span className="absolute top-[45px] left-1/2 -translate-x-1/2 px-2 py-1 bg-slate-800 dark:bg-slate-100 text-white dark:text-slate-900 text-[10px] font-bold rounded-md opacity-0 group-hover:opacity-100 pointer-events-none transition-all shadow-xl whitespace-nowrap z-50">
+        {isDark ? "Ubah ke Mode Terang" : "Ubah ke Mode Gelap"}
       </span>
     </div>
   )
