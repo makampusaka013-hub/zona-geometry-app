@@ -148,7 +148,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { headerImage: hImg, paperSize, isStandalone: true });
+        
+        // Tambahkan Peta Harga Proyek agar kalkulasi profit & TKDN di Excel Engine tidak kosong
+        const [projectRes, catalogRes] = await Promise.all([
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+        ]);
+        const mergedMap = {};
+        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+
+        await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { projectPrices, headerImage: hImg, paperSize, isStandalone: true });
         toast.success('Analisa AHSP Terpakai berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor AHSP: ' + err.message);
