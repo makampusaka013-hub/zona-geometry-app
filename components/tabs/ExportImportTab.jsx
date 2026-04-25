@@ -601,7 +601,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
                   { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
-                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
+                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'sky' },
                   { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
                   { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, color: 'indigo' }
                 ].map(tool => (
