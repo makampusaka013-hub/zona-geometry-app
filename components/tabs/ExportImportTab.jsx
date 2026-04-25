@@ -600,10 +600,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
               {/* Additional Tools */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 {[
-                  { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, color: 'emerald' },
-                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, color: 'blue' },
-                  { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, color: 'amber' },
-                  { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, color: 'indigo' }
+                  { id: 'scurve', label: 'Kurva-S', icon: TrendingUp, action: handleExportScurve, bg: 'bg-emerald-50 dark:bg-emerald-500/20', text: 'text-emerald-600 dark:text-emerald-400' },
+                  { id: 'used_ahsp', label: 'AHSP & Harga Terpakai', icon: ClipboardList, action: handleExportUsedAhsp, bg: 'bg-blue-50 dark:bg-blue-500/20', text: 'text-blue-600 dark:text-blue-400' },
+                  { id: 'used_res', label: 'AHSP & HSP', icon: Wallet, action: handleExportUsedResources, bg: 'bg-amber-50 dark:bg-amber-500/20', text: 'text-amber-600 dark:text-amber-400' },
+                  { id: 'catalog', label: 'Katalog Wilayah', icon: MapPin, action: handleExportRegionalCatalog, bg: 'bg-indigo-50 dark:bg-indigo-500/20', text: 'text-indigo-600 dark:text-indigo-400' }
                 ].map(tool => (
                   <button
                     key={tool.id}
@@ -611,8 +611,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                     disabled={loadingPro === tool.id}
                     className="group bg-white dark:bg-slate-900 p-6 rounded-[2rem] border border-slate-200 dark:border-slate-800 shadow-lg hover:shadow-xl hover:translate-y-[-4px] transition-all text-center flex flex-col items-center gap-4 disabled:opacity-50"
                   >
-                    <div className={`w-14 h-14 bg-${tool.color}-50 dark:bg-${tool.color}-500/20 rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
-                      <tool.icon className={`w-7 h-7 text-${tool.color}-600 dark:text-${tool.color}-400`} />
+                    <div className={`w-14 h-14 ${tool.bg} rounded-2xl flex items-center justify-center transition-transform group-hover:scale-110`}>
+                      <tool.icon className={`w-7 h-7 ${tool.text}`} />
                     </div>
                     <span className="text-[10px] font-black text-slate-800 dark:text-slate-100 uppercase tracking-widest leading-tight">{tool.label}</span>
                   </button>
