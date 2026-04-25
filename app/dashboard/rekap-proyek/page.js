@@ -596,6 +596,9 @@ function ProyekContent() {
     }
 
     try {
+      const { data: overrides } = await supabase.from('master_harga_custom').select('kode_item, harga_satuan, tkdn_percent, id');
+      const overrideMap = Object.fromEntries((overrides || []).map(o => [o.kode_item, o]));
+
       if (tab === 'proyek' || tab === 'progress' || tab === 'schedule' || tab === 'export') {
         const [effectiveRes, linesRes, backupRes, resourcesRes] = await Promise.all([
           supabase.rpc('get_effective_project_budget', { p_project_id: projectId }),
@@ -621,21 +624,6 @@ function ProyekContent() {
           };
         });
 
-        const firstEff = effectiveItems?.find(e => e.is_cco);
-        if (firstEff) {
-          const totalCco = effectiveItems.reduce((s, x) => s + (parseFloat(x.jumlah) || 0), 0);
-          setActiveCcoVersion({ type: firstEff.cco_version, total: totalCco });
-        } else {
-          setActiveCcoVersion(null);
-        }
-
-        setTabData(prev => ({
-          ...prev,
-          schedule: { lines: processedLines, resources: resources || [] },
-          ahsp: processedLines,
-          backup: backup || []
-        }));
-
         const catalog = {};
         const uniqueMasterIds = [...new Set((lines || []).map(l => l.master_ahsp_id).filter(Boolean))];
 
@@ -643,31 +631,98 @@ function ProyekContent() {
           const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', uniqueMasterIds);
           (catalogData || []).forEach(item => { catalog[item.master_ahsp_id] = item.details || []; });
         }
+
+        const finalLines = processedLines.map(l => {
+          if (!l.master_ahsp_id || !catalog[l.master_ahsp_id]) return l;
+          const details = catalog[l.master_ahsp_id];
+          let newBase = 0;
+          details.forEach(d => {
+            const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
+            newBase += (Number(d.koefisien || 0) * Number(p));
+          });
+          if (newBase === 0) return l;
+          const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : 15;
+          const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
+          const newJumlah = (Number(l.volume || 0) * newHarga);
+          return { ...l, harga_satuan: newHarga, jumlah: newJumlah };
+        });
+
+        setTabData(prev => ({
+          ...prev,
+          schedule: { lines: finalLines, resources: resources || [] },
+          ahsp: finalLines,
+          backup: backup || []
+        }));
+
         setAhspCatalog(catalog);
       }
       else if (tab === 'ahsp') {
-        const { data } = await supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan');
+        const { data: lines } = await supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan');
         if (version !== tabVersionRef.current) return;
-        setTabData(prev => ({ ...prev, ahsp: data || [] }));
+        
+        const uniqueMasterIds = [...new Set((lines || []).map(l => l.master_ahsp_id).filter(Boolean))];
+        let finalLines = lines || [];
+        if (uniqueMasterIds.length > 0) {
+           const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', uniqueMasterIds);
+           finalLines = (lines || []).map(l => {
+              const details = catalogData?.find(c => c.master_ahsp_id === l.master_ahsp_id)?.details || [];
+              if (details.length === 0) return l;
+              let newBase = 0;
+              details.forEach(d => {
+                const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
+                newBase += (Number(d.koefisien || 0) * Number(p));
+              });
+              if (newBase === 0) return l;
+              const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : 15;
+              const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
+              return { ...l, harga_satuan: newHarga, jumlah: (Number(l.volume || 0) * newHarga) };
+           });
+        }
+        setTabData(prev => ({ ...prev, ahsp: finalLines }));
       }
       else if (tab === 'terpakai') {
-        const [ahspRes, resourceSumRes] = await Promise.all([
+        const [ahspRes, resourceSumRes, overridesRes] = await Promise.all([
           supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan'),
-          supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId)
+          supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId),
+          supabase.from('master_harga_custom').select('*')
         ]);
 
         if (version !== tabVersionRef.current) return;
 
         const ahsp = ahspRes.data;
         const resourceSum = resourceSumRes.data;
+        const overrides = overridesRes.data || [];
+        const overrideMap = Object.fromEntries(overrides.map(o => [o.kode_item, o]));
+
         const aggregated = {};
         (resourceSum || []).forEach(r => {
           const k = r.key_item;
-          if (!aggregated[k]) aggregated[k] = { ...r };
+          const ov = overrideMap[k];
+          
+          if (!aggregated[k]) {
+            aggregated[k] = { ...r };
+            if (ov && ov.harga_satuan > 0) {
+              aggregated[k].harga_snapshot = ov.harga_satuan;
+              aggregated[k].tkdn_percent = ov.tkdn_percent;
+              aggregated[k].source_table = 'master_harga_custom';
+              aggregated[k].overrides_id = ov.id;
+              // Re-hitung kontribusi nilai & tkdn berdasarkan harga baru
+              aggregated[k].kontribusi_nilai = (parseFloat(r.total_volume_terpakai) || 0) * ov.harga_satuan;
+              aggregated[k].nilai_tkdn = aggregated[k].kontribusi_nilai * (ov.tkdn_percent / 100);
+            }
+          }
           else {
             aggregated[k].total_volume_terpakai = (parseFloat(aggregated[k].total_volume_terpakai) || 0) + (parseFloat(r.total_volume_terpakai) || 0);
-            aggregated[k].kontribusi_nilai = (parseFloat(aggregated[k].kontribusi_nilai) || 0) + (parseFloat(r.kontribusi_nilai) || 0);
-            aggregated[k].nilai_tkdn = (parseFloat(aggregated[k].nilai_tkdn) || 0) + (parseFloat(r.nilai_tkdn) || 0);
+            
+            if (ov && ov.harga_satuan > 0) {
+              // Jika ada override, gunakan harga override untuk total akumulasi
+              const newKontribusi = (parseFloat(r.total_volume_terpakai) || 0) * ov.harga_satuan;
+              aggregated[k].kontribusi_nilai = (parseFloat(aggregated[k].kontribusi_nilai) || 0) + newKontribusi;
+              aggregated[k].nilai_tkdn = (parseFloat(aggregated[k].nilai_tkdn) || 0) + (newKontribusi * (ov.tkdn_percent / 100));
+            } else {
+              aggregated[k].kontribusi_nilai = (parseFloat(aggregated[k].kontribusi_nilai) || 0) + (parseFloat(r.kontribusi_nilai) || 0);
+              aggregated[k].nilai_tkdn = (parseFloat(aggregated[k].nilai_tkdn) || 0) + (parseFloat(r.nilai_tkdn) || 0);
+            }
           }
         });
 
