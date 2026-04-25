@@ -275,7 +275,21 @@ export default function ProgressTab({
                              )}
                              {(isOwner || isAdmin || isAdvance || isPro) && row.status_approval === 'final' && (
                                <button 
-                                 onClick={(e) => handleStatusUpdate(e, row.id, 'draft')}
+                                 onClick={async (e) => {
+                                   e.stopPropagation();
+                                   if (window.confirm('Batal final? Item ini akan di-reset ke status DRAFT secara paksa agar bisa diedit kembali.')) {
+                                     setSavingStatus('saving');
+                                     // Bypass RPC dan tembak langsung ke tabel
+                                     const { error } = await supabase.from('ahsp_lines').update({ status_approval: 'draft' }).eq('id', row.id);
+                                     if (error) {
+                                       alert('Gagal membatalkan status final: ' + error.message);
+                                     } else {
+                                       // Muat ulang halaman agar perubahan status segera terlihat
+                                       window.location.reload(); 
+                                     }
+                                     setSavingStatus(null);
+                                   }
+                                 }}
                                  className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
                                >
                                  Batal Final
