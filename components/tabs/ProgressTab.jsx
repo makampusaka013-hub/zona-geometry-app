@@ -39,7 +39,9 @@ export default function ProgressTab({
   setSavingStatus,
   onUpdateStatus,
   isOwner,
-  isModeNormal
+  isModeNormal,
+  isAdvance,
+  isPro
 }) {
   const [progressData, setProgressData] = useState({}); // { [entity_id|name]: { [day]: val } }
   const [customRoles, setCustomRoles] = useState([]);
@@ -271,7 +273,7 @@ export default function ProgressTab({
                                  Reject
                                </button>
                              )}
-                             {isOwner && row.status_approval === 'final' && (
+                             {(isOwner || isAdmin || isAdvance || isPro) && row.status_approval === 'final' && (
                                <button 
                                  onClick={(e) => handleStatusUpdate(e, row.id, 'verified')}
                                  className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
@@ -299,7 +301,7 @@ export default function ProgressTab({
                           <input
                             type="number"
                             value={daily[day] || ''}
-                            disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
+                            disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, e.target.value)}
                             className={`w-16 h-8 text-center text-xs font-black bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-full focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-orange-500/10 focus:border-indigo-500 dark:focus:border-orange-500 transition-all outline-none text-indigo-600 dark:text-orange-400 disabled:opacity-30 disabled:cursor-not-allowed`}
                             placeholder="0"
