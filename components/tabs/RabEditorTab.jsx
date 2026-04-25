@@ -346,7 +346,6 @@ export default function RabEditorTab({
     const { data: proj } = await supabase.from('projects').select('*').eq('id', projectId).maybeSingle();
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
-      setGlobalOverhead(proj.overhead_percent || proj.profit_percent || 15);
       setIdentity({
         name: proj.name || '',
         code: proj.code || '',
@@ -373,39 +372,61 @@ export default function RabEditorTab({
       const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
       let masterPrices = {};
       if (ahspIds.length > 0) {
-        // Gunakan view_analisa_ahsp dan cocokkan dengan kolom 'id'
         const { data: masters } = await supabase.from('view_analisa_ahsp').select('id, total_subtotal').in('id', ahspIds);
         (masters || []).forEach(m => { masterPrices[m.id] = m.total_subtotal; });
       }
+
+      // --- LOGIKA PROFIT GLOBAL CERDAS ---
+      let initGlobalProfit = proj?.overhead_percent ?? proj?.profit_percent;
+      if (initGlobalProfit === null || initGlobalProfit === undefined) {
+         if (data.length > 0) {
+             const first = data[0];
+             const bPrice = parseNum(first.master_ahsp_id ? masterPrices[first.master_ahsp_id] : 0);
+             if (bPrice > 0 && parseNum(first.harga_satuan) > 0) {
+                 initGlobalProfit = Math.round(((parseNum(first.harga_satuan) / bPrice) - 1) * 100);
+             }
+         }
+      }
+      const finalGlobalProfit = initGlobalProfit ?? 15;
+      setGlobalOverhead(finalGlobalProfit);
 
       const grouped = {};
       data.forEach(item => {
         const bab = item.bab_pekerjaan || 'UMUM';
         if (!grouped[bab]) grouped[bab] = [];
         
-        // 1. Tentukan Profit (Prioritas: Profit Per Item -> Profit Global -> Default 15%)
-        const savedProfit = item.profit_percent;
-        const finalProfit = (savedProfit !== null && savedProfit !== undefined) 
-          ? savedProfit 
-          : (proj?.overhead_percent || proj?.profit_percent || 15);
-
-        // 2. KUNCI UTAMA: Tentukan HARGA DASAR murni
+        // 1. Tentukan Harga Dasar Murni
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
         let basePrice = parseNum(freshPrice);
         
-        if (basePrice === 0) {
-            // Coba hitung mundur dari rincian komponen jika tersedia (Sangat Akurat)
-            if (item.analisa_custom && item.analisa_custom.length > 0) {
-               basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
-            } 
-            // Hitung mundur dari Harga Final jika item Lumsum
-            else if (parseNum(item.harga_satuan) > 0) {
-               basePrice = parseNum(item.harga_satuan) / (1 + (parseNum(finalProfit) / 100));
-            }
+        if (basePrice === 0 && item.analisa_custom && item.analisa_custom.length > 0) {
+           basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
         }
 
-        // 3. Kalkulasi ulang Harga Final secara ketat
-        const activePrice = Math.ceil(basePrice * (1 + (parseNum(finalProfit) / 100)));
+        // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur -> Global -> Default 15%)
+        let savedItemProfit = item.profit_percent !== null && item.profit_percent !== undefined ? parseNum(item.profit_percent) : null;
+        let reverseEngineeredProfit = null;
+        
+        if (basePrice > 0 && parseNum(item.harga_satuan) > 0) {
+           reverseEngineeredProfit = Math.round(((parseNum(item.harga_satuan) / basePrice) - 1) * 100);
+        }
+
+        let finalProfit = 15; 
+        if (savedItemProfit !== null) {
+            finalProfit = savedItemProfit;
+        } else if (reverseEngineeredProfit !== null) {
+            finalProfit = reverseEngineeredProfit;
+        } else {
+            finalProfit = finalGlobalProfit;
+        }
+
+        // 3. Kalkulasi Harga Dasar untuk Lumpsum
+        if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
+           basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
+        }
+
+        // 4. Sinkronisasi Harga Final
+        const activePrice = Math.ceil(basePrice * (1 + (finalProfit / 100)));
 
         grouped[bab].push({
           key: item.id,
