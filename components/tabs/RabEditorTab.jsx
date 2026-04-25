@@ -8,7 +8,27 @@ import LocationSelect from '@/components/LocationSelect';
 
 // Helper Utilities
 function parseNum(v) {
-  const n = parseFloat(String(v ?? '').replace(',', '.'));
+  if (typeof v === 'number') return v;
+  let s = String(v ?? '').trim();
+  if (!s) return 0;
+
+  // Hapus Rp dan spasi
+  s = s.replace(/Rp/g, '').replace(/\s/g, '');
+
+  // Logika Format Indonesia (titik ribuan, koma desimal) vs JS (titik desimal)
+  // Jika ada koma, asumsikan itu desimal. Hapus semua titik, ganti koma jadi titik.
+  if (s.includes(',')) {
+    s = s.replace(/\./g, '').replace(',', '.');
+  } else {
+    // Jika tidak ada koma tapi ada lebih dari satu titik, asumsikan titik itu ribuan.
+    const dotCount = (s.match(/\./g) || []).length;
+    if (dotCount > 1) {
+      s = s.replace(/\./g, '');
+    }
+    // Jika hanya satu titik, JS parseFloat sudah benar (menganggap desimal).
+  }
+
+  const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }
 
@@ -498,7 +518,8 @@ export default function RabEditorTab({
       baseSubtotal: String(data.total_subtotal), 
       hargaSatuan: String(hs), 
       profitPercent: String(globalOverhead),
-      mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp'
+      mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp',
+      analisaDetails: [] // WAJIB KOSONGKAN agar tidak menimpa harga baru dengan breakdown lama
     });
   };
 
