@@ -266,9 +266,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
     setLoadingPro('scurve');
     try {
-      const { data: catalogData } = await supabase
-        .from('view_katalog_ahsp_lengkap')
-        .select('master_ahsp_id, details');
+      const ahspIds = [...new Set(ahspLines.map(l => l.master_ahsp_id).filter(Boolean))];
+      const { data: catalogData } = ahspIds.length > 0 
+        ? await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds)
+        : { data: [] };
       
       const catMap = {};
       (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
@@ -320,9 +321,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       const isScheduleSelected = selectedSheets.some(s => s.toLowerCase() === 'schedule');
       
       if (isScheduleSelected) {
-        const { data: catalogData } = await supabase
-          .from('view_katalog_ahsp_lengkap')
-          .select('master_ahsp_id, details');
+        const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
+        const { data: catalogData } = ahspIds.length > 0
+          ? await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds)
+          : { data: [] };
         
         const catMap = {};
         (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
