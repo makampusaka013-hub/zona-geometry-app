@@ -243,7 +243,7 @@ export default function ProgressTab({
                           </span>
                         )}
                       </div>
-                      <div className="font-bold text-slate-800 dark:text-white text-[12px] tracking-tight">{row.name}</div>
+                      <div className="font-bold text-slate-800 dark:text-white text-[12px] tracking-tight" title={row.name}>{row.name}</div>
                     </td>
                     <td className={`lg:sticky lg:left-[300px] z-10 ${rowBgClass} px-3 py-6 text-center text-[10px] font-bold text-slate-500 border-r border-slate-100 dark:border-slate-800/50 w-[60px]}`}>{row.unit}</td>
                     <td className={`lg:sticky lg:left-[360px] z-10 ${rowBgClass} px-4 py-6 text-right text-[10px] font-mono font-bold text-slate-400 border-r border-slate-100 dark:border-slate-800/50 w-[90px]`}>{fmt(row.target)}</td>
@@ -291,7 +291,7 @@ export default function ProgressTab({
                           <input
                             type="number"
                             value={daily[day] || ''}
-                            disabled={row.status_approval === 'verified' || row.status_approval === 'final' || (!isAdmin && !isOwner && userSlotRole !== 'pembuat')}
+                            disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, e.target.value)}
                             className={`w-16 h-8 text-center text-xs font-black bg-slate-100 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 rounded-full focus:ring-4 focus:ring-indigo-500/10 dark:focus:ring-orange-500/10 focus:border-indigo-500 dark:focus:border-orange-500 transition-all outline-none text-indigo-600 dark:text-orange-400 disabled:opacity-30 disabled:cursor-not-allowed`}
                             placeholder="0"
