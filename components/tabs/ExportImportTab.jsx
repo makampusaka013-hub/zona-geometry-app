@@ -278,7 +278,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       const manpower = computeManpower(ahspLines, catMap, project.labor_settings || {});
       const sequenced = getSequencedSchedule(manpower, project.start_date);
 
-      ProReport.exportProScurveGantt(project, sequenced);
+      // Fetch Progress Data
+      const { data: progData } = await supabase
+        .from('project_progress_daily')
+        .select('*')
+        .eq('project_id', project.id);
+
+      await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
+        scheduleData: sequenced,
+        progressData: progData,
+        paperSize: paperSize || 'A4',
+        headerImage: headerImage 
+      });
     } catch (err) {
       toast.error('Gagal memproses Kurva-S: ' + err.message);
     } finally {
@@ -334,11 +345,25 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         scheduleData = getSequencedSchedule(manpower, project.start_date);
       }
 
-      // 2. Eksekusi Export sesuai Mode (Scope aman)
+      // 2. Fetch Progress Data (untuk baris AKTUAL di Schedule)
+      const { data: progData } = await supabase
+        .from('project_progress_daily')
+        .select('*')
+        .eq('project_id', project.id);
+
+      // 3. Eksekusi Export sesuai Mode (Scope aman)
       if (exportMode === 'catalog') {
         const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
         const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage, paperSize, scheduleData });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+          isCatalog: true, 
+          catAhsp, 
+          catPrice, 
+          headerImage, 
+          paperSize, 
+          scheduleData,
+          progressData: progData 
+        });
       } else {
         // Fetch project-specific resource prices (Komponen Harga) AND regional catalog
         const [projectRes, catalogRes] = await Promise.all([
@@ -358,9 +383,16 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           if (p.harga_satuan && Number(p.harga_satuan) > 0) mergedMap[p.kode_item] = p.harga_satuan; 
         });
         
-        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+        const priceMap = mergedMap;
           
-        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { projectPrices, headerImage, paperSize, scheduleData });
+        await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+          priceMap, 
+          globalOverhead: project.ppn_percent || 12, 
+          headerImage, 
+          paperSize, 
+          scheduleData,
+          progressData: progData 
+        });
       }
       toast.success('Laporan kustom berhasil diunduh.');
     } catch (err) {
