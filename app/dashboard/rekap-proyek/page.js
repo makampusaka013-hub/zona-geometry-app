@@ -1056,7 +1056,6 @@ function ProyekContent() {
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
                     onClick={() => setActiveTab(tab.id)}
-                    title={tab.label}
                     className={`p-2 rounded-xl transition-all duration-300 ${activeTab === tab.id
                       ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105'
                       : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400'
@@ -1064,10 +1063,10 @@ function ProyekContent() {
                   >
                     <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  {/* Custom Tooltip */}
-                  <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
+                  {/* Custom Tooltip (Below Icon) */}
+                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
                     {tab.label}
-                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-4 border-transparent border-t-slate-900 dark:border-t-slate-800" />
+                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900 dark:border-b-slate-800" />
                   </div>
                 </div>
               ))}
