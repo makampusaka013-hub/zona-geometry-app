@@ -465,9 +465,18 @@ export default function RabEditorTab({
         ...s,
         lines: s.lines.map(r => {
           if (r.key !== rowKey) return r;
-          const base = parseNum(r.baseSubtotal) || parseNum(r.hargaSatuan);
-          const newHarga = Math.ceil((base * (1 + (val/100))));
-          return { ...r, profitPercent: String(val), hargaSatuan: String(newHarga) };
+          // Cari harga dasar asli. Jika kosong, reverse-engineer dari harga saat ini dikurangi profit saat ini.
+          const currentBase = parseNum(r.baseSubtotal) > 0 
+            ? parseNum(r.baseSubtotal) 
+            : (parseNum(r.hargaSatuan) / (1 + (parseNum(r.profitPercent || 0) / 100)));
+          
+          const newHarga = Math.ceil(currentBase * (1 + (val / 100)));
+          return { 
+            ...r, 
+            profitPercent: String(val), 
+            hargaSatuan: String(newHarga), 
+            baseSubtotal: String(currentBase) // Kunci harga dasar agar tidak amnesia
+          };
         })
       };
     }));
@@ -477,13 +486,19 @@ export default function RabEditorTab({
     setSections(prev => prev.map(s => ({
       ...s,
       lines: s.lines.map(r => {
-        const base = parseNum(r.baseSubtotal) || parseNum(r.hargaSatuan);
+        // Cari harga dasar asli. Jika kosong, reverse-engineer dari harga saat ini dikurangi profit saat ini.
+        const currentBase = parseNum(r.baseSubtotal) > 0 
+          ? parseNum(r.baseSubtotal) 
+          : (parseNum(r.hargaSatuan) / (1 + (parseNum(r.profitPercent || 0) / 100)));
+          
         const profitPct = parseNum(globalOverhead);
-        const newHarga = Math.ceil((base * (1 + (profitPct/100))));
+        const newHarga = Math.ceil(currentBase * (1 + (profitPct / 100)));
+        
         return {
           ...r,
           profitPercent: String(profitPct),
-          hargaSatuan: String(newHarga)
+          hargaSatuan: String(newHarga),
+          baseSubtotal: String(currentBase) // Kunci harga dasar agar tidak amnesia
         };
       })
     })));
