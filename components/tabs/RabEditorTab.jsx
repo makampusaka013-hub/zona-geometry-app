@@ -372,8 +372,24 @@ export default function RabEditorTab({
       const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
       let masterPrices = {};
       if (ahspIds.length > 0) {
-        const { data: masters } = await supabase.from('view_analisa_ahsp').select('id, total_subtotal').in('id', ahspIds);
-        (masters || []).forEach(m => { masterPrices[m.id] = m.total_subtotal; });
+        // PRIORITAS: Ambil detail lengkap & override terbaru untuk perhitungan subtotal di frontend
+        const [mastersRes, overridesRes] = await Promise.all([
+          supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
+        ]);
+        
+        const overrideMap = {};
+        (overridesRes.data || []).forEach(o => { if (o.harga_satuan > 0) overrideMap[o.kode_item] = o.harga_satuan; });
+
+        (mastersRes.data || []).forEach(m => {
+          let calcSubtotal = 0;
+          const details = Array.isArray(m.details) ? m.details : [];
+          details.forEach(d => {
+            const p = overrideMap[d.kode_item] || d.harga_konversi || 0;
+            calcSubtotal += (Number(d.koefisien || 0) * Number(p));
+          });
+          masterPrices[m.master_ahsp_id] = calcSubtotal;
+        });
       }
 
       // --- LOGIKA PROFIT GLOBAL CERDAS ---

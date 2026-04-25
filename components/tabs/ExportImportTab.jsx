@@ -127,13 +127,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        const [projectRes, catalogRes] = await Promise.all([
+        const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
         const mergedMap = {};
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
@@ -166,13 +168,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        const [projectRes, catalogRes] = await Promise.all([
+        const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
         const mergedMap = {};
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, enrichedLines, ['AHSP', 'HSP'], { 
@@ -195,13 +199,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       setLoadingPro('ahsp_hsp');
       try {
-        const [projectRes, catalogRes] = await Promise.all([
+        const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
         const mergedMap = {};
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, ahspLines, ['AHSP', 'HSP'], { 
@@ -287,13 +293,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const manpower = computeManpower(ahspLines, catMap, project.labor_settings || {});
         const sequenced = getSequencedSchedule(manpower, project.start_date);
         const { data: progData } = await supabase.from('project_progress_daily').select('*').eq('project_id', project.id);
-        const [projectRes, catalogRes] = await Promise.all([
+        const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
         const mergedMap = {};
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
@@ -346,13 +354,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
         } else {
-          const [projectRes, catalogRes] = await Promise.all([
+          const [projectRes, catalogRes, overrideRes] = await Promise.all([
             supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-            supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+            supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+            supabase.from('master_harga_custom').select('kode_item, harga_satuan')
           ]);
           const mergedMap = {};
           (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+          (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
             projectPrices, 
