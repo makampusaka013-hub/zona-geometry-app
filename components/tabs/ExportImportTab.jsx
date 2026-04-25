@@ -82,99 +82,96 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
   }
 
-  function handleExportExcel() {
+  async function handleExportExcel() {
     if (!project || !ahspLines || ahspLines.length === 0) {
       toast.warning('Data RAB kosong. Tidak ada yang bisa diekspor.');
       return;
     }
+    setLoadingPro('rab');
+    try {
+      // Reuse logic from Custom Export
+      const enrichedLines = [...ahspLines];
+      const missingDetailIds = enrichedLines
+        .filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0))
+        .map(l => l.master_ahsp_id);
 
-    const wb = XLSX.utils.book_new();
-    const ppnPercent = parseFloat(project.ppn_percent) || 0;
+      if (missingDetailIds.length > 0) {
+        const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+        if (detailsData) {
+          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+          enrichedLines.forEach(l => {
+            if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) {
+              if (!l.master_ahsp) l.master_ahsp = {};
+              l.master_ahsp.details = detailMap[l.master_ahsp_id];
+            }
+          });
+        }
+      }
 
-    const sectionsObj = {};
-    ahspLines.forEach(line => {
-      const bab = line.bab_pekerjaan || 'Lain-lain';
-      if (!sectionsObj[bab]) sectionsObj[bab] = { namaBab: bab, lines: [], subtotal: 0 };
-      sectionsObj[bab].lines.push(line);
-      sectionsObj[bab].subtotal += (line.jumlah || 0);
-    });
+      const [projectRes, catalogRes] = await Promise.all([
+        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+      ]);
+      const mergedMap = {};
+      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-    const sections = Object.values(sectionsObj).sort((a, b) => a.lines[0]?.sort_order - b.lines[0]?.sort_order);
-
-    const grandSubtotal = sections.reduce((s, sec) => s + sec.subtotal, 0);
-    const ppnAmount = grandSubtotal * (ppnPercent / 100);
-    const grandTotal = grandSubtotal + ppnAmount;
-    const roundedGrandTotal = Math.round(grandTotal / 1000) * 1000;
-
-    const rabData = [];
-    rabData.push(['RENCANA ANGGARAN BIAYA (RAB)']);
-    rabData.push([]);
-    rabData.push(['Program', project.program_name || '-']);
-    rabData.push(['Kegiatan', project.activity_name || '-']);
-    rabData.push(['Pekerjaan', project.work_name || '-']);
-    rabData.push(['Lokasi', project.location || '-']);
-    rabData.push(['Tahun Anggaran', project.fiscal_year || '-']);
-    rabData.push(['Pembuat', project.created_by_name || '-']);
-    rabData.push([]);
-    
-    rabData.push(['NO', 'URAIAN PEKERJAAN', 'KODE AHSP', 'SATUAN', 'VOLUME', 'HARGA SATUAN (Rp)', 'JUMLAH HARGA (Rp)']);
-    
-    sections.forEach((sec, sIdx) => {
-      rabData.push([romanize(sIdx + 1), sec.namaBab.toUpperCase(), '', '', '', '']);
-      
-      sec.lines.forEach((r, idx) => {
-        rabData.push([ 
-          (idx + 1).toString(), 
-          r.uraian, 
-          r.master_ahsp?.kode_ahsp || '', 
-          r.satuan, 
-          parseNum(r.volume), 
-          parseNum(r.harga_satuan), 
-          parseNum(r.jumlah) 
-        ]);
+      await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
+        projectPrices,
+        headerImage, 
+        paperSize 
       });
-      
-      rabData.push(['', `SUBTOTAL BAB ${romanize(sIdx + 1)}`, '', '', '', '', sec.subtotal]);
-      rabData.push([]);
-    });
-
-    rabData.push([]);
-    rabData.push(['', 'A. TOTAL HARGA', '', '', '', '', grandSubtotal]);
-    rabData.push(['', `B. PPN ${ppnPercent}%`, '', '', '', '', ppnAmount]);
-    rabData.push(['', 'C. TOTAL KESELURUHAN (A + B)', '', '', '', '', grandTotal]);
-    rabData.push(['', 'DIBULATKAN', '', '', '', '', roundedGrandTotal]);
-
-    const rabWs = XLSX.utils.aoa_to_sheet(rabData);
-    XLSX.utils.book_append_sheet(wb, rabWs, "Detil RAB");
-
-    const rekapData = [];
-    rekapData.push(['REKAPITULASI RENCANA ANGGARAN BIAYA']);
-    rekapData.push([]);
-    rekapData.push(['NO', 'URAIAN PEKERJAAN', 'TOTAL HARGA (Rp)']);
-    sections.forEach((sec, i) => {
-       rekapData.push([romanize(i+1), sec.namaBab.toUpperCase(), sec.subtotal]);
-    });
-    rekapData.push([]);
-    rekapData.push(['', 'A. TOTAL BIAYA', grandSubtotal]);
-    rekapData.push(['', `B. PAJAK PERTAMBAHAN NILAI (PPN) ${ppnPercent}%`, ppnAmount]);
-    rekapData.push(['', 'C. TOTAL KESELURUHAN (A + B)', grandTotal]);
-    rekapData.push(['', 'DIBULATKAN', roundedGrandTotal]);
-
-    const rekapWs = XLSX.utils.aoa_to_sheet(rekapData);
-    XLSX.utils.book_append_sheet(wb, rekapWs, "Rekapitulasi");
-
-    XLSX.writeFile(wb, `Laporan_RAB_${project.name}.xlsx`);
-    toast.success('RAB Berhasil diunduh.');
+      toast.success('RAB Berhasil diunduh.');
+    } catch (err) {
+      toast.error('Gagal mengekspor RAB: ' + err.message);
+    } finally {
+      setLoadingPro(null);
+    }
   }
 
-  function handleExportUsedAhsp() {
-    if (!project || !ahspLines) return;
-    ProReport.exportProUsedAhsp(project, ahspLines);
+  async function handleExportUsedAhsp() {
+    if (!project || !ahspLines || ahspLines.length === 0) return;
+    setLoadingPro('used_ahsp');
+    try {
+      const enrichedLines = [...ahspLines];
+      const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
+      if (missingDetailIds.length > 0) {
+        const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+        if (detailsData) {
+          const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
+          enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+        }
+      }
+      await generateProjectReport(project, userMember, enrichedLines, ['AHSP'], { headerImage, paperSize });
+      toast.success('Analisa AHSP Terpakai berhasil diunduh.');
+    } catch (err) {
+      toast.error('Gagal mengekspor AHSP: ' + err.message);
+    } finally {
+      setLoadingPro(null);
+    }
   }
 
-  function handleExportUsedResources() {
-    if (!project || !ahspLines) return;
-    ProReport.exportProUsedResources(project, ahspLines);
+  async function handleExportUsedResources() {
+    if (!project || !ahspLines || ahspLines.length === 0) return;
+    setLoadingPro('used_res');
+    try {
+      const [projectRes, catalogRes] = await Promise.all([
+        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+      ]);
+      const mergedMap = {};
+      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+
+      await generateProjectReport(project, userMember, ahspLines, ['HARGA SATUAN TERPAKAI'], { projectPrices, headerImage, paperSize });
+      toast.success('Komponen Harga berhasil diunduh.');
+    } catch (err) {
+      toast.error('Gagal mengekspor Komponen Harga: ' + err.message);
+    } finally {
+      setLoadingPro(null);
+    }
   }
 
   function handleSetCurrentPeriod() {
@@ -224,18 +221,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
     setLoadingPro('catalog');
     try {
-      const { data, error } = await supabase
-        .from('master_harga_dasar')
-        .select('*, master_items(*)')
-        .eq('location_id', project.location_id);
-      
-      if (error) throw error;
-      if (!data || data.length === 0) {
+      const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
+      if (!catPrice || catPrice.length === 0) {
         toast.warning(`Tidak ada data katalog untuk wilayah ${project.location}`);
         return;
       }
-
-      ProReport.exportProRegionalCatalog(project.location, data);
+      await generateProjectReport(project, userMember, [], ['HARGA SATUAN'], { 
+        isCatalog: true, 
+        catPrice, 
+        headerImage, 
+        paperSize 
+      });
+      toast.success('Katalog Wilayah berhasil diunduh.');
     } catch (err) {
       toast.error('Gagal mengambil katalog: ' + err.message);
     } finally {
@@ -246,12 +243,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   async function handleExportMasterAhsp() {
     setLoadingPro('ahsp');
     try {
-      const { data, error } = await supabase
-        .from('view_katalog_ahsp_lengkap')
-        .select('*');
-      
-      if (error) throw error;
-      ProReport.exportProMasterAhsp(data || []);
+      const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
+      await generateProjectReport(project, userMember, [], ['AHSP'], { 
+        isCatalog: true, 
+        catAhsp, 
+        headerImage, 
+        paperSize 
+      });
+      toast.success('Master AHSP berhasil diunduh.');
     } catch (err) {
       toast.error('Gagal mengambil master AHSP: ' + err.message);
     } finally {
@@ -278,15 +277,20 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       const manpower = computeManpower(ahspLines, catMap, project.labor_settings || {});
       const sequenced = getSequencedSchedule(manpower, project.start_date);
 
-      // Fetch Progress Data
-      const { data: progData } = await supabase
-        .from('project_progress_daily')
-        .select('*')
-        .eq('project_id', project.id);
+      // Fetch Prices for correct percentage calculations
+      const [projectRes, catalogRes] = await Promise.all([
+        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id)
+      ]);
+      const mergedMap = {};
+      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
       await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
         scheduleData: sequenced,
         progressData: progData,
+        projectPrices,
         paperSize: paperSize || 'A4',
         headerImage: headerImage 
       });
