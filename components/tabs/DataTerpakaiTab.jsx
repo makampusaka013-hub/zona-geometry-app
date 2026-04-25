@@ -125,13 +125,32 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
       }
 
       if (item.source_table === 'master_harga_dasar' || !item.source_table) {
+        // Mapping kategori agar sesuai check constraint DB ('Bahan', 'Upah', 'Alat', 'Lumpsum')
+        const rawJ = (item.jenis_komponen || item.kategori_item || '').toLowerCase();
+        const code = (itemCode || '').trim().toUpperCase();
+        const unit = (item.satuan || '').toUpperCase();
+        const name = (item.uraian || '').toLowerCase();
+        
+        let finalKategori = 'Bahan';
+        if (rawJ === 'bahan') finalKategori = 'Bahan';
+        else if (rawJ === 'upah' || rawJ === 'tenaga') finalKategori = 'Upah';
+        else if (rawJ === 'alat') finalKategori = 'Alat';
+        else if (rawJ === 'lumpsum' || rawJ === 'ls') finalKategori = 'Lumpsum';
+        else {
+          // Heuristic fallback
+          if (code.startsWith('A') || code.startsWith('B')) finalKategori = 'Bahan';
+          else if (code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name)) finalKategori = 'Upah';
+          else if (code.startsWith('M') || unit === 'JAM' || unit === 'SEWA') finalKategori = 'Alat';
+          else finalKategori = 'Bahan';
+        }
+
         const { error } = await supabase.from('master_harga_custom').upsert({
           overrides_harga_dasar_id: validId,
           nama_item: item.uraian || item.nama_item,
           satuan: item.satuan,
           harga_satuan: newPrice,
           tkdn_percent: newTkdn,
-          kategori_item: item.jenis_komponen || item.kategori_item,
+          kategori_item: finalKategori,
           kode_item: itemCode,
         }, { onConflict: 'user_id,overrides_harga_dasar_id' });
         if (error) throw error;
