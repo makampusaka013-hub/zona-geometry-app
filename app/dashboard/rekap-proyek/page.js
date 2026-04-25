@@ -574,7 +574,7 @@ function ProyekContent() {
     // This prevents the UI from flickering/blocking when switching between known tabs
     const hasExistingData = (() => {
       switch (tab) {
-        case 'proyek': case 'progress': case 'schedule': return tabData.ahsp?.length > 0;
+        case 'proyek': case 'progress': case 'schedule': case 'export': return tabData.ahsp?.length > 0;
         case 'terpakai': return tabData.harga?.length > 0;
         case 'perubahan': return tabData.cco?.length > 0 || tabData.mc?.length > 0;
         case 'tkdn': return tabData.tkdn !== null;
@@ -589,7 +589,7 @@ function ProyekContent() {
     }
 
     try {
-      if (tab === 'proyek' || tab === 'progress' || tab === 'schedule') {
+      if (tab === 'proyek' || tab === 'progress' || tab === 'schedule' || tab === 'export') {
         const [effectiveRes, linesRes, backupRes, resourcesRes] = await Promise.all([
           supabase.rpc('get_effective_project_budget', { p_project_id: projectId }),
           supabase.from('ahsp_lines').select('*, master_ahsp(kode_ahsp)').eq('project_id', projectId).order('bab_pekerjaan'),
