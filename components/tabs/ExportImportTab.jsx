@@ -206,7 +206,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const { data: allAhsp, error: errAhsp } = await supabase
           .from('view_katalog_ahsp_lengkap')
           .select('*')
-          .eq('location_id', locationId)
           .order('kode_ahsp');
         
         if (errAhsp) throw errAhsp;
