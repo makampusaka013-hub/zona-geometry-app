@@ -199,31 +199,42 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       setLoadingPro('ahsp_hsp');
       try {
-        const [catalogAhspRes, projectRes, catalogRes, overrideRes] = await Promise.all([
-          supabase.from('view_katalog_ahsp_lengkap').select('*'),
-          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+        const locationId = project?.location_id || member?.selected_location_id;
+        const locationName = project?.location || 'Wilayah Terpilih';
+
+        // 1. Ambil Seluruh Katalog AHSP dari Database (Filter berdasarkan wilayah proyek)
+        const { data: allAhsp, error: errAhsp } = await supabase
+          .from('view_katalog_ahsp_lengkap')
+          .select('*')
+          .eq('location_id', locationId)
+          .order('kode_ahsp');
+        
+        if (errAhsp) throw errAhsp;
+
+        // 2. Ambil Peta Harga Komponen (HSP) Wilayah + Overrides
+        const [pricesRes, overrideRes] = await Promise.all([
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', locationId),
           supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
-        
+
         const mergedMap = {};
-        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (pricesRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, [], ['AHSP', 'HSP'], { 
-          isCatalog: true,
-          catAhsp: catalogAhspRes.data || [],
+        // 3. Ekspor dengan isStandalone: false agar VLOOKUP aktif
+        await generateProjectReport(project, userMember, allAhsp, ['AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
-          isStandalone: true,
-          fileName: "AHSP & HSP"
+          isStandalone: false, // <--- KUNCI: Aktifkan VLOOKUP
+          isCatalog: true,      // <--- KUNCI: Mode Katalog
+          fileName: `AHSP & HSP ${locationName}`
         });
-        toast.success('AHSP & HSP berhasil diunduh.');
+
+        toast.success('Katalog AHSP & HSP berhasil diunduh.');
       } catch (err) {
-        toast.error('Gagal mengekspor AHSP & HSP: ' + err.message);
+        toast.error('Gagal ekspor: ' + err.message);
       } finally {
         setLoadingPro(null);
       }
