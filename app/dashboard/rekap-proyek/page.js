@@ -177,7 +177,8 @@ function ProyekContent() {
     try {
       if (activeCcoVersion?.total > 0) {
         const subtotal = activeCcoVersion.total;
-        const ppn = subtotal * ((currentProjectObj.ppn_percent || 12) / 100);
+        const ppnPct = currentProjectObj.ppn_percent ?? 12;
+        const ppn = subtotal * (ppnPct / 100);
         const total = Math.ceil((subtotal + ppn) / 1000) * 1000;
         return { total, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
@@ -239,7 +240,7 @@ function ProyekContent() {
         contract_number: currentProjectObj.contract_number || '',
         hsp_value: currentProjectObj.hsp_value || 0,
         manual_duration: currentProjectObj.manual_duration || 0,
-        ppn_percent: currentProjectObj.ppn_percent || 12,
+        ppn_percent: currentProjectObj.ppn_percent ?? 12,
         program_name: currentProjectObj.program_name || '',
         activity_name: currentProjectObj.activity_name || '',
         work_name: currentProjectObj.work_name || '',
@@ -1346,7 +1347,8 @@ function ProyekContent() {
 
                       // Calculate Total for this project
                       const subtotal = (p.ahsp_lines || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-                      const ppn = subtotal * ((p.ppn_percent || 12) / 100);
+                      const ppnPct = p.ppn_percent ?? 12; // Gunakan Nullish Coalescing (??) agar angka 0 tidak diubah ke 12
+                      const ppn = subtotal * (ppnPct / 100);
                       const total = subtotal + ppn;
                       const rounded = Math.ceil((total || 0) / 1000) * 1000;
 
