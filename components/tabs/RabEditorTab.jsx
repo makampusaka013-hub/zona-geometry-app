@@ -362,27 +362,29 @@ export default function RabEditorTab({
         const bab = item.bab_pekerjaan || 'UMUM';
         if (!grouped[bab]) grouped[bab] = [];
         
+        // 1. Ambil harga dari katalog dan harga yang tersimpan di DB
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
         const currentSavedPrice = item.harga_satuan;
-        // PRIORITASKAN harga yang sudah tersimpan di DB karena sudah mengandung custom profit user.
-        // Hanya gunakan freshPrice (katalog) jika data harga di DB masih kosong/0 (item baru).
-        const activePrice = (currentSavedPrice !== null && currentSavedPrice !== undefined && parseNum(currentSavedPrice) > 0) 
+        
+        // 2. Tentukan harga aktif (prioritaskan yang tersimpan di DB)
+        const activePrice = (currentSavedPrice !== null && parseNum(currentSavedPrice) > 0) 
           ? currentSavedPrice 
           : (freshPrice || 0);
 
-        // ----------------------------------------------------
-        // REVERSE-ENGINEER PROFIT PERCENTAGE
-        // Jika profit dari DB kosong, hitung mundur dari harga
-        // ----------------------------------------------------
-        let realProfit = item.profit_percent;
-        if ((realProfit === null || realProfit === undefined) && freshPrice && parseNum(freshPrice) > 0 && activePrice) {
-          realProfit = Math.round(((parseNum(activePrice) / parseNum(freshPrice)) - 1) * 100);
+        // 3. HITUNG MUNDUR PROFIT (Jika DB kosong, hitung dari selisih harga)
+        let calculatedProfit = item.profit_percent;
+        
+        if ((calculatedProfit === null || calculatedProfit === undefined) && freshPrice && parseNum(freshPrice) > 0) {
+          // Rumus: ((Harga Jual / Harga Dasar) - 1) * 100
+          calculatedProfit = Math.round(((parseNum(activePrice) / parseNum(freshPrice)) - 1) * 100);
         }
         
-        const finalProfit = (realProfit !== null && realProfit !== undefined && !isNaN(realProfit)) 
-          ? realProfit 
+        // 4. Gunakan hasil hitung, jika gagal baru gunakan default proyek (15%)
+        const finalProfit = (calculatedProfit !== null && !isNaN(calculatedProfit)) 
+          ? calculatedProfit 
           : (proj?.overhead_percent || 15);
 
+        // 5. Masukkan ke dalam state grouped
         grouped[bab].push({
           key: item.id,
           masterAhspId: item.master_ahsp_id,
@@ -396,7 +398,7 @@ export default function RabEditorTab({
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: String(finalProfit)
+          profitPercent: String(finalProfit) 
         });
       });
 
