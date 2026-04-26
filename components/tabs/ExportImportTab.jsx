@@ -213,7 +213,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       setLoadingPro('ahsp_hsp');
       try {
-        const locationId = project?.location_id || member?.selected_location_id;
+        const locationId = project?.location_id || userMember?.selected_location_id;
         const locationName = project?.location || 'Wilayah Terpilih';
 
         // 1. Ambil Seluruh Katalog AHSP dari Database (Filter berdasarkan wilayah proyek)
@@ -381,6 +381,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       setLoadingReport(true);
       try {
         const enrichedLines = [...ahspLines];
+        let filteredSheets = [];
+        let useStatic = false;
         
         if (role === 'normal') {
           filteredSheets = ['RAB', 'REKAP'];
@@ -804,7 +806,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         )}
                       </button>
 
-                      {member?.role !== 'normal' && (
+                      {userMember?.role !== 'normal' && (
                         <button
                           onClick={handleConfirmCustomPdfExport}
                           disabled={loadingReport}
