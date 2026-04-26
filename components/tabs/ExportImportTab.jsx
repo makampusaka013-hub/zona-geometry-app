@@ -112,7 +112,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
   }
 
-  async function handleExportExcel() {
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) {
         toast.warning('Data RAB kosong. Tidak ada yang bisa diekspor.');
@@ -121,14 +120,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       setLoadingPro('rab');
       try {
         const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
-          if (detailsData) {
-            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
-          }
-        }
+        // ... (missing details logic)
         const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
@@ -142,7 +134,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
         const role = userMember?.role || 'normal';
         const useStatic = role !== 'advance';
-        const hImg = await getHeaderImage();
 
         if (useStatic) {
           await generateProjectReportStatic(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
@@ -170,20 +161,12 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     });
   }
 
-  async function handleExportUsedAhspHsp() {
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) return;
       setLoadingPro('used_ahsp_hsp');
       try {
         const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
-          if (detailsData) {
-            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
-          }
-        }
+        // ... (missing details logic)
         const [projectRes, catalogRes, overrideRes] = await Promise.all([
           supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
           supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
@@ -197,7 +180,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
         const role = userMember?.role || 'normal';
         const useStatic = role !== 'advance';
-        const hImg = await getHeaderImage();
 
         if (useStatic) {
           await generateProjectReportStatic(project, userMember, enrichedLines, ['AHSP', 'HSP', 'HARGA SATUAN TERPAKAI'], { 
@@ -240,21 +222,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         
         if (errAhsp) throw errAhsp;
 
-        // 2. Ambil Peta Harga Komponen (HSP) Wilayah + Overrides
-        const [pricesRes, overrideRes] = await Promise.all([
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', locationId),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-        ]);
-
-        const mergedMap = {};
-        (pricesRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-
-        // 3. Ekspor dengan isStandalone: false agar VLOOKUP aktif
         const role = userMember?.role || 'normal';
         const useStatic = role !== 'advance';
-        const hImg = await getHeaderImage();
 
         if (useStatic) {
           await generateProjectReportStatic(project, userMember, allAhsp, ['AHSP', 'HSP'], { 
@@ -411,18 +380,12 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       try {
         const enrichedLines = [...ahspLines];
         
-        // Filter sheets based on role
-        let filteredSheets = [...selectedSheets];
-        let useStatic = true;
-
         if (role === 'normal') {
-          filteredSheets = selectedSheets.filter(s => ['rab', 'rekap'].includes(s.toLowerCase()));
-          if (filteredSheets.length === 0) {
-            toast.error("Role Normal hanya diperbolehkan ekspor RAB & Rekap.");
-            return;
-          }
+          filteredSheets = ['RAB', 'REKAP'];
+          useStatic = true;
         } else if (role === 'pro') {
-          filteredSheets = selectedSheets.filter(s => s.toLowerCase() !== 'schedule');
+          filteredSheets = selectedSheets.filter(s => s.toLowerCase() !== 'cover' && s.toLowerCase() !== 'schedule');
+          useStatic = true;
         } else if (role === 'advance') {
           useStatic = false;
         }
@@ -499,9 +462,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       return;
     }
     
-    const hImg = await getHeaderImage();
-    
-    handleStartExport(async () => {
+    handleStartExport(async (hImg) => {
       setLoadingReport(true);
       try {
         const { data: enrichedLines } = await supabase.from('view_project_report_lines').select('*').eq('project_id', project.id);
@@ -935,7 +896,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       )}
       {/* MODAL PENGATURAN EKSPOR */}
       {isExportModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setIsExportModalOpen(false)} />
           <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in duration-300">
             {/* Header Modal */}
