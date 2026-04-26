@@ -137,11 +137,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+        const subtotal = enrichedLines.reduce((acc, l) => acc + (Number(l.volume || 0) * (l.rounded_harga || 0)), 0);
+        const ppnPercent = project?.ppn_percent ?? project?.ppn ?? 11;
+        const ppnVal = Math.round(subtotal * (ppnPercent / 100));
+        const grandTotal = subtotal + ppnVal;
 
         let coverImage = null;
         if (['cover', 'RAB', 'REKAP'].some(s => s.toLowerCase() === 'cover')) {
-          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg, grandTotal });
         }
 
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
@@ -184,11 +187,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+        const subtotal = enrichedLines.reduce((acc, l) => acc + (Number(l.volume || 0) * (l.rounded_harga || 0)), 0);
+        const ppnPercent = project?.ppn_percent ?? project?.ppn ?? 11;
+        const ppnVal = Math.round(subtotal * (ppnPercent / 100));
+        const grandTotal = subtotal + ppnVal;
 
         let coverImage = null;
         if (['cover', 'AHSP', 'HSP'].some(s => s.toLowerCase() === 'cover')) {
-          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg, grandTotal });
         }
 
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
@@ -409,11 +415,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+          const subtotal = enrichedLines.reduce((acc, l) => acc + (Number(l.volume || 0) * (l.rounded_harga || 0)), 0);
+          const ppnPercent = project?.ppn_percent ?? project?.ppn ?? 11;
+          const ppnVal = Math.round(subtotal * (ppnPercent / 100));
+          const grandTotal = subtotal + ppnVal;
           
           let coverImage = null;
           if (selectedSheets.some(s => s.toLowerCase() === 'cover')) {
-            coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+            coverImage = await generateCoverImage(project, userMember, { mainImage: hImg, grandTotal });
           }
 
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
