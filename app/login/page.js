@@ -172,9 +172,17 @@ function LoginContent() {
             </div>
 
             <div className="relative">
-              <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
-                Kata Sandi
-              </label>
+              <div className="flex items-center justify-between mb-1.5 ml-1">
+                <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                  Kata Sandi
+                </label>
+                <Link 
+                  href="/auth/forgot-password" 
+                  className="text-[10px] font-bold text-indigo-600 dark:text-orange-400 hover:underline uppercase tracking-wider"
+                >
+                  Lupa Password?
+                </Link>
+              </div>
               <input
                 type="password"
                 required
