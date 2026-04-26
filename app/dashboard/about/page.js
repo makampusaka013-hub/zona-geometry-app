@@ -57,8 +57,8 @@ export default function AboutPage() {
         
         {/* Section 1: Hero Info */}
         <section className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-          <div className="inline-flex items-center justify-center p-5 bg-slate-900/50 backdrop-blur-xl rounded-[40px] border border-white/5 shadow-2xl mb-4">
-            <Logo className="h-16 lg:h-20" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <Logo className="h-24 lg:h-32" />
           </div>
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-6xl font-black text-white leading-tight tracking-tight">
