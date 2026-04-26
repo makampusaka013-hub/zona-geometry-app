@@ -60,13 +60,17 @@ export async function POST(request) {
       </div>
     `;
 
-    await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Support Zona Geometry <admin@zonageometry.id>',
+    const { data: emailData, error: emailError } = await resend.emails.send({
+      from: 'Sistem Notifikasi Zona Geometry <admin@zonageometry.id>',
       to: adminEmail,
       reply_to: user.email,
       subject: `[${type.toUpperCase()}] ${subject}`,
       html: htmlContent,
     });
+
+    if (emailError) {
+      throw new Error(`Resend Error: ${emailError.message}`);
+    }
 
     return NextResponse.json({ success: true, ticket });
 

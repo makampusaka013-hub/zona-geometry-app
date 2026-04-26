@@ -35,11 +35,14 @@ export default function AboutPage() {
       });
 
       const result = await res.json();
+      
+      if (!res.ok) {
+        throw new Error(result.error || 'Gagal mengirim laporan.');
+      }
+
       if (result.success) {
         setMessage({ type: 'success', text: 'Laporan Anda telah terkirim! Admin akan segera meninjau.' });
         setFormData({ type: 'bug', subject: '', description: '' });
-      } else {
-        throw new Error(result.error || 'Gagal mengirim laporan.');
       }
     } catch (err) {
       setMessage({ type: 'error', text: err.message });
