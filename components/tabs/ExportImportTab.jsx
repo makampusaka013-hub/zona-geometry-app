@@ -565,8 +565,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                   <span className="text-[9px] font-bold text-slate-400">XLSX</span>
                 </div>
                 {subTab === 'export' && (
-                  <div className="flex flex-col items-center opacity-40">
-                    <div className="w-10 h-10 bg-slate-500/20 rounded-xl flex items-center justify-center border border-slate-500/30 mb-1"><FileText className="w-5 h-5 text-slate-400" /></div>
+                  <div className="flex flex-col items-center">
+                    <div className="w-10 h-10 bg-rose-500/20 rounded-xl flex items-center justify-center border border-rose-500/30 mb-1">
+                      <FileText className="h-5 w-5 text-rose-400" />
+                    </div>
                     <span className="text-[9px] font-bold text-slate-400">PDF</span>
                   </div>
                 )}
@@ -806,12 +808,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         )}
                       </button>
 
-                      {userMember?.role !== 'normal' && (
-                        <button
-                          onClick={handleConfirmCustomPdfExport}
-                          disabled={loadingReport}
-                          className="flex-1 flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-red-900/20 disabled:opacity-50 disabled:hover:scale-100"
-                        >
+                      <button
+                        onClick={handleConfirmCustomPdfExport}
+                        disabled={loadingReport}
+                        className="flex-1 flex items-center justify-center gap-3 bg-rose-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-rose-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-rose-900/20 disabled:opacity-50 disabled:hover:scale-100"
+                      >
                           {loadingReport ? (
                             <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                           ) : (
@@ -820,8 +821,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                               <span>Export PDF .PDF</span>
                             </div>
                           )}
-                        </button>
-                      )}
+                      </button>
                     </div>
                   </div>
                 </div>
