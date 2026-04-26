@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Logo } from '@/components/Logo';
+import { LogoHero } from '@/components/LogoHero';
 import { supabase } from '@/lib/supabase';
 
 export default function AboutPage() {
@@ -57,9 +58,7 @@ export default function AboutPage() {
         
         {/* Section 1: Hero Info */}
         <section className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-          <div className="inline-flex items-center justify-center mb-4">
-            <Logo className="h-24 lg:h-32" />
-          </div>
+          <LogoHero className="h-28 lg:h-36 mb-4" />
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-6xl font-black text-white leading-tight tracking-tight">
               Akselerasi RAB dengan <br />
