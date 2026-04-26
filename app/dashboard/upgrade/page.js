@@ -227,12 +227,12 @@ export default function UpgradePage() {
                 <ul className="mt-5 space-y-2.5">
                   {[
                     'Semua Fitur Normal',
-                    'Penyimpanan Tak Terbatas',
+                    'Bisa Override Harga Satuan',
                     'Custom Branding Laporan',
                     'Export PDF Premium (A4)',
                     'Maks. 3 Proyek',
                     'Akses Multi-Device',
-                    'Prioritas Support WA',
+                    'Bisa Tambah AHSP Custom',
                     'Gabung Proyek (Member)',
                   ].map((feature) => (
                     <li key={feature} className="flex items-center gap-3 text-[11px] text-slate-700 dark:text-slate-300 font-bold">
