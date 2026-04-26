@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
+import { generateProjectPDF } from '@/lib/pdf_engine';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
@@ -417,6 +418,36 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     });
   }
 
+  async function handleConfirmCustomPdfExport() {
+    if (selectedSheets.length === 0) {
+      toast.error("Pilih minimal satu sheet untuk di-ekspor.");
+      return;
+    }
+    
+    const hImg = await getHeaderImage();
+    
+    handleStartExport(async () => {
+      setLoadingReport(true);
+      try {
+        const { data: enrichedLines } = await supabase.from('view_project_report_lines').select('*').eq('project_id', project.id);
+        
+        await generateProjectPDF(project, userMember, enrichedLines || [], selectedSheets, {
+          headerImage: hImg,
+          paperSize,
+          fileName: `Laporan Proyek ${project.name || ''}`,
+          scheduleData: { project, userMember }
+        });
+        
+        toast.success("PDF berhasil di-generate!");
+      } catch (err) {
+        console.error(err);
+        toast.error("Gagal membuat PDF: " + err.message);
+      } finally {
+        setLoadingReport(false);
+      }
+    }, 'custom_pdf');
+  }
+
   function handleStartExport(fn, toolId = null) {
     setPendingExportFn(() => fn);
     setPendingToolId(toolId);
@@ -729,14 +760,37 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         <div className="h-full bg-emerald-500 w-full" />
                       </div>
                     </div>
-                    <button
-                      onClick={handleConfirmCustomExport}
-                      disabled={loadingPro === 'custom'}
-                      className="w-full py-5 bg-white text-slate-900 rounded-2xl text-xs font-black uppercase tracking-[0.3em] shadow-2xl hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
-                    >
-                      {loadingPro === 'custom' ? <Spinner className="w-5 h-5 border-slate-900" /> : <Download className="w-5 h-5" />}
-                      Export Custom .xlsx
-                    </button>
+                    <div className="flex flex-col sm:flex-row gap-4 w-full">
+                      <button
+                        onClick={handleConfirmCustomExport}
+                        disabled={loadingReport}
+                        className="flex-1 flex items-center justify-center gap-3 bg-white dark:bg-white text-slate-900 px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-slate-900/20 disabled:opacity-50 disabled:hover:scale-100"
+                      >
+                        {loadingReport ? (
+                          <div className="h-5 w-5 border-2 border-slate-900 border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <Download className="h-5 w-5" />
+                            <span>Export Custom .XLSX</span>
+                          </div>
+                        )}
+                      </button>
+
+                      <button
+                        onClick={handleConfirmCustomPdfExport}
+                        disabled={loadingReport}
+                        className="flex-1 flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-red-900/20 disabled:opacity-50 disabled:hover:scale-100"
+                      >
+                        {loadingReport ? (
+                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                        ) : (
+                          <div className="flex items-center gap-3">
+                            <FileText className="h-5 w-5" />
+                            <span>Export PDF .PDF</span>
+                          </div>
+                        )}
+                      </button>
+                    </div>
                   </div>
                 </div>
               </div>
