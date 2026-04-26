@@ -138,7 +138,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
+        await generateProjectReport(project, userMember, enrichedLines, ['COVER', 'RAB', 'REKAP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
@@ -179,7 +179,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['AHSP', 'HSP'], { 
+        await generateProjectReport(project, userMember, enrichedLines, ['COVER', 'AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
