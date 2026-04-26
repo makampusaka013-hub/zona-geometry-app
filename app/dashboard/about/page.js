@@ -59,9 +59,7 @@ export default function AboutPage() {
         
         {/* Section 1: Hero Info */}
         <section className="text-center space-y-8 animate-in fade-in slide-in-from-bottom-6 duration-700">
-          <div className="dark:inline-flex dark:items-center dark:justify-center dark:p-5 dark:bg-slate-900/50 dark:backdrop-blur-xl dark:rounded-[40px] dark:border dark:border-white/5 dark:shadow-2xl dark:mb-4">
-            <Logo className="h-20 lg:h-24 dark:h-16 dark:lg:h-20" />
-          </div>
+          <LogoHero className="h-28 lg:h-36 mb-4" />
           <div className="space-y-4">
             <h1 className="text-4xl lg:text-6xl font-black text-slate-900 dark:text-white leading-tight tracking-tight">
               Akselerasi RAB dengan <br />
@@ -76,15 +74,15 @@ export default function AboutPage() {
         {/* Section 2: Premium Feature Grid */}
         <section className="grid grid-cols-1 md:grid-cols-2 gap-8 outline-none">
           {features.map((f, i) => (
-            <div key={i} className="group p-8 bg-white dark:bg-slate-900/40 dark:backdrop-blur-md rounded-[32px] border border-slate-200 dark:border-white/5 hover:border-blue-500/30 dark:hover:border-amber-500/30 hover:shadow-xl transition-all duration-300">
+            <div key={i} className="group p-8 bg-white dark:bg-slate-900/40 backdrop-blur-md rounded-[32px] border border-slate-200 dark:border-white/5 hover:border-blue-500/30 dark:hover:border-amber-500/30 hover:shadow-xl transition-all duration-300">
               <div className="mb-6 p-4 w-fit bg-blue-50 dark:bg-amber-500/10 rounded-2xl group-hover:bg-blue-100 dark:group-hover:bg-amber-500/20 transition-colors">
-                {/* Dynamic Icon Color based on theme */}
+                {/* Dynamically handle icon color based on theme */}
                 {Object.assign({}, f.icon, {
-                  props: { ...f.icon.props, className: `${f.icon.props.className.replace('text-amber-500', '')} text-blue-600 dark:text-amber-500` }
+                  props: { ...f.icon.props, className: f.icon.props.className.replace('text-amber-500', 'text-blue-600 dark:text-amber-500') }
                 })}
               </div>
               <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3 tracking-wide">{f.title}</h3>
-              <p className="text-slate-500 dark:text-slate-400 leading-relaxed font-medium text-sm">
+              <p className="text-slate-50 dark:text-slate-400 leading-relaxed font-medium text-sm">
                 {f.desc}
               </p>
             </div>
@@ -113,14 +111,14 @@ export default function AboutPage() {
         {/* Section 4: Integrated ISSUE REPORT Form */}
         <section id="report" className="max-w-3xl mx-auto pt-16 border-t border-slate-200 dark:border-white/5 space-y-12">
           <div className="text-center space-y-4">
-            <div className="inline-flex bg-blue-600/10 text-blue-600 dark:bg-red-500/10 dark:text-red-500 px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4">
+            <div className="inline-flex bg-blue-600/10 dark:bg-blue-500/10 text-blue-600 dark:text-blue-500 px-4 py-1.5 rounded-full text-xs font-black tracking-widest uppercase mb-4">
               Support Center
             </div>
             <h2 className="text-3xl lg:text-4xl font-black text-slate-900 dark:text-white">Ada Masalah? Laporkan Sekarang</h2>
             <p className="text-slate-500 dark:text-slate-400 font-medium">Bantu kami menyempurnakan Zona Geometry. Admin akan merespons dalam 1x24 jam.</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900/60 dark:backdrop-blur-2xl p-8 lg:p-10 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-2xl space-y-8">
+          <form onSubmit={handleSubmit} className="bg-white dark:bg-slate-900/60 backdrop-blur-2xl p-8 lg:p-10 rounded-[40px] border border-slate-200 dark:border-white/10 shadow-2xl space-y-8">
             {message && (
               <div className={`p-5 rounded-2xl flex items-center gap-4 animate-in fade-in zoom-in duration-300 ${
                 message.type === 'success' ? 'bg-emerald-50 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20' : 'bg-red-50 dark:bg-red-500/10 text-red-600 dark:text-red-400 border border-red-200 dark:border-red-500/20'
@@ -138,8 +136,8 @@ export default function AboutPage() {
                   onClick={() => setFormData({ ...formData, type: t })}
                   className={`py-4 px-2 rounded-2xl text-[10px] font-black tracking-tighter transition-all border ${
                     formData.type === t
-                      ? 'bg-blue-600 text-white border-blue-600 dark:bg-amber-500 dark:text-black dark:border-amber-500 shadow-xl shadow-blue-600/20 dark:shadow-amber-500/20 scale-105'
-                      : 'bg-slate-50 text-slate-400 border-slate-200 dark:bg-slate-800/50 dark:text-slate-500 dark:border-white/5 hover:border-blue-500/40 dark:hover:border-amber-500/40'
+                      ? 'bg-blue-600 dark:bg-amber-500 text-white dark:text-black border-blue-600 dark:border-amber-500 shadow-xl shadow-blue-600/20 dark:shadow-amber-500/20 scale-105'
+                      : 'bg-slate-50 dark:bg-slate-800/50 text-slate-400 dark:text-slate-500 border-slate-200 dark:border-white/5 hover:border-blue-500/40 dark:hover:border-amber-500/40'
                   }`}
                 >
                   {t.replace('_', ' ').toUpperCase()}
