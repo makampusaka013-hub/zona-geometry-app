@@ -112,6 +112,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     }
   }
 
+  async function handleExportExcel() {
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) {
         toast.warning('Data RAB kosong. Tidak ada yang bisa diekspor.');
@@ -161,6 +162,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     });
   }
 
+  async function handleExportUsedAhspHsp() {
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) return;
       setLoadingPro('used_ahsp_hsp');
