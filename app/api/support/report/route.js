@@ -42,7 +42,7 @@ export async function POST(request) {
     if (dbError) throw dbError;
 
     // 3. Send Email Notification to Admin
-    const adminEmail = process.env.ADMIN_EMAIL || 'admin@zonageometry.id';
+    const adminEmail = 'admin@zonageometry.id';
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
         <h2 style="color: #f97316;">⚠️ Laporan Masalah Baru</h2>
