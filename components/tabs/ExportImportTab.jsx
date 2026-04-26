@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
+import { generateProjectReport as generateProjectReportStatic } from '@/lib/excel_engine_static';
 import { generateProjectPDF } from '@/lib/pdf_engine';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
@@ -356,14 +357,34 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   }
 
   async function handleConfirmCustomExport() {
+    const role = userMember?.role || 'normal';
+    
     handleStartExport(async (hImg) => {
       if (selectedSheets.length === 0) {
          toast.warning('Pilih minimal satu sheet untuk diekspor.');
          return;
       }
-      setLoadingPro('custom');
+      setLoadingReport(true);
       try {
         const enrichedLines = [...ahspLines];
+        
+        // Filter sheets based on role
+        let filteredSheets = [...selectedSheets];
+        let useStatic = true;
+
+        if (role === 'normal') {
+          filteredSheets = selectedSheets.filter(s => ['rab', 'rekap'].includes(s.toUpperCase()));
+          if (filteredSheets.length === 0) {
+            toast.error("Role Normal hanya diperbolehkan ekspor RAB & Rekap.");
+            return;
+          }
+        } else if (role === 'pro') {
+          filteredSheets = selectedSheets.filter(s => !['cover', 'schedule'].includes(s.toLowerCase()));
+        } else if (role === 'advance') {
+          useStatic = false;
+        }
+
+        // Logic to fetch missing details and prices
         const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
         if (missingDetailIds.length > 0) {
           const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
@@ -372,8 +393,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
+
         let scheduleData = [];
-        if (selectedSheets.some(s => s.toLowerCase() === 'schedule')) {
+        if (filteredSheets.some(s => s.toLowerCase() === 'schedule')) {
           const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
           const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds);
           const catMap = {};
@@ -382,24 +404,32 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
           scheduleData = getSequencedSchedule(manpower, project.start_date);
         }
+
         const { data: progData } = await supabase.from('project_progress_daily').select('*').eq('project_id', project.id);
-        if (exportMode === 'catalog') {
-          const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
-          const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+        
+        const [projectRes, catalogRes, overrideRes] = await Promise.all([
+          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
+        ]);
+        const mergedMap = {};
+        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+
+        if (useStatic) {
+          await generateProjectReportStatic(project, userMember, enrichedLines, filteredSheets, { 
+            projectPrices, 
+            globalOverhead: project.ppn_percent || 12, 
+            headerImage: hImg, 
+            paperSize, 
+            scheduleData, 
+            progressData: progData,
+            fileName: `Proyek ${project.name || ''}`
+          });
         } else {
-          const [projectRes, catalogRes, overrideRes] = await Promise.all([
-            supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-            supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-            supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-          ]);
-          const mergedMap = {};
-          (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-          
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+          await generateProjectReport(project, userMember, enrichedLines, filteredSheets, { 
             projectPrices, 
             globalOverhead: project.ppn_percent || 12, 
             headerImage: hImg, 
@@ -409,11 +439,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             fileName: `Proyek ${project.name || ''}`
           });
         }
-        toast.success('Laporan kustom berhasil diunduh.');
+        
+        toast.success('Laporan berhasil diunduh.');
       } catch (err) {
+        console.error(err);
         toast.error('Gagal membuat laporan: ' + err.message);
       } finally {
-        setLoadingPro(null);
+        setLoadingReport(false);
       }
     });
   }
@@ -559,24 +591,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                   </button>
                 </div>
 
-                <div className="group bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all h-full flex flex-col justify-between overflow-hidden relative">
-                  <div className="absolute top-0 right-0 p-6 opacity-5 -rotate-12">
-                    <FileText className="w-24 h-24" />
-                  </div>
-                  <div className="relative z-10">
-                    <div className="w-16 h-16 bg-rose-50 dark:bg-rose-500/10 rounded-3xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
-                      <TrendingUp className="w-8 h-8 text-rose-600 dark:text-rose-400" />
-                    </div>
-                    <h3 className="text-xl font-black text-slate-900 dark:text-white mb-3">Rekapitulasi RAB</h3>
-                    <p className="text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-widest mb-4">Format: XLSX (.xlsx)</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed mb-8">
-                      Unduh ringkasan biaya per kelompok pekerjaan (Bab) saja. Ideal untuk lampiran dokumen kontrak atau pengajuan cepat.
-                    </p>
-                  </div>
-                  <button onClick={() => ProReport.exportProRabSummary(project, ahspLines)} className="w-full py-4 bg-rose-600 dark:bg-rose-500/10 dark:text-rose-400 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:translate-y-[-2px] transition-all flex items-center justify-center gap-2">
-                    <Download className="w-4 h-4" /> DOWNLOAD REKAP
-                  </button>
-                </div>
+                {/* Card Rekapitulasi RAB dihapus untuk role normal sesuai permintaan */}
 
                 <div className="group bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl opacity-60 transition-all h-full flex flex-col justify-between overflow-hidden relative grayscale">
                   <div className="absolute top-0 right-0 p-6 opacity-5">
@@ -738,7 +753,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule'].map(sheet => (
+                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']
+                        .filter(sheet => {
+                          const role = userMember?.role || 'normal';
+                          if (role === 'normal') return ['RAB', 'REKAP'].includes(sheet);
+                          if (role === 'pro') return sheet !== 'cover' && sheet !== 'schedule';
+                          return true;
+                        })
+                        .map(sheet => (
                         <button
                           key={sheet}
                           onClick={() => toggleSheet(sheet)}
@@ -776,20 +798,22 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         )}
                       </button>
 
-                      <button
-                        onClick={handleConfirmCustomPdfExport}
-                        disabled={loadingReport}
-                        className="flex-1 flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-red-900/20 disabled:opacity-50 disabled:hover:scale-100"
-                      >
-                        {loadingReport ? (
-                          <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                        ) : (
-                          <div className="flex items-center gap-3">
-                            <FileText className="h-5 w-5" />
-                            <span>Export PDF .PDF</span>
-                          </div>
-                        )}
-                      </button>
+                      {member?.role !== 'normal' && (
+                        <button
+                          onClick={handleConfirmCustomPdfExport}
+                          disabled={loadingReport}
+                          className="flex-1 flex items-center justify-center gap-3 bg-red-600 text-white px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-red-700 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-red-900/20 disabled:opacity-50 disabled:hover:scale-100"
+                        >
+                          {loadingReport ? (
+                            <div className="h-5 w-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-3">
+                              <FileText className="h-5 w-5" />
+                              <span>Export PDF .PDF</span>
+                            </div>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -872,12 +896,12 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setIsExportModalOpen(false)} />
           <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in duration-300">
             {/* Header Modal */}
-            <div className="p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-between">
+            <div className="p-8 bg-indigo-600 text-white flex items-center justify-between">
               <div>
                 <h3 className="text-2xl font-black tracking-tighter">Pengaturan Ekspor</h3>
-                <p className="text-[10px] font-bold text-indigo-200 uppercase tracking-widest mt-1">Logo & Format Dokumen</p>
+                <p className="text-[10px] font-bold text-indigo-100/70 uppercase tracking-widest mt-1">Logo & Format Dokumen</p>
               </div>
-              <div className="w-14 h-14 bg-white/20 rounded-2xl flex items-center justify-center">
+              <div className="w-14 h-14 bg-white/10 rounded-2xl flex items-center justify-center">
                 <FileSpreadsheet className="w-7 h-7 text-white" />
               </div>
             </div>
