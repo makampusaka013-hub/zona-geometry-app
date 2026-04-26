@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
+import { generateCoverImage } from '@/lib/cover_engine';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
@@ -138,9 +139,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
+        let coverImage = null;
+        if (['cover', 'RAB', 'REKAP'].some(s => s.toLowerCase() === 'cover')) {
+          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+        }
+
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
           projectPrices, 
           headerImage: hImg, 
+          coverImage,
           paperSize, 
           isStandalone: true,
           fileName: `RAB ${project.name || ''}`
@@ -179,9 +186,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
+        let coverImage = null;
+        if (['cover', 'AHSP', 'HSP'].some(s => s.toLowerCase() === 'cover')) {
+          coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+        }
+
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
+          coverImage,
           paperSize, 
           isStandalone: true,
           fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
@@ -397,8 +410,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+          
+          let coverImage = null;
+          if (selectedSheets.some(s => s.toLowerCase() === 'cover')) {
+            coverImage = await generateCoverImage(project, userMember, { mainImage: hImg });
+          }
+
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
             projectPrices, 
+            coverImage,
             globalOverhead: project.ppn_percent || 12, 
             headerImage: hImg, 
             paperSize, 
