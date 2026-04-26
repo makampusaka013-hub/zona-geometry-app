@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Logo } from '@/components/Logo';
+import { supabase } from '@/lib/supabase';
 
 export default function AboutPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -13,42 +14,7 @@ export default function AboutPage() {
   });
 
   const features = [
-    {
-      title: 'Akurasi Geometris',
-      desc: 'Perhitungan volume dan kebutuhan material yang presisi berdasarkan standar PUPR.',
-      icon: (
-        <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
-        </svg>
-      )
-    },
-    {
-      title: 'Katalog Regional',
-      desc: 'Akses data harga material dan upah yang disesuaikan dengan wilayah proyek Anda.',
-      icon: (
-        <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064M15 20.488V18a2 2 0 012-2h3.064" />
-        </svg>
-      )
-    },
-    {
-      title: 'Manajemen Proyek',
-      desc: 'Pantau kemajuan harian dan kelola revisi (CCO) dalam satu platform terintegrasi.',
-      icon: (
-        <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
-        </svg>
-      )
-    },
-    {
-      title: 'Laporan Profesional',
-      desc: 'Ekspor RAB, AHSP, dan jadwal kerja ke format Excel yang siap cetak.',
-      icon: (
-        <svg className="w-8 h-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 17v-2m3 2v-4m3 4v-6m2 10H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-        </svg>
-      )
-    }
+// ... (features array lines 15-52)
   ];
 
   const handleSubmit = async (e) => {
@@ -57,9 +23,14 @@ export default function AboutPage() {
     setMessage(null);
 
     try {
+      const { data: { session } } = await supabase.auth.getSession();
+      
       const res = await fetch('/api/support/report', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Authorization': session?.access_token ? `Bearer ${session.access_token}` : ''
+        },
         body: JSON.stringify(formData)
       });
 
