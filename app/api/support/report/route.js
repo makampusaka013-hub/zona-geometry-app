@@ -61,8 +61,9 @@ export async function POST(request) {
     `;
 
     await resend.emails.send({
-      from: 'Support Zona Geometry <noreply@zonageometry.id>',
+      from: process.env.EMAIL_FROM || 'Support Zona Geometry <admin@zonageometry.id>',
       to: adminEmail,
+      reply_to: user.email,
       subject: `[${type.toUpperCase()}] ${subject}`,
       html: htmlContent,
     });
