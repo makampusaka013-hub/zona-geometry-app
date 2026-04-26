@@ -12,7 +12,7 @@ import { generateProjectReport } from '@/lib/excel_engine';
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
   const [exportMode, setExportMode] = useState('project'); // 'project' | 'catalog'
-  const [selectedSheets, setSelectedSheets] = useState(['COVER', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']);
+  const [selectedSheets, setSelectedSheets] = useState(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']);
   const [reportType, setReportType] = useState('harian');
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().split('T')[0],
@@ -138,7 +138,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['COVER', 'RAB', 'REKAP'], { 
+        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
@@ -179,7 +179,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['COVER', 'AHSP', 'HSP'], { 
+        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
           projectPrices, 
           headerImage: hImg, 
           paperSize, 
@@ -706,7 +706,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {['COVER', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule'].map(sheet => (
+                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule'].map(sheet => (
                         <button
                           key={sheet}
                           onClick={() => toggleSheet(sheet)}
