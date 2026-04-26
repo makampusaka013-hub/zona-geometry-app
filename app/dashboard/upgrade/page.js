@@ -68,7 +68,7 @@ export default function UpgradePage() {
                 await fetch('/api/payment/verify', {
                   method: 'POST',
                   headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ 
+                  body: JSON.stringify({
                     order_id: result.order_id,
                     userId: session.user.id,
                     plan: planType
@@ -107,10 +107,10 @@ export default function UpgradePage() {
   const currentRole = member?.role || 'normal';
   const isExpired = member?.expired_at ? new Date(member.expired_at) < new Date() : true;
 
-  const isNormalActive   = currentRole === 'normal'   && member?.is_paid && !isExpired;
-  const isProActive      = currentRole === 'pro'      && !isExpired;
-  const isAdvanceActive  = currentRole === 'advance'  && !isExpired;
-  
+  const isNormalActive = currentRole === 'normal' && member?.is_paid && !isExpired;
+  const isProActive = currentRole === 'pro' && !isExpired;
+  const isAdvanceActive = currentRole === 'advance' && !isExpired;
+
   const isTrial = currentRole === 'normal' && !member?.is_paid;
   const daysRemaining = member?.expired_at ? Math.ceil((new Date(member.expired_at) - new Date()) / (1000 * 60 * 60 * 24)) : 0;
   const isExpiringSoon = daysRemaining <= 1;
@@ -139,8 +139,8 @@ export default function UpgradePage() {
       <Script
         src={
           process.env.NEXT_PUBLIC_MIDTRANS_IS_PRODUCTION === 'true'
-          ? "https://app.midtrans.com/snap/snap.js"
-          : "https://app.sandbox.midtrans.com/snap/snap.js"
+            ? "https://app.midtrans.com/snap/snap.js"
+            : "https://app.sandbox.midtrans.com/snap/snap.js"
         }
         data-client-key={process.env.NEXT_PUBLIC_MIDTRANS_CLIENT_KEY}
         strategy="afterInteractive"
@@ -198,11 +198,10 @@ export default function UpgradePage() {
               <button
                 onClick={() => handleUpgrade('normal')}
                 disabled={!!loading || isNormalActive || isProActive || isAdvanceActive}
-                className={`mt-6 w-full py-3 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all transform active:scale-95 flex items-center justify-center gap-2 ${
-                  isNormalActive || isProActive || isAdvanceActive
-                  ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed'
-                  : 'bg-slate-900 dark:bg-slate-800 text-white hover:bg-black dark:hover:bg-slate-700 shadow-xl'
-                }`}
+                className={`mt-6 w-full py-3 rounded-xl font-black text-[11px] uppercase tracking-widest transition-all transform active:scale-95 flex items-center justify-center gap-2 ${isNormalActive || isProActive || isAdvanceActive
+                    ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed'
+                    : 'bg-slate-900 dark:bg-slate-800 text-white hover:bg-black dark:hover:bg-slate-700 shadow-xl'
+                  }`}
               >
                 {loading === 'normal' ? (
                   <div className="w-4 h-4 border-2 border-white border-t-transparent animate-spin rounded-full" />
@@ -256,11 +255,10 @@ export default function UpgradePage() {
               <button
                 onClick={() => handleUpgrade('pro')}
                 disabled={!!loading || isProActive || isAdvanceActive}
-                className={`mt-6 w-full py-3.5 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-3 ${
-                  isProActive || isAdvanceActive
-                  ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed'
-                  : 'bg-indigo-600 dark:bg-orange-500 text-white shadow-lg shadow-indigo-500/30 dark:shadow-orange-500/30 hover:bg-indigo-700 dark:hover:bg-orange-600'
-                }`}
+                className={`mt-6 w-full py-3.5 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-3 ${isProActive || isAdvanceActive
+                    ? 'bg-slate-100 text-slate-400 dark:bg-slate-800 cursor-not-allowed'
+                    : 'bg-indigo-600 dark:bg-orange-500 text-white shadow-lg shadow-indigo-500/30 dark:shadow-orange-500/30 hover:bg-indigo-700 dark:hover:bg-orange-600'
+                  }`}
               >
                 {loading === 'pro' ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full" />
@@ -295,7 +293,7 @@ export default function UpgradePage() {
                     'BIM IFC Auto-Volume Extractor',
                     'Kolaborasi Penuh (Share & Join)',
                     'Maks. 5 Proyek',
-                    'Priority Support Dedicated',
+                    'Export custom excel full formula',
                   ].map((feature) => (
                     <li key={feature} className="flex items-center gap-3 text-[11px] text-slate-200 font-bold">
                       <div className="h-5 w-5 rounded-full bg-purple-500/20 flex items-center justify-center shrink-0">
@@ -312,11 +310,10 @@ export default function UpgradePage() {
               <button
                 onClick={() => handleUpgrade('advance')}
                 disabled={!!loading || isAdvanceActive}
-                className={`mt-6 w-full py-3.5 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-3 ${
-                  isAdvanceActive
-                  ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
-                  : 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-500/30 hover:from-purple-500 hover:to-fuchsia-500'
-                }`}
+                className={`mt-6 w-full py-3.5 rounded-xl font-black text-sm transition-all transform active:scale-95 flex items-center justify-center gap-3 ${isAdvanceActive
+                    ? 'bg-slate-800 text-slate-500 cursor-not-allowed'
+                    : 'bg-gradient-to-r from-purple-600 to-fuchsia-600 text-white shadow-lg shadow-purple-500/30 hover:from-purple-500 hover:to-fuchsia-500'
+                  }`}
               >
                 {loading === 'advance' ? (
                   <div className="w-5 h-5 border-2 border-white border-t-transparent animate-spin rounded-full" />
@@ -357,7 +354,7 @@ export default function UpgradePage() {
             <p className="text-[10px] text-slate-500 leading-relaxed font-medium">Sistem prabayar manual. Tidak ada tagihan otomatis ke kartu.</p>
           </div>
         </div>
-        
+
         <div className="flex items-center justify-center gap-4 text-[9px] text-slate-400 font-bold uppercase tracking-widest">
           <span className="flex items-center gap-1.5 opacity-60">
             <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd" /></svg>
