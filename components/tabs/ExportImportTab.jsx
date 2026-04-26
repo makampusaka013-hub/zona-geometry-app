@@ -140,13 +140,27 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
-          projectPrices, 
-          headerImage: hImg, 
-          paperSize, 
-          isStandalone: true,
-          fileName: `RAB ${project.name || ''}`
-        });
+        const role = userMember?.role || 'normal';
+        const useStatic = role !== 'advance';
+        const hImg = await getHeaderImage();
+
+        if (useStatic) {
+          await generateProjectReportStatic(project, userMember, enrichedLines, ['RAB', 'REKAP'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: true,
+            fileName: `RAB ${project.name || ''}`
+          });
+        } else {
+          await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: true,
+            fileName: `RAB ${project.name || ''}`
+          });
+        }
         toast.success('RAB Berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor RAB: ' + err.message);
@@ -181,13 +195,27 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
-          projectPrices, 
-          headerImage: hImg, 
-          paperSize, 
-          isStandalone: true,
-          fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
-        });
+        const role = userMember?.role || 'normal';
+        const useStatic = role !== 'advance';
+        const hImg = await getHeaderImage();
+
+        if (useStatic) {
+          await generateProjectReportStatic(project, userMember, enrichedLines, ['AHSP', 'HSP', 'HARGA SATUAN TERPAKAI'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: true,
+            fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
+          });
+        } else {
+          await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: true,
+            fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
+          });
+        }
         toast.success('AHSP & Harga Terpakai berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor AHSP & Harga: ' + err.message);
@@ -224,14 +252,29 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         // 3. Ekspor dengan isStandalone: false agar VLOOKUP aktif
-        await generateProjectReport(project, userMember, allAhsp, ['AHSP', 'HSP'], { 
-          projectPrices, 
-          headerImage: hImg, 
-          paperSize, 
-          isStandalone: false, // <--- KUNCI: Aktifkan VLOOKUP
-          isCatalog: true,      // <--- KUNCI: Mode Katalog
-          fileName: `AHSP & HSP ${locationName}`
-        });
+        const role = userMember?.role || 'normal';
+        const useStatic = role !== 'advance';
+        const hImg = await getHeaderImage();
+
+        if (useStatic) {
+          await generateProjectReportStatic(project, userMember, allAhsp, ['AHSP', 'HSP'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: true,
+            isCatalog: true,
+            fileName: `AHSP & HSP ${locationName}`
+          });
+        } else {
+          await generateProjectReport(project, userMember, allAhsp, ['AHSP', 'HSP'], { 
+            projectPrices, 
+            headerImage: hImg, 
+            paperSize, 
+            isStandalone: false,
+            isCatalog: true,
+            fileName: `AHSP & HSP ${locationName}`
+          });
+        }
 
         toast.success('Katalog AHSP & HSP berhasil diunduh.');
       } catch (err) {
@@ -373,13 +416,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         let useStatic = true;
 
         if (role === 'normal') {
-          filteredSheets = selectedSheets.filter(s => ['rab', 'rekap'].includes(s.toUpperCase()));
+          filteredSheets = selectedSheets.filter(s => ['rab', 'rekap'].includes(s.toLowerCase()));
           if (filteredSheets.length === 0) {
             toast.error("Role Normal hanya diperbolehkan ekspor RAB & Rekap.");
             return;
           }
         } else if (role === 'pro') {
-          filteredSheets = selectedSheets.filter(s => !['cover', 'schedule'].includes(s.toLowerCase()));
+          filteredSheets = selectedSheets.filter(s => s.toLowerCase() !== 'schedule');
         } else if (role === 'advance') {
           useStatic = false;
         }
