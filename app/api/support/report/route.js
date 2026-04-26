@@ -1,8 +1,6 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
-
-const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function POST(request) {
   try {
@@ -41,8 +39,19 @@ export async function POST(request) {
 
     if (dbError) throw dbError;
 
-    // 3. Send Email Notification to Admin
+    // 3. Send Email Notification to Admin via Nodemailer (Hostinger SMTP)
     const adminEmail = 'admin@zonageometry.id';
+    
+    const transporter = nodemailer.createTransport({
+      host: 'smtp.hostinger.com',
+      port: 465,
+      secure: true,
+      auth: {
+        user: 'admin@zonageometry.id',
+        pass: process.env.EMAIL_PASSWORD,
+      },
+    });
+
     const htmlContent = `
       <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 12px;">
         <h2 style="color: #f97316;">⚠️ Laporan Masalah Baru</h2>
@@ -60,16 +69,17 @@ export async function POST(request) {
       </div>
     `;
 
-    const { data: emailData, error: emailError } = await resend.emails.send({
-      from: 'Sistem Notifikasi Zona Geometry <admin@zonageometry.id>',
-      to: adminEmail,
-      reply_to: user.email,
-      subject: `[${type.toUpperCase()}] ${subject}`,
-      html: htmlContent,
-    });
-
-    if (emailError) {
-      throw new Error(`Resend Error: ${emailError.message}`);
+    try {
+      await transporter.sendMail({
+        from: '"Sistem Zona Geometry" <admin@zonageometry.id>',
+        to: adminEmail,
+        replyTo: user.email,
+        subject: `[${type.toUpperCase()}] ${subject}`,
+        html: htmlContent,
+      });
+    } catch (mailError) {
+      console.error('Nodemailer Error:', mailError);
+      throw new Error(`Gagal mengirim email: ${mailError.message}`);
     }
 
     return NextResponse.json({ success: true, ticket });
