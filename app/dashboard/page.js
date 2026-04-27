@@ -21,7 +21,6 @@ import {
   Wallet, HardHat, ClipboardList, Hammer, Construction,
   Activity, BarChart2, Zap
 } from 'lucide-react';
-import Empty from '@/components/Empty';
 import { computeManpower, getSequencedSchedule } from '@/lib/manpower';
 
 function formatIdr(n) {
@@ -188,7 +187,7 @@ function DashboardContent() {
 
       // [SAFETY NET: AKTIVASI OTOMATIS DI DASHBOARD]
       let finalRow = row;
-      
+
       // Ambil sinyal pembayaran dari URL
       const hasPaymentSignal = searchParams.get('payment') === 'success' || !!searchParams.get('order_id');
 
@@ -253,36 +252,36 @@ function DashboardContent() {
   }, [router, searchParams]);
 
   useEffect(() => { loadData(); }, [loadData]);
-  
+
   // Pemicu sinkronisasi ulang jika ada parameter pembayaran sukses
   const paymentStatus = searchParams.get('payment');
   const orderId = searchParams.get('order_id');
-  
+
   useEffect(() => {
     let isMounted = true;
-    
+
     async function handlePaymentSuccess() {
       // Deteksi keberhasilan dari parameter URL (Midtrans redirect)
-      const isActuallySuccess = paymentStatus === 'success' || 
-                                 (orderId && searchParams.get('transaction_status') === 'settlement') ||
-                                 (orderId && orderId.includes('-') && pathname.includes('dashboard'));
+      const isActuallySuccess = paymentStatus === 'success' ||
+        (orderId && searchParams.get('transaction_status') === 'settlement') ||
+        (orderId && orderId.includes('-') && pathname.includes('dashboard'));
 
       if (isActuallySuccess && orderId && member?.user_id) {
         console.log('[PAYMENT] Success detected in URL, triggering proactive verification for:', orderId);
-        
+
         try {
           // Tembak API verify secara manual untuk memastikan DB terupdate detik ini juga
           const res = await fetch('/api/payment/verify', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              order_id: orderId, 
+            body: JSON.stringify({
+              order_id: orderId,
               userId: member.user_id,
               userEmail: member.email, // KRUSIAL untuk sinkronisasi cadangan
-              plan: searchParams.get('plan') || 'normal' 
+              plan: searchParams.get('plan') || 'normal'
             })
           });
-          
+
           const result = await res.json();
           if (result.success) {
             console.log('[PAYMENT] Proactive verification successful! Cleaning up URL...');
@@ -294,9 +293,9 @@ function DashboardContent() {
         }
       }
     }
-    
+
     handlePaymentSuccess();
-    
+
     return () => { isMounted = false; };
   }, [paymentStatus, orderId, member, router, searchParams]); // Tambahkan 'member' agar re-run saat data user siap
 
@@ -383,22 +382,22 @@ function DashboardContent() {
       resources?.forEach(r => { totB += (Number(r.kontribusi_nilai) || 0); totT += (Number(r.nilai_tkdn) || 0); });
       const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
 
-      const totalUpah = resources?.filter(r => { 
-        const j = (r.jenis_komponen || '').toLowerCase(); 
+      const totalUpah = resources?.filter(r => {
+        const j = (r.jenis_komponen || '').toLowerCase();
         const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'upah' || j === 'tenaga' || j === 'worker' || k.startsWith('L'); 
+        return j === 'upah' || j === 'tenaga' || j === 'worker' || k.startsWith('L');
       }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
-      const totalBahan = resources?.filter(r => { 
-        const j = (r.jenis_komponen || '').toLowerCase(); 
+      const totalBahan = resources?.filter(r => {
+        const j = (r.jenis_komponen || '').toLowerCase();
         const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'bahan' || j === 'material' || j === 'barang' || k.startsWith('B') || k.startsWith('A'); 
+        return j === 'bahan' || j === 'material' || j === 'barang' || k.startsWith('B') || k.startsWith('A');
       }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
-      const totalAlat = resources?.filter(r => { 
-        const j = (r.jenis_komponen || '').toLowerCase(); 
+      const totalAlat = resources?.filter(r => {
+        const j = (r.jenis_komponen || '').toLowerCase();
         const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E'); 
+        return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E');
       }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
       // Project-wide ratios for items without specific breakdown (Fallback)
@@ -613,10 +612,10 @@ function DashboardContent() {
     start.setHours(0, 0, 0, 0);
     const day = Math.floor((today - start) / 86400000);
     if (day < 0) return null;
-    
+
     if (sCurveFreq === 'daily') return `H-${day}`;
     if (day === 0) return '0';
-    
+
     const interval = sCurveFreq === 'weekly' ? 7 : 30;
     const prefix = sCurveFreq === 'weekly' ? 'M' : 'B';
     return `${prefix}-${Math.floor((day - 1) / interval) + 1}`;
@@ -769,19 +768,28 @@ function DashboardContent() {
       <div className="px-4 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-9 space-y-8">
           {projects.length === 0 ? (
-            <Empty
-              icon={<LayoutDashboard />}
-              title="Mulai Proyek Pertama Anda"
-              description="Dashboard analitik akan muncul secara otomatis setelah Anda menyusun rencana anggaran biaya (RAB) dan jadwal pada proyek konstruksi Anda."
-              action={
-                <Link
-                  href="/dashboard/rekap-proyek?action=new"
-                  className="px-10 py-5 bg-indigo-600 dark:bg-orange-600 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0"
-                >
-                  + Buat Proyek Sekarang
-                </Link>
-              }
-            />
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-20 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
+                <img
+                  src="/empty_state.png"
+                  alt="No Projects"
+                  className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl"
+                />
+              </div>
+              <div className="space-y-2 relative z-10">
+                <h3 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Mulai Proyek Pertama Anda</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
+                  Dashboard analitik akan muncul di sini setelah Anda membuat atau bergabung ke sebuah proyek konstruksi.
+                </p>
+              </div>
+              <Link
+                href="/dashboard/rekap-proyek?action=new"
+                className="px-8 py-4 bg-indigo-600 dark:bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 uppercase tracking-widest text-xs hover:scale-105 transition-all"
+              >
+                + Buat Proyek Sekarang
+              </Link>
+            </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -828,8 +836,8 @@ function DashboardContent() {
                       <ComposedChart data={processedChartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
                         <defs>
                           <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
-                            <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3}/>
-                            <stop offset="95%" stopColor="var(--chart-realis-glow)" stopOpacity={0}/>
+                            <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3} />
+                            <stop offset="95%" stopColor="var(--chart-realis-glow)" stopOpacity={0} />
                           </linearGradient>
                         </defs>
                         <CartesianGrid
@@ -1011,14 +1019,11 @@ function DashboardContent() {
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Pilih Proyek Aktif</h3>
             <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
               {projects.length === 0 ? (
-                <div className="py-10 px-4 text-center bg-[#0f172a] rounded-3xl border border-slate-800/50">
-                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] leading-relaxed mb-4">
-                    Data belum tersedia.
+                <div className="py-6 text-center">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">
+                    Data belum tersedia untuk kriteria ini.
                   </p>
-                  <Link 
-                    href="/dashboard/rekap-proyek?action=new" 
-                    className="px-6 py-3 bg-orange-600/10 text-orange-500 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border border-orange-500/20 hover:bg-orange-600 hover:text-white transition-all inline-block"
-                  >
+                  <Link href="/dashboard/rekap-proyek?action=new" className="mt-2 text-[9px] font-black text-indigo-600 dark:text-orange-500 uppercase tracking-widest hover:underline inline-block">
                     + Buat Proyek
                   </Link>
                 </div>

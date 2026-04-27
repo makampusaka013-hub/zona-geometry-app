@@ -52,11 +52,7 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
   const [selectedAhsp, setSelectedAhsp] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty 
-      icon={<ClipboardList />} 
-      title="Belum Ada Rincian AHSP" 
-      description="Data rincian AHSP tidak ditemukan di dalam RAB proyek ini. Silakan tambahkan item pekerjaan terlebih dahulu di editor RAB."
-    />;
+    return <Empty icon={<ClipboardList className="w-10 h-10" />} msg="Tidak ada rincian AHSP di RAB ini." />;
   }
 
   return (
@@ -137,7 +133,7 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
       const p = getOverridePrice(d.kode_item) || d.harga_konversi || d.harga || 0;
       return s + (Number(d.koefisien || 0) * Number(p));
     }, 0) : 0;
-  }, [details, hargaRows, getOverridePrice]);
+  }, [details, hargaRows]);
 
   const profitPercent = item.profit_percent !== null && item.profit_percent !== undefined ? Number(item.profit_percent) : 15;
   const hargaSatuanRAB = Math.round(subtotalAnalisa * (1 + (profitPercent / 100)));
@@ -477,11 +473,7 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
   const [overrideItem, setOverrideItem] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty 
-      icon={<Package />} 
-      title="Belum Ada Komponen Terpakai" 
-      description="Data harga satuan komponen belum tersedia. Komponen akan muncul otomatis setelah Anda menyusun item pekerjaan di RAB."
-    />;
+    return <Empty icon={<Package className="w-10 h-10" />} msg="Belum ada data harga satuan terpakai." />;
   }
 
   return (

@@ -9,9 +9,9 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.tkdn) {
-    return <Empty 
-      icon={<Factory />} 
-      title="Belum ada data kalkulasi TKDN." 
+    return <Empty
+      icon={<Factory />}
+      title="Belum ada data kalkulasi TKDN."
       description="Silakan isi data RAB dan harga satuan terlebih dahulu agar sistem dapat menghitung bobot TKDN secara otomatis."
     />;
   }
@@ -23,11 +23,11 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
       {/* 1. KARTU RINGKASAN UTAMA */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         <div className="col-span-1 md:col-span-2 rounded-[32px] bg-gradient-to-br from-indigo-600 to-blue-800 dark:from-[#EF8519] dark:to-[#C06A14] p-8 text-white shadow-2xl relative overflow-hidden group">
-           <Factory className="absolute -bottom-8 -right-8 w-64 h-64 opacity-10 rotate-12 transition-transform duration-700 group-hover:scale-110" />
-           <div className="relative z-10">
+          <Factory className="absolute -bottom-8 -right-8 w-64 h-64 opacity-10 rotate-12 transition-transform duration-700 group-hover:scale-110" />
+          <div className="relative z-10">
             <div className="text-[10px] font-black opacity-70 uppercase tracking-[0.2em] mb-2">Capaian TKDN Gabungan Proyek</div>
             <div className="flex items-baseline gap-2">
-              <span className="text-7xl font-black font-mono tracking-tighter">{Number(tabData.tkdn.total_tkdn_pct||0).toFixed(2)}</span>
+              <span className="text-7xl font-black font-mono tracking-tighter">{Number(tabData.tkdn.total_tkdn_pct || 0).toFixed(2)}</span>
               <span className="text-3xl font-bold opacity-50">%</span>
             </div>
             <div className="mt-6 flex items-center gap-3">
@@ -35,7 +35,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
                 {tabData.tkdn.total_tkdn_pct >= 40 ? '✅ Lulus Threshold PUPR (Min. 40%)' : '⚠️ Masih Dibawah Ambang Batas PUPR'}
               </div>
             </div>
-           </div>
+          </div>
         </div>
         <div className="rounded-[32px] bg-slate-50/80 backdrop-blur-md dark:bg-slate-900/80 p-6 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col justify-center">
           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Realisasi TKDN (RP)</div>
@@ -90,9 +90,9 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
                     <td className="px-8 py-5 text-right font-mono text-xs text-emerald-700 dark:text-emerald-500 font-black">{formatIdr(val.tkdn)}</td>
                     <td className="px-8 py-5 pl-12">
                       <div className="flex items-center gap-4">
-                      <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 min-w-[150px] overflow-hidden">
-                        <div className="h-full bg-indigo-500 dark:bg-orange-500 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)] dark:shadow-[0_0_8px_rgba(239,133,25,0.5)]" style={{ width: `${kontrib}%` }} />
-                      </div>
+                        <div className="flex-1 bg-slate-100 dark:bg-slate-800 rounded-full h-1.5 min-w-[150px] overflow-hidden">
+                          <div className="h-full bg-indigo-500 dark:bg-orange-500 rounded-full shadow-[0_0_8px_rgba(79,70,229,0.5)] dark:shadow-[0_0_8px_rgba(239,133,25,0.5)]" style={{ width: `${kontrib}%` }} />
+                        </div>
                         <span className="text-[10px] font-black text-slate-400 w-10 text-right">{kontrib.toFixed(0)}%</span>
                       </div>
                     </td>
@@ -113,7 +113,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
         <div className="rounded-[32px] border border-slate-100 dark:border-slate-800 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
           <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
             <table className="w-full text-[11px] border-separate border-spacing-0">
-            <thead className="sticky top-0 z-10 bg-white dark:bg-[#020617]">
+              <thead className="sticky top-0 z-10 bg-white dark:bg-[#020617]">
                 <tr className="bg-indigo-50 dark:bg-orange-600 text-indigo-700 dark:text-white text-[9px] uppercase font-black tracking-widest">
                   <th className="px-8 py-5 text-left border-b border-indigo-100 dark:border-orange-500/30 bg-indigo-50 dark:bg-orange-600">KATALOG KOMPONEN</th>
                   <th className="px-6 py-5 text-center border-b border-indigo-100 dark:border-orange-500/30 bg-indigo-50 dark:bg-orange-600">JENIS</th>
@@ -126,7 +126,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
                 {items.map((item, i) => {
                   const rawJ = (item.jenis_komponen || item.jenis || '').toLowerCase();
                   const code = (item.kode_item || '').trim().toUpperCase();
-                  
+
                   // Heuristic: Using strict prefix rules (A/B=Bahan, L=Tenaga, M=Alat)
                   let j = rawJ;
                   const unit = (item.satuan || '').toUpperCase();
