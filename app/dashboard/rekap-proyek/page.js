@@ -309,23 +309,26 @@ function ProyekContent() {
       
       toast.success('Proyek berhasil dibuat.');
       
-      // Update local state first and pass it to loadData to prevent snapping back
+      // Success
       const newProject = { ...data, ahsp_lines: [] };
-      setProjects(prev => [newProject, ...prev]);
+      setProjects(prev => {
+        const exists = prev.some(p => p.id === data.id);
+        if (exists) return prev;
+        return [newProject, ...prev];
+      });
       setSelectedProject(data.id);
-      
-      // Update URL & LocalStorage
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('id', data.id);
-      router.push(`${pathname}?${params.toString()}`);
-      localStorage.setItem('bc_last_project', data.id);
-      
       setIsCreating(false);
       setActiveTab('proyek');
       setSubTabProyek('rab');
       
-      // Explicitly pass the new ID to loadData
-      loadData(data.id);
+      // Update URL first
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', data.id);
+      params.set('tab', 'proyek');
+      router.push(`${pathname}?${params.toString()}`);
+      
+      // Refresh to ensure full data sync
+      loadData();
     } catch (err) {
       toast.error('Gagal membuat proyek: ' + err.message);
     } finally {
@@ -498,7 +501,7 @@ function ProyekContent() {
         setLoading(false);
       }
     }
-  }, [router, isCreating]);
+  }, [router]);
 
   const handleNewProject = useCallback(() => {
     if (ownedLimitReached) {
@@ -793,7 +796,7 @@ function ProyekContent() {
     } finally {
       if (version === tabVersionRef.current) setTabLoading(false);
     }
-  }, []);
+  }, [member?.selected_location_id]);
 
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
@@ -1383,8 +1386,11 @@ function ProyekContent() {
       )}
 
       {/* ── Area Border Kerja ── */}
-      <div className="px-6 pb-20 pt-0 transition-all duration-500">
-        <div className="rounded-b-[32px] border-x-2 border-b-2 border-indigo-600/10 dark:border-orange-500/20 bg-white dark:bg-[#0f172a] shadow-2xl p-0 ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
+      <div className={activeTab === 'daftar' ? 'px-4 lg:px-8 pb-20' : 'px-6 pb-20 pt-0 transition-all duration-500'}>
+        <div className={activeTab === 'daftar' 
+          ? 'bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800'
+          : 'rounded-b-[32px] border-x-2 border-b-2 border-indigo-600/10 dark:border-orange-500/20 bg-white dark:bg-[#0f172a] shadow-2xl p-0 ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden'
+        }>
           {activeTab === 'daftar' && (
             projects.length === 0 ? (
               <Empty
@@ -1405,7 +1411,7 @@ function ProyekContent() {
                 )}
               />
             ) : (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#1e293b] shadow-xl">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-xl">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   <thead className="bg-indigo-50/80 dark:bg-orange-600/10 text-[10px] uppercase tracking-widest text-indigo-600 dark:text-orange-400 font-black border-b border-slate-100 dark:border-slate-800">
                     <tr>
