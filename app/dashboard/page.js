@@ -19,7 +19,7 @@ import {
   Plus, AlertCircle, Calendar, MapPin, Wrench, Layers,
   ChevronRight, ArrowUpRight, LayoutDashboard, Clock,
   Wallet, HardHat, ClipboardList, Hammer, Construction,
-  Activity, BarChart2, Zap, LayoutDashboard
+  Activity, BarChart2, Zap
 } from 'lucide-react';
 import Empty from '@/components/Empty';
 import { computeManpower, getSequencedSchedule } from '@/lib/manpower';
