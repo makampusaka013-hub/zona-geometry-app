@@ -14,7 +14,8 @@ import {
   Trash2,
   TrendingUp,
   AlertCircle,
-  CheckCircle2
+  CheckCircle2,
+  ClipboardList
 } from 'lucide-react';
 import Spinner from '../Spinner';
 import ModernConfirmModal from '../ModernConfirmModal';
@@ -80,7 +81,7 @@ export default function ProgressTab({
       setLoadingProgress(false);
     }
     loadProgress();
-  }, [activeTab, projectId]);
+  }, [activeTab, projectId, currentUserId]);
 
   // ── Auto-save Logic (Debounced) ──
   const saveTimeout = useRef(null);
