@@ -612,7 +612,7 @@ function ProyekContent() {
         const effectiveItems = effectiveRes.data;
         const lines = linesRes.data;
         const backup = backupRes.data;
-        const resources = resourcesRes.data;
+        const rawResources = resourcesRes.data;
 
         const processedLines = (lines || []).map(l => {
           const eff = (effectiveItems || []).find(e => e.line_id === l.id);
