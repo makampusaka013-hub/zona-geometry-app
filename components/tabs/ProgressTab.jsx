@@ -250,11 +250,11 @@ export default function ProgressTab({
   if (!items || items.length === 0) {
     return (
       <div className="space-y-6 w-full">
-        <div className="flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-8 animate-in fade-in zoom-in duration-500 w-full min-h-[400px]">
+        <div className="flex flex-col items-center justify-center py-12 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-6 animate-in fade-in zoom-in duration-500 w-full">
           <div className="relative group">
             <div className="absolute inset-0 bg-indigo-500/10 dark:bg-orange-500/10 blur-[60px] rounded-full group-hover:blur-[100px] transition-all duration-700" />
             <div className="relative z-10 w-20 h-20 bg-white dark:bg-slate-800/50 rounded-[2rem] flex items-center justify-center shadow-xl border border-slate-200 dark:border-slate-700/50 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-white/50 dark:ring-slate-700/50">
-              <ClipboardList className="w-10 h-10 text-indigo-600 dark:text-orange-500 stroke-[1.5px]" />
+              <TrendingUp className="w-10 h-10 text-indigo-600 dark:text-orange-500 stroke-[1.5px]" />
             </div>
           </div>
           <div className="text-center space-y-3 max-w-md relative z-10">
