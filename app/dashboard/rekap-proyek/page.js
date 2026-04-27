@@ -1273,8 +1273,8 @@ function ProyekContent() {
                 {[
                   { id: 'volume', icon: TrendingUp, label: 'Progress Volume' },
                   { id: 'material', icon: Package, label: 'Material' },
-                  { id: 'alat', icon: Package, label: 'Alat' },
-                  { id: 'labor', icon: Users, label: 'Tenaga Kerja' }
+                  { id: 'labor', icon: Users, label: 'Tenaga Kerja' },
+                  { id: 'alat', icon: Package, label: 'Alat' }
                 ].map(btn => (
                   <button
                     key={btn.id}
@@ -1591,7 +1591,7 @@ function ProyekContent() {
             <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
           )}
 
-          {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
+          {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
           {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />}
           {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}

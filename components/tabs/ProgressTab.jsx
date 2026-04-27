@@ -86,6 +86,48 @@ export default function ProgressTab({
   const saveTimeout = useRef(null);
   const saveQueue = useRef([]);
 
+  const handleManualSave = async () => {
+    setSavingStatus('saving');
+    try {
+      const payload = [];
+      Object.entries(progressData).forEach(([key, days]) => {
+        const row = rows.find(r => (r.id || r.name) === key);
+        if (!row) return;
+
+        Object.entries(days).forEach(([day, val]) => {
+          payload.push({
+            project_id: projectId,
+            entity_type: row.type,
+            entity_id: row.id,
+            entity_name: row.type === 'custom_labor' ? row.name : null,
+            entity_key: key,
+            day_number: parseInt(day),
+            val: Number(val),
+            created_by: currentUserId,
+            updated_at: new Date().toISOString()
+          });
+        });
+      });
+
+      if (payload.length === 0) {
+        setSavingStatus(null);
+        return;
+      }
+
+      const { error } = await supabase
+        .from('project_progress_daily')
+        .upsert(payload, { onConflict: 'project_id,day_number,entity_type,entity_key,created_by' });
+
+      if (error) throw error;
+      setSavingStatus('saved');
+      setTimeout(() => setSavingStatus(null), 2000);
+    } catch (err) {
+      console.error('Manual save failed:', err);
+      setSavingStatus('error');
+      setTimeout(() => setSavingStatus(null), 3000);
+    }
+  };
+
   const updateCell = (entityId, entityName, type, day, value) => {
     const val = parseFloat(value) || 0;
     const key = entityId || entityName;
@@ -205,9 +247,30 @@ export default function ProgressTab({
   if (tabLoading || loadingProgress) return <Spinner />;
 
   return (
-    <div className="w-full h-full">
+    <div className="w-full h-full space-y-4">
+      <div className="flex justify-between items-center px-4 py-2">
+        <div className="flex items-center gap-2">
+          <BarChart3 className="w-5 h-5 text-indigo-600 dark:text-orange-500" />
+          <span className="text-[10px] font-black uppercase tracking-widest text-slate-500 dark:text-slate-400">
+            Laporan Harian - {viewMode === 'volume' ? 'Volume Pekerjaan' : viewMode === 'material' ? 'Material' : viewMode === 'alat' ? 'Alat' : 'Tenaga Kerja'}
+          </span>
+        </div>
+        
+        <button 
+          onClick={handleManualSave}
+          disabled={savingStatus === 'saving'}
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
+            savingStatus === 'saving' 
+              ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+              : 'bg-indigo-600 dark:bg-orange-600 hover:bg-indigo-700 dark:hover:bg-orange-700 text-white shadow-indigo-500/20 dark:shadow-orange-900/20'
+          }`}
+        >
+          {savingStatus === 'saving' ? <Spinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
+          {savingStatus === 'saving' ? 'Menyimpan...' : 'Simpan Progress'}
+        </button>
+      </div>
 
-      <div className="border-t-0 bg-white dark:bg-[#020617] overflow-hidden">
+      <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm">
         <div className="overflow-x-auto max-h-[700px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
           <table 
             className="text-sm border-separate border-spacing-0 table-fixed min-w-[320px]"
