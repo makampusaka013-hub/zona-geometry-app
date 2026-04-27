@@ -249,6 +249,9 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         document.body
       )}
     </div>
+  );
+}
+
 export default function RabEditorTab({ 
   projectId, 
   initialIdentity,
