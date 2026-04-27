@@ -71,7 +71,8 @@ export default function DataPerubahanTab({
   userSlotRole,
   isAdmin,
   subTab,
-  setSubTab
+  setSubTab,
+  currentUserId
 }) {
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState(null);
@@ -96,6 +97,7 @@ export default function DataPerubahanTab({
           isSaving={isSaving}
           userSlotRole={userSlotRole}
           isAdmin={isAdmin}
+          currentUserId={currentUserId}
         />
       ) : (
         <McView 
@@ -107,13 +109,14 @@ export default function DataPerubahanTab({
           isSaving={isSaving}
           userSlotRole={userSlotRole}
           isAdmin={isAdmin}
+          currentUserId={currentUserId}
         />
       )}
     </div>
   );
 }
 
-function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, userSlotRole, isAdmin }) {
+function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, userSlotRole, isAdmin, currentUserId }) {
   const [localCco, setLocalCco] = useState({}); // { line_id: { volume, price, is_new } }
   const [ccoType, setCcoType] = useState('CCO-1');
   const [ccoStatus, setCcoStatus] = useState('draft');
@@ -166,14 +169,18 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
   }, [items, baseline, localCco]);
 
   useEffect(() => {
-    const currentDrafts = ccoData.filter(c => c.cco_type === ccoType);
+    // Filter drafts by current user, but include ALL approved records
+    const currentDrafts = ccoData.filter(c => c.cco_type === ccoType && (c.status === 'approved' || c.created_by === currentUserId));
     const map = {};
     currentDrafts.forEach(c => {
       map[c.line_id] = { volume: c.volume_cco, price: c.price_cco };
     });
     setLocalCco(map);
-    setCcoStatus(currentDrafts[0]?.status || 'draft');
-  }, [ccoData, ccoType]);
+    // Determine status based on current user's draft or approved status
+    const myDraft = currentDrafts.find(c => c.created_by === currentUserId);
+    const approvedOne = currentDrafts.find(c => c.status === 'approved');
+    setCcoStatus(approvedOne ? 'approved' : (myDraft?.status || 'draft'));
+  }, [ccoData, ccoType, currentUserId]);
 
   const handleAddItem = async (masterItem) => {
     onSaveStart();
@@ -223,9 +230,6 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
   const handleSave = async (status = 'draft') => {
     onSaveStart();
     try {
-      const { data: { user } } = await supabase.auth.getUser();
-      const userId = user?.id;
-
       const payload = Object.entries(localCco).map(([line_id, data]) => {
         const base = baseline[line_id] || { volume: 0, price: 0 };
         return {
@@ -238,13 +242,15 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
           volume_cco: Number(data.volume),
           price_cco: Number(data.price),
           jumlah_cco: Number(data.volume) * Number(data.price),
-          created_by: userId,
+          created_by: currentUserId,
           updated_at: new Date().toISOString()
         };
       });
 
       if (payload.length === 0) throw new Error("Tidak ada perubahan untuk disimpan.");
-      const { error } = await supabase.from('project_cco').upsert(payload);
+      const { error } = await supabase.from('project_cco').upsert(payload, { 
+        onConflict: 'project_id,cco_type,line_id,created_by' 
+      });
       if (error) throw error;
       
       const actionMsg = status === 'approved' ? 'disetujui' : 'disimpan sebagai draf';
@@ -415,7 +421,7 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
   );
 }
 
-function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, userSlotRole, isAdmin }) {
+function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, userSlotRole, isAdmin, currentUserId }) {
   const [localMc, setLocalMc] = useState({}); // { line_id: volume_mc }
   const [mcType, setMcType] = useState('MC-0');
 
@@ -430,9 +436,9 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
 
   useEffect(() => {
     const map = {};
-    mcData.filter(m => m.mc_type === mcType).forEach(m => { map[m.line_id] = m.volume_mc; });
+    mcData.filter(m => m.mc_type === mcType && m.created_by === currentUserId).forEach(m => { map[m.line_id] = m.volume_mc; });
     setLocalMc(map);
-  }, [mcData, mcType]);
+  }, [mcData, mcType, currentUserId]);
 
   const handleSave = async () => {
     onSaveStart();
@@ -442,12 +448,15 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
         line_id,
         mc_type: mcType,
         volume_mc: Number(volume_mc),
+        created_by: currentUserId,
         updated_at: new Date().toISOString()
       }));
 
       if (payload.length === 0) throw new Error("Tidak ada data progres untuk disimpan.");
 
-      const { error } = await supabase.from('project_mc').upsert(payload);
+      const { error } = await supabase.from('project_mc').upsert(payload, {
+        onConflict: 'project_id,mc_type,line_id,created_by'
+      });
       if (error) throw error;
       onSaveEnd({ type: 'success', msg: `Data ${mcType} berhasil disimpan secara permanen.` });
     } catch (err) {

@@ -739,9 +739,20 @@ function ProyekContent() {
         }));
       }
       else if (tab === 'perubahan') {
+        const { data: { user } } = await supabase.auth.getUser();
+        const userId = user?.id;
+
         const [ccoRes, mcRes] = await Promise.all([
-          supabase.from('project_cco').select('*').eq('project_id', projectId).order('revision_number'),
-          supabase.from('project_mc').select('*').eq('project_id', projectId).order('mc_number')
+          supabase.from('project_cco')
+            .select('*')
+            .eq('project_id', projectId)
+            .or(`status.eq.approved,created_by.eq.${userId}`)
+            .order('cco_type', { ascending: true }),
+          supabase.from('project_mc')
+            .select('*')
+            .eq('project_id', projectId)
+            .eq('created_by', userId)
+            .order('mc_type', { ascending: true })
         ]);
         if (version !== tabVersionRef.current) return;
         setTabData(prev => ({ ...prev, cco: ccoRes.data || [], mc: mcRes.data || [] }));
@@ -1573,7 +1584,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
-          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab }} />}
+          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />}
           {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />}
