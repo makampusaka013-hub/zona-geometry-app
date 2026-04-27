@@ -764,7 +764,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']
+                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule']
                         .filter(sheet => {
                           const role = userMember?.role || 'normal';
                           if (role === 'normal') return ['RAB', 'REKAP'].includes(sheet);
