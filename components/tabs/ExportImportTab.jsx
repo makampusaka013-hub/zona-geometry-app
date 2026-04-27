@@ -380,7 +380,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       }
       setLoadingReport(true);
       try {
-        const enrichedLines = [...ahspLines];
+        const enrichedLines = [...(ahspLines || [])];
         let filteredSheets = [];
         let useStatic = false;
         
@@ -391,6 +391,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           filteredSheets = selectedSheets.filter(s => s.toLowerCase() !== 'cover' && s.toLowerCase() !== 'schedule');
           useStatic = true;
         } else if (role === 'advance') {
+          filteredSheets = [...selectedSheets];
           useStatic = false;
         }
 
