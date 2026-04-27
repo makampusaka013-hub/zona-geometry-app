@@ -382,9 +382,23 @@ function DashboardContent() {
       resources?.forEach(r => { totB += (Number(r.kontribusi_nilai) || 0); totT += (Number(r.nilai_tkdn) || 0); });
       const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
 
-      const totalUpah = resources?.filter(r => { const j = (r.jenis_komponen || '').toLowerCase(); return j === 'upah' || j === 'tenaga' || j === 'worker' || (r.key_item || '').startsWith('L'); }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
-      const totalBahan = resources?.filter(r => { const j = (r.jenis_komponen || '').toLowerCase(); return j === 'bahan' || j === 'material' || j === 'barang' || (r.key_item || '').startsWith('B') || (r.key_item || '').startsWith('M'); }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
-      const totalAlat = resources?.filter(r => { const j = (r.jenis_komponen || '').toLowerCase(); return j === 'alat' || j === 'peralatan' || j === 'mesin' || (r.key_item || '').startsWith('A') || (r.key_item || '').startsWith('E'); }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
+      const totalUpah = resources?.filter(r => { 
+        const j = (r.jenis_komponen || '').toLowerCase(); 
+        const k = (r.key_item || '').trim().toUpperCase();
+        return j === 'upah' || j === 'tenaga' || j === 'worker' || k.startsWith('L'); 
+      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
+
+      const totalBahan = resources?.filter(r => { 
+        const j = (r.jenis_komponen || '').toLowerCase(); 
+        const k = (r.key_item || '').trim().toUpperCase();
+        return j === 'bahan' || j === 'material' || j === 'barang' || k.startsWith('B') || k.startsWith('A'); 
+      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
+
+      const totalAlat = resources?.filter(r => { 
+        const j = (r.jenis_komponen || '').toLowerCase(); 
+        const k = (r.key_item || '').trim().toUpperCase();
+        return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E'); 
+      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
       // Project-wide ratios for items without specific breakdown (Fallback)
       const resSum = totalUpah + totalBahan + totalAlat || 1;
@@ -424,8 +438,8 @@ function DashboardContent() {
         const baseTotal = details.reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) || 0;
 
         const isU = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('L') || j === 'upah' || j === 'tenaga'; };
-        const isB = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('B') || k.startsWith('M') || j === 'bahan' || j === 'material'; };
-        const isA = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('A') || k.startsWith('E') || j === 'alat' || j === 'peralatan'; };
+        const isB = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('B') || k.startsWith('A') || j === 'bahan' || j === 'material'; };
+        const isA = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('M') || k.startsWith('E') || j === 'alat' || j === 'peralatan'; };
 
         let uRatio = 0, bRatio = 0, aRatio = 0;
 
@@ -632,11 +646,11 @@ function DashboardContent() {
     if (resFreq === 'all') {
       let raw = projectStats?.resources?.filter(r => {
         const matchesSearch = !filterSearch || r.uraian?.toLowerCase().includes(filterSearch.toLowerCase());
-        const kode = (r.kode_item || '').trim().toUpperCase();
+        const kode = (r.kode_item || r.key_item || '').trim().toUpperCase();
         const jenis = (r.jenis_komponen || '').toLowerCase();
         let matchesT = true;
-        if (filterType === 'bahan') matchesT = kode.startsWith('A') || kode.startsWith('B') || jenis === 'bahan';
-        else if (filterType === 'alat') matchesT = kode.startsWith('M') || jenis === 'alat';
+        if (filterType === 'bahan') matchesT = kode.startsWith('B') || kode.startsWith('A') || jenis === 'bahan' || jenis === 'material';
+        else if (filterType === 'alat') matchesT = kode.startsWith('M') || kode.startsWith('E') || jenis === 'alat' || jenis === 'peralatan';
         else if (filterType === 'upah') matchesT = kode.startsWith('L') || jenis === 'upah' || jenis === 'tenaga';
         return matchesT && matchesSearch;
       }) || [];
