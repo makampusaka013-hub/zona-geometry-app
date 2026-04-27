@@ -10,7 +10,8 @@ import { toast } from '@/lib/toast';
 import {
   Camera, MapPin, ClipboardList, Activity, Package, Factory,
   LayoutGrid, ChevronRight, Users, BarChart2, Clock, CalendarDays, Zap, FileSpreadsheet,
-  TrendingUp, Trash2, Save, Plus, LogOut, Copy, Check, UserMinus, Settings2, Settings, Tag, ShieldCheck
+  TrendingUp, Trash2, Save, Plus, LogOut, Copy, Check, UserMinus, Settings2, Settings, Tag, ShieldCheck,
+  FolderKanban
 } from 'lucide-react';
 import {
   BarChart, Bar, Cell
@@ -1385,58 +1386,50 @@ function ProyekContent() {
       <div className="px-6 pb-20 pt-0 transition-all duration-500">
         <div className="rounded-b-[32px] border-x-2 border-b-2 border-indigo-600/10 dark:border-orange-500/20 bg-white dark:bg-[#0f172a] shadow-2xl p-0 ring-1 ring-slate-200 dark:ring-slate-800 min-h-[60vh] overflow-hidden">
           {activeTab === 'daftar' && (
-            <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#1e293b] shadow-xl">
-              <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
-                <thead className="bg-indigo-50/80 dark:bg-orange-600/10 text-[10px] uppercase tracking-widest text-indigo-600 dark:text-orange-400 font-black border-b border-slate-100 dark:border-slate-800">
-                  <tr>
-                    <th className="px-8 py-5 text-left w-1/3">PROYEK</th>
-                    <th className="px-6 py-5 text-center w-24">ROLE</th>
-                    <th className="px-6 py-5 text-center">TOTAL KONTRAK</th>
-                    <th className="px-6 py-5 text-center">DURASI / REALISASI</th>
-                    <th className="px-6 py-5 text-center">KODE BERBAGI</th>
-                    <th className="px-8 py-5 text-right">AKSI</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                  {projects.length === 0 ? (
+            projects.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
+                <div className="relative group">
+                  <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
+                  <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
+                    <FolderKanban className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
+                  </div>
+                </div>
+                
+                <div className="text-center space-y-4 max-w-md relative z-10">
+                  <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Belum Ada Proyek</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
+                    Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda untuk memulai.
+                  </p>
+                </div>
+                
+                {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
+                  <button
+                    onClick={handleNewProject}
+                    disabled={ownedLimitReached}
+                    className={`mt-4 px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0 ${ownedLimitReached
+                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                        : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-indigo-500/30 dark:shadow-orange-900/40 ring-4 ring-indigo-500/10 dark:ring-orange-500/10'
+                      }`}
+                  >
+                    {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Pertama'}
+                  </button>
+                )}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#1e293b] shadow-xl">
+                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+                  <thead className="bg-indigo-50/80 dark:bg-orange-600/10 text-[10px] uppercase tracking-widest text-indigo-600 dark:text-orange-400 font-black border-b border-slate-100 dark:border-slate-800">
                     <tr>
-                      <td colSpan="6" className="px-6 py-24 text-center">
-                        <div className="flex flex-col items-center justify-center space-y-8 animate-in fade-in zoom-in duration-500">
-                          <div className="relative">
-                            <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
-                            <img 
-                              src="/empty_state.png" 
-                              alt="No Data" 
-                              className="w-48 h-48 object-contain relative z-10 drop-shadow-2xl" 
-                            />
-                          </div>
-                          <div className="text-center space-y-3 max-w-md relative z-10">
-                            <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Belum Ada Proyek</h3>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 font-bold">
-                              Data belum tersedia untuk kriteria ini.
-                            </p>
-                            <p className="text-[10px] text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">
-                              Silakan buat proyek baru atau gabung proyek rekan Anda menggunakan tombol di pojok kanan atas.
-                            </p>
-                          </div>
-                          
-                          {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                            <button
-                              onClick={handleNewProject}
-                              disabled={ownedLimitReached}
-                              className={`mt-4 px-8 py-4 text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.5rem] transition-all shadow-2xl ${ownedLimitReached
-                                  ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                                  : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-105 active:scale-95 shadow-indigo-500/20 dark:shadow-orange-900/20'
-                                }`}
-                            >
-                              {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Pertama'}
-                            </button>
-                          )}
-                        </div>
-                      </td>
+                      <th className="px-8 py-5 text-left w-1/3">PROYEK</th>
+                      <th className="px-6 py-5 text-center w-24">ROLE</th>
+                      <th className="px-6 py-5 text-center">TOTAL KONTRAK</th>
+                      <th className="px-6 py-5 text-center">DURASI / REALISASI</th>
+                      <th className="px-6 py-5 text-center">KODE BERBAGI</th>
+                      <th className="px-8 py-5 text-right">AKSI</th>
                     </tr>
-                  ) : (
-                    projects.map(p => {
+                  </thead>
+                  <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+                    {projects.map(p => {
                       if (!p) return null;
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
@@ -1447,114 +1440,100 @@ function ProyekContent() {
                       const ppn = subtotal * (ppnPct / 100);
                       const totalExact = Math.round(subtotal + ppn);
                       const rounded = Math.ceil((totalExact || 0) / 1000) * 1000;
-
                       return (
-                        <tr key={p.id} className="hover:bg-indigo-50/50 dark:hover:bg-orange-500/10 transition-colors group border-b border-slate-50 dark:border-slate-800 last:border-0">
-                          <td className="px-8 py-5 font-bold text-slate-800 dark:text-slate-100 flex items-center gap-3">
-                            <div className="w-10 h-10 rounded-2xl bg-indigo-50 dark:bg-slate-800 flex items-center justify-center text-indigo-600 dark:text-orange-500 shrink-0 shadow-inner">
-                              <LayoutGrid className="w-5 h-5" />
+                        <tr key={p.id} className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors group">
+                          <td className="px-8 py-6">
+                            <div className="flex flex-col gap-1">
+                              <span className="font-black text-slate-900 dark:text-white uppercase tracking-tight text-[12px] group-hover:text-indigo-600 dark:group-hover:text-orange-400 transition-colors">{p.name}</span>
+                              <span className="text-[9px] font-bold text-slate-400 flex items-center gap-2">
+                                <MapPin className="w-2.5 h-2.5" /> {p.location || 'Lokasi tidak ditentukan'}
+                              </span>
                             </div>
-                            <div className="truncate">{p.name || p.activity_name || 'Tanpa Nama'}</div>
                           </td>
-                          <td className="px-6 py-5 text-center">
-                            <span className={`px-2.5 py-1 rounded-lg text-[9px] font-black uppercase tracking-wider ${myRole === 'Owner'
-                                ? 'bg-indigo-600 text-white shadow-sm'
-                                : (myRole ? 'bg-indigo-50 text-indigo-700 dark:bg-orange-500/10 dark:text-orange-400 border border-indigo-100 dark:border-orange-500/20' : 'bg-slate-100 text-slate-400 dark:bg-slate-800 dark:text-slate-500 border border-slate-200 dark:border-slate-700')
-                              }`}>
-                              {myRole || 'Pending'}
+                          <td className="px-6 py-6 text-center">
+                            <span className={`px-2 py-1 rounded-md text-[8px] font-black uppercase tracking-widest ${myRole === 'Owner' ? 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400'}`}>
+                              {myRole}
                             </span>
                           </td>
-                          <td className="px-6 py-5 text-center font-mono font-black text-slate-900 dark:text-white">
-                            {formatIdr(rounded)}
-                          </td>
-                          <td className="px-6 py-5 text-center">
+                          <td className="px-6 py-6 text-center font-mono font-black text-slate-700 dark:text-slate-300 text-[11px]">{formatIdr(rounded)}</td>
+                          <td className="px-6 py-6 text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className="font-black text-sm text-slate-800 dark:text-white">
-                                {p.manual_duration || 0} / {p.start_date ? Math.max(0, Math.floor((new Date() - new Date(p.start_date)) / 86400000) + 1) : 0}
-                                <span className="text-[10px] font-semibold text-slate-400 ml-1">hari</span>
-                              </span>
-                              {p.start_date ? (
-                                <span className="text-[9px] text-slate-400 font-mono">
-                                  {safeFormatDate(p.start_date)}
-                                </span>
-                              ) : (
-                                <span className="text-[9px] text-amber-500 font-semibold italic">Tgl belum diset</span>
+                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{p.duration || 0} Hari</span>
+                              <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
+                              </div>
+                            </div>
+                          </td>
+                          <td className="px-6 py-6 text-center">
+                            <div className="flex items-center justify-center gap-2">
+                              <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-mono font-black tracking-widest">{p.share_code || '—'}</code>
+                              {p.share_code && (
+                                <button
+                                  onClick={() => {
+                                    navigator.clipboard.writeText(p.share_code);
+                                    toast.success('Kode Berbagi berhasil disalin!');
+                                  }}
+                                  className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                >
+                                  <Copy className="w-3.5 h-3.5" />
+                                </button>
                               )}
                             </div>
                           </td>
-                          <td className="px-6 py-5 text-center">
-                            {p.created_by === member?.user_id ?
-                              (member?.role === 'admin' || member?.role === 'advance' ? (
-                                <button onClick={() => setShowShareModal(p)} className="px-4 py-2 rounded-2xl bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-400 text-[10px] font-black tracking-widest border border-emerald-100 dark:border-emerald-800/50 hover:bg-emerald-100 transition-all uppercase flex items-center gap-2 mx-auto">
-                                  {p.unique_code} <Zap className="w-3 h-3 text-emerald-500 fill-emerald-500 animate-pulse" />
-                                </button>
-                              ) : (
-                                <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest italic text-center block">Hanya Advance</span>
-                              ))
-                              : <span className="text-slate-400 dark:text-slate-600 text-[10px] uppercase font-bold tracking-widest flex items-center justify-center gap-2 italic">🔒 Terproteksi</span>
-                            }
-                          </td>
-                          <td className="px-8 py-5 text-right">
-                            <div className="flex justify-end items-center gap-3">
+                          <td className="px-8 py-6 text-right">
+                            <div className="flex items-center justify-end gap-2">
                               <button
                                 onClick={() => { setSelectedProject(p.id); setActiveTab('proyek'); }}
                                 className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:scale-[1.05] active:scale-95 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
                               >
                                 Buka
                               </button>
-                              {p.created_by === member?.user_id ? (
-                                <button
-                                  onClick={() => handleDeleteProject(p.id)}
-                                  className="p-2.5 text-slate-400 hover:text-rose-500 hover:bg-rose-50 dark:hover:bg-rose-500/10 rounded-xl transition-all active:scale-90"
-                                  title="Hapus Proyek"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
-                              ) : (
-                                <button
-                                  onClick={() => handleLeaveProject(p.id)}
-                                  className="p-2.5 text-slate-300 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-2xl transition-all"
-                                  title="Keluar dari Proyek"
-                                >
-                                  <LogOut className="w-4 h-4" />
-                                </button>
-                              )}
                             </div>
                           </td>
                         </tr>
                       )
-                    })
-                  )}
-                </tbody>
-              </table>
-            </div>
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )
           )}
 
           {activeTab === 'proyek' && (
             <div className="space-y-6">
               {(!selectedProject && !isCreating) ? (
-                <div className="bg-white/50 dark:bg-slate-900/50 rounded-3xl p-20 border-2 border-dashed border-slate-200 dark:border-slate-800 text-center flex flex-col items-center gap-4">
-                  <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                    <LayoutGrid className="w-8 h-8 text-slate-400" />
+                <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
+                  <div className="relative group">
+                    <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
+                    <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
+                      <LayoutGrid className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
+                    </div>
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <p className="text-sm font-black text-slate-600 dark:text-slate-400 uppercase tracking-widest">Belum Ada Proyek Terpilih</p>
-                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-relaxed">Silakan pilih proyek di tab <span className="text-indigo-600 dark:text-orange-500">Daftar Proyek</span> untuk melihat RAB dan Jadwal</p>
+                  
+                  <div className="text-center space-y-4 max-w-md relative z-10">
+                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Data belum tersedia untuk kriteria ini.</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
+                      Silakan pilih proyek di tab <span className="text-indigo-600 dark:text-orange-500 font-black italic">Daftar Proyek</span> untuk mulai menyusun RAB dan Jadwal.
+                    </p>
                   </div>
-                  <div className="flex flex-col sm:flex-row gap-3 mt-4">
-                    <button onClick={() => setActiveTab('daftar')} className="px-6 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-white transition-all">
+                  
+                  <div className="flex flex-col sm:flex-row gap-5 relative z-10">
+                    <button 
+                      onClick={() => setActiveTab('daftar')} 
+                      className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 shadow-sm"
+                    >
                       Kembali Ke Daftar
                     </button>
                     {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
                       <button
                         onClick={handleNewProject}
                         disabled={ownedLimitReached}
-                        className={`px-6 py-3 text-[10px] font-black uppercase tracking-widest rounded-2xl transition-all ${ownedLimitReached
-                            ? 'bg-slate-300 text-slate-500 cursor-not-allowed shadow-none'
-                            : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-xl hover:scale-105 active:scale-95'
+                        className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl hover:scale-105 active:scale-95 ${ownedLimitReached
+                            ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
+                            : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-indigo-500/30 dark:shadow-orange-900/40 ring-4 ring-indigo-500/10 dark:ring-orange-500/10'
                           }`}
                       >
-                        {ownedLimitReached ? 'Batas 3 Proyek Tercapai' : '+ Buat Proyek Baru'}
+                        {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Baru'}
                       </button>
                     )}
                   </div>
