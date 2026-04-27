@@ -4,11 +4,11 @@ import Empty from '../Empty';
 import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
-export default function DataTerpakaiTab({ 
-  activeTab, 
-  tabLoading, 
-  tabData, 
-  formatIdr, 
+export default function DataTerpakaiTab({
+  activeTab,
+  tabLoading,
+  tabData,
+  formatIdr,
   onRefresh,
   subTab,
   setSubTab,
@@ -71,8 +71,8 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
             </thead>
             <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
               {rows.map((item, i) => (
-                <tr 
-                  key={item.id || i} 
+                <tr
+                  key={item.id || i}
                   onClick={() => setSelectedAhsp(item)}
                   className="hover:bg-indigo-50/50 dark:hover:bg-orange-900/20 transition-colors cursor-pointer group"
                 >
@@ -100,12 +100,12 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
       </div>
 
       {selectedAhsp && (
-        <AhspDetailModal 
-          item={selectedAhsp} 
+        <AhspDetailModal
+          item={selectedAhsp}
           details={ahspCatalog[selectedAhsp.master_ahsp_id] || selectedAhsp.analisa_custom || []}
           hargaRows={hargaRows}
-          formatIdr={formatIdr} 
-          onClose={() => setSelectedAhsp(null)} 
+          formatIdr={formatIdr}
+          onClose={() => setSelectedAhsp(null)}
         />
       )}
     </>
@@ -208,26 +208,26 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
 
           {details.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 opacity-30">
-               <ClipboardList className="w-16 h-16 mb-4" />
-               <p className="text-sm font-bold uppercase tracking-widest">Detail rincian tidak tersedia</p>
+              <ClipboardList className="w-16 h-16 mb-4" />
+              <p className="text-sm font-bold uppercase tracking-widest">Detail rincian tidak tersedia</p>
             </div>
           )}
         </div>
 
         {/* Footer Sumary */}
         <div className="px-8 py-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 grid grid-cols-1 md:grid-cols-3 gap-6">
-           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Total Harga Dasar</div>
-              <div className="text-lg font-mono font-black text-slate-900 dark:text-white">{formatIdr(subtotalAnalisa)}</div>
-           </div>
-           <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-              <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Profit / Overhead ({profitPercent}%)</div>
-              <div className="text-lg font-mono font-black text-indigo-600 dark:text-orange-400">+{formatIdr(Math.round(subtotalAnalisa * (profitPercent/100)))}</div>
-           </div>
-           <div className="bg-indigo-600 dark:bg-orange-600 p-5 rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 text-white">
-              <div className="text-[9px] font-black text-white/60 uppercase tracking-widest mb-2">Harga Satuan Pekerjaan (RAB)</div>
-              <div className="text-xl font-mono font-black">{formatIdr(hargaSatuanRAB)}</div>
-           </div>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Total Harga Dasar</div>
+            <div className="text-lg font-mono font-black text-slate-900 dark:text-white">{formatIdr(subtotalAnalisa)}</div>
+          </div>
+          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
+            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Profit / Overhead ({profitPercent}%)</div>
+            <div className="text-lg font-mono font-black text-indigo-600 dark:text-orange-400">+{formatIdr(Math.round(subtotalAnalisa * (profitPercent / 100)))}</div>
+          </div>
+          <div className="bg-indigo-600 dark:bg-orange-600 p-5 rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 text-white">
+            <div className="text-[9px] font-black text-white/60 uppercase tracking-widest mb-2">Harga Satuan Pekerjaan (RAB)</div>
+            <div className="text-xl font-mono font-black">{formatIdr(hargaSatuanRAB)}</div>
+          </div>
         </div>
       </div>
     </div>
@@ -237,7 +237,7 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
 // ─── Modal Override Harga ───────────────────────────────────────────────
 function OverrideModal({ item, formatIdr, onClose, onSaved }) {
   const isOverrideActive = item.source_table === 'master_harga_custom';
-  
+
   const [harga, setHarga] = useState(String(Math.round(item.harga_snapshot || 0)));
   const [tkdn, setTkdn] = useState(String(Number(item.tkdn_percent || 0).toFixed(2)));
   const [saving, setSaving] = useState(false);
@@ -251,7 +251,7 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
 
       let validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
       const itemCode = item.key_item || item.kode_item;
-      
+
       // KUNCI UTAMA: Jika ID kosong, cari manual ke tabel aslinya
       if (!validId && itemCode) {
         if (item.source_table === 'master_harga_custom') {
@@ -274,7 +274,7 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
         const code = (itemCode || '').trim().toUpperCase();
         const unit = (item.satuan || '').toUpperCase();
         const name = (item.uraian || '').toLowerCase();
-        
+
         let finalKategori = 'Bahan';
         if (rawJ === 'bahan') finalKategori = 'Bahan';
         else if (rawJ === 'upah' || rawJ === 'tenaga') finalKategori = 'Upah';
@@ -319,7 +319,7 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
     try {
       let validId = item.overrides_id || item.item_dasar_id || item.master_id || item.id;
       const itemCode = item.key_item || item.kode_item;
-      
+
       // KUNCI UTAMA: Jika ID kosong, cari manual ke tabel aslinya
       if (!validId && itemCode) {
         if (item.source_table === 'master_harga_custom') {
@@ -332,8 +332,8 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
       }
 
       if (!validId) {
-         alert("Gagal menemukan ID referensi komponen untuk direset.");
-         return;
+        alert("Gagal menemukan ID referensi komponen untuk direset.");
+        return;
       }
 
       if (item.source_table === 'master_harga_custom') {
@@ -500,7 +500,7 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                   const code = (item.key_item || '').trim().toUpperCase();
                   const unit = (item.satuan || '').toUpperCase();
                   const name = (item.uraian || '').toLowerCase();
-                  
+
                   let j = rawJ;
                   if (!rawJ || rawJ === 'bahan_upah_alat' || rawJ === 'upah') {
                     if (code.startsWith('A') || code.startsWith('B')) {
@@ -558,11 +558,10 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                         {!readOnly ? (
                           <button
                             onClick={() => setOverrideItem(item)}
-                            className={`p-2 rounded-xl transition-all ${
-                              isOverridden
+                            className={`p-2 rounded-xl transition-all ${isOverridden
                                 ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
                                 : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 hover:bg-indigo-50 dark:hover:bg-orange-500/10'
-                            }`}
+                              }`}
                           >
                             <Edit3 className="w-4 h-4" />
                           </button>
