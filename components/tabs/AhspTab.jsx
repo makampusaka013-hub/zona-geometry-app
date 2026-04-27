@@ -9,7 +9,11 @@ export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, can
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.ahsp || tabData.ahsp.length === 0) {
-    return <Empty icon={<ClipboardList className="w-10 h-10" />} msg="Tidak ada rincian AHSP di RAB ini." />;
+    return <Empty 
+      icon={<ClipboardList />} 
+      title="Tidak ada rincian AHSP" 
+      description="Silakan susun rencana anggaran biaya proyek Anda di editor RAB terlebih dahulu untuk memunculkan rincian pekerjaan di sini."
+    />;
   }
 
   const getStatusBadge = (status) => {

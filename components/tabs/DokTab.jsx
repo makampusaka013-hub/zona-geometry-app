@@ -10,7 +10,11 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.dok || tabData.dok.length === 0) {
-    return <Empty icon={<Camera className="w-10 h-10" />} msg="Belum ada laporan harian dengan dokumentasi foto." />;
+    return <Empty 
+      icon={<Camera />} 
+      title="Belum ada dokumentasi foto." 
+      description="Gunakan aplikasi mobile untuk mengunggah foto lapangan dan koordinat GPS secara real-time dari lokasi proyek."
+    />;
   }
 
   return (

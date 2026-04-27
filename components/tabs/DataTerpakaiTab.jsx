@@ -52,7 +52,11 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
   const [selectedAhsp, setSelectedAhsp] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty icon={<ClipboardList className="w-10 h-10" />} msg="Tidak ada rincian AHSP di RAB ini." />;
+    return <Empty 
+      icon={<ClipboardList />} 
+      title="Belum Ada Rincian AHSP" 
+      description="Data rincian AHSP tidak ditemukan di dalam RAB proyek ini. Silakan tambahkan item pekerjaan terlebih dahulu di editor RAB."
+    />;
   }
 
   return (
@@ -473,7 +477,11 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
   const [overrideItem, setOverrideItem] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty icon={<Package className="w-10 h-10" />} msg="Belum ada data harga satuan terpakai." />;
+    return <Empty 
+      icon={<Package />} 
+      title="Belum Ada Komponen Terpakai" 
+      description="Data harga satuan komponen belum tersedia. Komponen akan muncul otomatis setelah Anda menyusun item pekerjaan di RAB."
+    />;
   }
 
   return (

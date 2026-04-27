@@ -9,7 +9,11 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.tkdn) {
-    return <Empty icon={<Factory className="w-10 h-10" />} msg="Belum ada data kalkulasi TKDN." />;
+    return <Empty 
+      icon={<Factory />} 
+      title="Belum ada data kalkulasi TKDN." 
+      description="Silakan isi data RAB dan harga satuan terlebih dahulu agar sistem dapat menghitung bobot TKDN secara otomatis."
+    />;
   }
 
   const items = tabData?.harga || [];
