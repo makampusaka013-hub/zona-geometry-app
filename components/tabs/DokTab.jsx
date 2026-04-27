@@ -1,7 +1,6 @@
 import React from 'react';
 import Image from 'next/image';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { Camera, MapPin } from 'lucide-react';
 
 export default function DokTab({ activeTab, tabLoading, tabData }) {
@@ -10,11 +9,12 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.dok || tabData.dok.length === 0) {
-    return <Empty 
-      icon={<Camera />} 
-      title="Belum ada dokumentasi foto." 
-      description="Gunakan aplikasi mobile untuk mengunggah foto lapangan dan koordinat GPS secara real-time dari lokasi proyek."
-    />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Camera className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Belum ada dokumentasi foto</p>
+      </div>
+    );
   }
 
   return (

@@ -769,23 +769,16 @@ function DashboardContent() {
         <div className="lg:col-span-9 space-y-8">
           {projects.length === 0 ? (
             <div className="bg-white dark:bg-slate-900 rounded-[32px] p-20 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
-                <img
-                  src="/empty_state.png"
-                  alt="No Projects"
-                  className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl"
-                />
+              <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                <LayoutDashboard className="w-10 h-10" />
               </div>
-              <div className="space-y-2 relative z-10">
-                <h3 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Mulai Proyek Pertama Anda</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
-                  Dashboard analitik akan muncul di sini setelah Anda membuat atau bergabung ke sebuah proyek konstruksi.
-                </p>
+              <div className="space-y-2">
+                <h3 className="text-xl font-bold text-slate-800 dark:text-white">Mulai Proyek Pertama Anda</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm mx-auto"> Dashboard analitik akan muncul secara otomatis setelah Anda menyusun rencana anggaran biaya (RAB) dan jadwal pada proyek konstruksi Anda. </p>
               </div>
               <Link
                 href="/dashboard/rekap-proyek?action=new"
-                className="px-8 py-4 bg-indigo-600 dark:bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 uppercase tracking-widest text-xs hover:scale-105 transition-all"
+                className="px-8 py-4 bg-indigo-600 dark:bg-orange-600 text-white font-bold rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 uppercase tracking-widest text-xs hover:scale-105 transition-all"
               >
                 + Buat Proyek Sekarang
               </Link>

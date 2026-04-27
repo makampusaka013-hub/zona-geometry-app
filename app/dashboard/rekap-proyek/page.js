@@ -199,32 +199,25 @@ function ProyekContent() {
 
 
 
-  // ── Unified URL & State Synchronization ──
+  // ── Sinkronisasi URL & State ──
   useEffect(() => {
-    if (isCheckingAuth.current || loading) return;
-    try {
-      const urlId = searchParams?.get('id');
-
-      // 1. Sinkronisasi State ke URL (User memilih dari dropdown) - PRIORITAS UTAMA
-      if (selectedProject && urlId !== selectedProject) {
-        const params = new URLSearchParams(searchParams?.toString() || '');
-        params.set('id', selectedProject);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
-      }
-      // 2. Sinkronisasi URL ke State (Load awal atau navigasi browser)
-      else if (urlId && urlId !== selectedProject) {
-        setSelectedProject(urlId);
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
-      }
-      // 3. Fallback: Tidak ada ID di URL maupun State
-      else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0 && !isCreating) {
-        const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
-        const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
-        setSelectedProject(targetId);
-      }
-    } catch (err) {
-      console.error('URL Sync Error:', err);
+    if (loading || isCheckingAuth.current) return;
+    
+    const urlId = searchParams.get('id');
+    
+    // 1. Jika ada ID di URL tapi tidak di state (Load awal)
+    if (urlId && urlId !== selectedProject) {
+      setSelectedProject(urlId);
+    }
+    // 2. Jika ada ID di state tapi tidak di URL (User memilih proyek)
+    else if (selectedProject && urlId !== selectedProject) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', selectedProject);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+    // 3. Fallback: Jika tidak ada di keduanya, ambil proyek pertama
+    else if (!urlId && !selectedProject && projects.length > 0 && !isCreating) {
+      setSelectedProject(projects[0].id);
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
 
@@ -1219,7 +1212,7 @@ function ProyekContent() {
       </div>
 
       {activeTab !== 'daftar' && (currentProjectObj || isCreating) && (
-        <div className="sticky top-[73px] z-[70] bg-white/90 dark:bg-slate-900/95 backdrop-blur-md border-b-2 border-indigo-600/20 dark:border-orange-500/30 px-4 md:px-6 py-1.5 flex flex-nowrap lg:flex-wrap items-center justify-between gap-2 md:gap-4 shadow-sm overflow-x-hidden">
+        <div className="sticky top-[73px] z-[70] bg-white/90 dark:bg-slate-900/95 backdrop-blur-md border-b border-slate-200 dark:border-slate-800 px-4 md:px-6 py-2 flex flex-wrap items-center justify-between gap-4 shadow-sm">
           <div className="flex items-center gap-2">
             <div className="flex items-center justify-between w-full lg:w-auto">
               <div className="hidden lg:flex items-center gap-0 overflow-hidden rounded-xl shadow-lg border border-indigo-500/30 dark:border-orange-500/20">
@@ -1383,40 +1376,30 @@ function ProyekContent() {
       )}
 
       {/* ── Area Border Kerja ── */}
-      <div className="px-6 pb-20 pt-0 transition-all duration-500">
-        <div className="rounded-b-[32px] border-x-2 border-b-2 border-indigo-600/10 dark:border-orange-500/20 bg-white dark:bg-[#0f172a] shadow-2xl p-0 ring-1 ring-slate-200 dark:ring-slate-800 min-h-[60vh] overflow-hidden">
+      <div className="px-4 lg:px-8 pb-20">
+        <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
           {activeTab === 'daftar' && (
             projects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
-                <div className="relative group">
-                  <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
-                  <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
-                    <FolderKanban className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
-                  </div>
+              <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
+                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                  <LayoutGrid className="w-8 h-8" />
                 </div>
-
-                <div className="text-center space-y-4 max-w-md relative z-10">
-                  <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Belum Ada Proyek</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
-                    Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda untuk memulai.
-                  </p>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-bold text-slate-800 dark:text-white">Belum Ada Proyek</h3>
+                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda.</p>
                 </div>
-
                 {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
                   <button
                     onClick={handleNewProject}
                     disabled={ownedLimitReached}
-                    className={`mt-4 px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0 ${ownedLimitReached
-                      ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                      : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-indigo-500/30 dark:shadow-orange-900/40 ring-4 ring-indigo-500/10 dark:ring-orange-500/10'
-                      }`}
+                    className={`px-8 py-3 text-xs font-bold rounded-xl transition-all ${ownedLimitReached ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-105'}`}
                   >
-                    {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Pertama'}
+                    + Buat Proyek Pertama
                   </button>
                 )}
               </div>
             ) : (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#1e293b] shadow-xl">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   <thead className="bg-indigo-50/80 dark:bg-orange-600/10 text-[10px] uppercase tracking-widest text-indigo-600 dark:text-orange-400 font-black border-b border-slate-100 dark:border-slate-800">
                     <tr>
@@ -1502,40 +1485,13 @@ function ProyekContent() {
           {activeTab === 'proyek' && (
             <div className="space-y-6">
               {(!selectedProject && !isCreating) ? (
-                <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
-                  <div className="relative group">
-                    <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
-                    <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
-                      <LayoutGrid className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
-                    </div>
+                <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
+                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
+                    <ClipboardList className="w-8 h-8" />
                   </div>
-
-                  <div className="text-center space-y-4 max-w-md relative z-10">
-                    <h3 className="text-3xl font-black text-slate-900 dark:text-white tracking-tighter uppercase italic">Data belum tersedia untuk kriteria ini.</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 font-bold leading-relaxed">
-                      Silakan pilih proyek di tab <span className="text-indigo-600 dark:text-orange-500 font-black italic">Daftar Proyek</span> untuk mulai menyusun RAB dan Jadwal.
-                    </p>
-                  </div>
-
-                  <div className="flex flex-col sm:flex-row gap-5 relative z-10">
-                    <button
-                      onClick={() => setActiveTab('daftar')}
-                      className="px-8 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl border border-slate-200 dark:border-slate-700 hover:bg-slate-50 transition-all hover:scale-105 active:scale-95 shadow-sm"
-                    >
-                      Kembali Ke Daftar
-                    </button>
-                    {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                      <button
-                        onClick={handleNewProject}
-                        disabled={ownedLimitReached}
-                        className={`px-8 py-4 text-[11px] font-black uppercase tracking-[0.2em] rounded-2xl transition-all shadow-xl hover:scale-105 active:scale-95 ${ownedLimitReached
-                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed'
-                          : 'bg-indigo-600 dark:bg-orange-600 text-white shadow-indigo-500/30 dark:shadow-orange-900/40 ring-4 ring-indigo-500/10 dark:ring-orange-500/10'
-                          }`}
-                      >
-                        {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Baru'}
-                      </button>
-                    )}
+                  <div className="space-y-1">
+                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Proyek Belum Dipilih</h3>
+                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Silakan pilih proyek di tab Daftar Proyek untuk mulai menyusun RAB dan Jadwal.</p>
                   </div>
                 </div>
               ) : subTabProyek === 'rab' ? (
@@ -1544,7 +1500,6 @@ function ProyekContent() {
                   initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
                   backupData={tabData.backup}
                   member={member}
-                  onTotalChange={setLocalTotalKontrak}
                   onRefresh={(newId) => {
                     setIsCreating(false);
                     setLocalTotalKontrak(null); // Reset status lokal setelah berhasil simpan

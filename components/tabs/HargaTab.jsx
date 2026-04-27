@@ -1,6 +1,5 @@
 import React from 'react';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { Package } from 'lucide-react';
 
 export default function HargaTab({ activeTab, tabLoading, tabData, formatIdr }) {
@@ -9,7 +8,12 @@ export default function HargaTab({ activeTab, tabLoading, tabData, formatIdr }) 
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.harga || tabData.harga.length === 0) {
-    return <Empty icon={<Package className="w-10 h-10" />} msg="Belum ada data harga satuan terpakai." />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Package className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Belum ada data harga satuan</p>
+      </div>
+    );
   }
 
   return (

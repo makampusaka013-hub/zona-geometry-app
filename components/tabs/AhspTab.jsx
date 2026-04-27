@@ -1,6 +1,5 @@
 import React from 'react';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw } from 'lucide-react';
 
 export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus }) {
@@ -9,11 +8,12 @@ export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, can
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.ahsp || tabData.ahsp.length === 0) {
-    return <Empty 
-      icon={<ClipboardList />} 
-      title="Tidak ada rincian AHSP" 
-      description="Silakan susun rencana anggaran biaya proyek Anda di editor RAB terlebih dahulu untuk memunculkan rincian pekerjaan di sini."
-    />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <ClipboardList className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Tidak ada rincian AHSP</p>
+      </div>
+    );
   }
 
   const getStatusBadge = (status) => {

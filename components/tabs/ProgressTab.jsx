@@ -19,7 +19,6 @@ import {
 } from 'lucide-react';
 import Spinner from '../Spinner';
 import ModernConfirmModal from '../ModernConfirmModal';
-import Empty from '../Empty';
 
 function fmt(n) { return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
 
@@ -250,22 +249,9 @@ export default function ProgressTab({
 
   if (!items || items.length === 0) {
     return (
-      <div className="space-y-6 w-full">
-        <Empty
-          icon={<TrendingUp />}
-          title="Belum Ada Progres"
-          description="Data item pekerjaan tidak ditemukan. Pastikan Anda sudah menyusun RAB Proyek agar dapat mulai mencatat progres harian."
-        />
-
-        <div className="flex items-start gap-4 p-5 rounded-3xl bg-[#0f172a] border border-slate-800 shadow-sm backdrop-blur-sm">
-          <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0 shadow-inner">
-            <AlertCircle className="w-5 h-5 text-orange-500 stroke-[2px]" />
-          </div>
-          <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500 block mb-1">💡 Professional Tip</span>
-            Gunakan tombol arah panah atau Tab untuk berpindah antar hari dengan cepat. Perubahan disimpan otomatis dalam rentang 1.5 detik setelah Anda berhenti mengetik. Data progres ini akan menyusun rekapitulasi Laporan Harian secara otomatis.
-          </p>
-        </div>
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <TrendingUp className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Belum ada progres tersedia</p>
       </div>
     );
   }

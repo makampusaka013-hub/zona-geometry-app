@@ -1,6 +1,5 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { Activity, Save, AlertCircle, CheckCircle2, Search, Plus, Trash2, LayoutGrid } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
@@ -264,7 +263,14 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
   const canEdit = !isApproved && (isAdmin || userSlotRole === 'kontraktor');
   const canApprove = !isApproved && (isAdmin || userSlotRole === 'konsultan' || userSlotRole === 'instansi');
 
-  if (items.length === 0) return <Empty icon={<Activity className="w-10 h-10" />} msg="Tambahkan AHSP ke proyek untuk mengelola CCO." />;
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Activity className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Tambahkan AHSP ke proyek untuk mengelola CCO</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -464,7 +470,14 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
     }
   };
 
-  if (items.length === 0) return <Empty icon={<Activity className="w-10 h-10" />} msg="Tambahkan AHSP ke proyek untuk mengelola MC." />;
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Activity className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Tambahkan AHSP ke proyek untuk mengelola MC</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">

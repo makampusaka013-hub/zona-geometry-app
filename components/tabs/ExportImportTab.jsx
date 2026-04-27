@@ -5,7 +5,6 @@ import Spinner from '../Spinner';
 import LocationSelect from '../LocationSelect';
 import { toast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
-import Empty from '../Empty';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
@@ -582,22 +581,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       {subTab === 'export' ? (
         <>
           {(!ahspLines || ahspLines.length === 0) ? (
-            <div className="space-y-6">
-              <Empty
-                icon={<FileSpreadsheet />}
-                title="Belum Ada Data RAB"
-                description="Silakan susun rencana anggaran biaya proyek Anda di tab RAB Proyek terlebih dahulu sebelum dapat menggunakan fitur pelaporan ini."
-              />
-
-              <div className="flex items-start gap-4 p-5 rounded-3xl bg-[#0f172a] border border-slate-800 shadow-sm backdrop-blur-sm">
-                <div className="w-10 h-10 rounded-xl bg-orange-500/10 flex items-center justify-center shrink-0 shadow-inner">
-                  <Info className="w-5 h-5 text-orange-500 stroke-[2px]" />
-                </div>
-                <p className="text-[11px] font-bold text-slate-400 leading-relaxed">
-                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-orange-500 block mb-1">💡 Professional Tip</span>
-                  Pastikan data RAB sudah lengkap sebelum melakukan ekspor. Anda dapat mengunduh laporan dalam format Excel (.xlsx) atau PDF profesional yang siap cetak untuk keperluan administrasi proyek.
-                </p>
-              </div>
+            <div className="flex flex-col items-center justify-center py-20 opacity-30">
+              <FileSpreadsheet className="w-16 h-16 mb-4" />
+              <p className="text-sm font-bold uppercase tracking-widest">Belum ada data RAB</p>
             </div>
           ) : isModeNormal ? (
             <div className="space-y-12">

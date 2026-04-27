@@ -249,9 +249,6 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         document.body
       )}
     </div>
-  );
-}
-
 export default function RabEditorTab({ 
   projectId, 
   initialIdentity,
@@ -261,8 +258,7 @@ export default function RabEditorTab({
   backupData = [],
   member,
   projectStartDate,
-  setProjectStartDate,
-  onTotalChange
+  setProjectStartDate
 }) {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -493,9 +489,8 @@ export default function RabEditorTab({
       const total = subtotal + ppn;
       const rounded = Math.ceil(total / 1000) * 1000;
       setRecap({ subtotal, ppn, total, rounded, sectionTotals });
-      if (onTotalChange) onTotalChange(rounded);
     });
-  }, [sections, identity.ppn_percent, onTotalChange]);
+  }, [sections, identity.ppn_percent]);
 
   const updateRow = (sId, rowKey, patch) => {
     setSections(prev => prev.map(s => s.id === sId ? { 

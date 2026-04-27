@@ -1,6 +1,5 @@
 import React, { useState, useMemo } from 'react';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
@@ -52,7 +51,12 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
   const [selectedAhsp, setSelectedAhsp] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty icon={<ClipboardList className="w-10 h-10" />} msg="Tidak ada rincian AHSP di RAB ini." />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <ClipboardList className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Tidak ada rincian AHSP</p>
+      </div>
+    );
   }
 
   return (
@@ -473,7 +477,12 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
   const [overrideItem, setOverrideItem] = useState(null);
 
   if (rows.length === 0) {
-    return <Empty icon={<Package className="w-10 h-10" />} msg="Belum ada data harga satuan terpakai." />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Package className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Belum ada data harga satuan terpakai</p>
+      </div>
+    );
   }
 
   return (

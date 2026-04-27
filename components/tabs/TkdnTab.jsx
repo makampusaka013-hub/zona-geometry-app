@@ -1,6 +1,5 @@
 import React from 'react';
 import Spinner from '../Spinner';
-import Empty from '../Empty';
 import { Factory, Info } from 'lucide-react';
 
 export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
@@ -9,11 +8,12 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
   if (tabLoading) return <Spinner />;
 
   if (!tabData?.tkdn) {
-    return <Empty
-      icon={<Factory />}
-      title="Belum ada data kalkulasi TKDN."
-      description="Silakan isi data RAB dan harga satuan terlebih dahulu agar sistem dapat menghitung bobot TKDN secara otomatis."
-    />;
+    return (
+      <div className="flex flex-col items-center justify-center py-20 opacity-30">
+        <Factory className="w-16 h-16 mb-4" />
+        <p className="text-sm font-bold uppercase tracking-widest">Belum ada data kalkulasi TKDN</p>
+      </div>
+    );
   }
 
   const items = tabData?.harga || [];
