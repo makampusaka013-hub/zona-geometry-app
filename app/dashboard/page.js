@@ -19,8 +19,9 @@ import {
   Plus, AlertCircle, Calendar, MapPin, Wrench, Layers,
   ChevronRight, ArrowUpRight, LayoutDashboard, Clock,
   Wallet, HardHat, ClipboardList, Hammer, Construction,
-  Activity, BarChart2, Zap
+  Activity, BarChart2, Zap, LayoutDashboard
 } from 'lucide-react';
+import Empty from '@/components/Empty';
 import { computeManpower, getSequencedSchedule } from '@/lib/manpower';
 
 function formatIdr(n) {
@@ -768,28 +769,19 @@ function DashboardContent() {
       <div className="px-4 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-9 space-y-8">
           {projects.length === 0 ? (
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-20 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-6">
-              <div className="relative">
-                <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
-                <img 
-                  src="/empty_state.png" 
-                  alt="No Projects" 
-                  className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl" 
-                />
-              </div>
-              <div className="space-y-2 relative z-10">
-                <h3 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Mulai Proyek Pertama Anda</h3>
-                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
-                  Dashboard analitik akan muncul di sini setelah Anda membuat atau bergabung ke sebuah proyek konstruksi.
-                </p>
-              </div>
-              <Link
-                href="/dashboard/rekap-proyek?action=new"
-                className="px-8 py-4 bg-indigo-600 dark:bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 uppercase tracking-widest text-xs hover:scale-105 transition-all"
-              >
-                + Buat Proyek Sekarang
-              </Link>
-            </div>
+            <Empty
+              icon={<LayoutDashboard />}
+              title="Mulai Proyek Pertama Anda"
+              description="Dashboard analitik akan muncul secara otomatis setelah Anda menyusun rencana anggaran biaya (RAB) dan jadwal pada proyek konstruksi Anda."
+              action={
+                <Link
+                  href="/dashboard/rekap-proyek?action=new"
+                  className="px-10 py-5 bg-indigo-600 dark:bg-orange-600 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0"
+                >
+                  + Buat Proyek Sekarang
+                </Link>
+              }
+            />
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -1019,11 +1011,14 @@ function DashboardContent() {
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Pilih Proyek Aktif</h3>
             <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
               {projects.length === 0 ? (
-                <div className="py-6 text-center">
-                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">
-                    Data belum tersedia untuk kriteria ini.
+                <div className="py-10 px-4 text-center bg-[#0f172a] rounded-3xl border border-slate-800/50">
+                  <p className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] leading-relaxed mb-4">
+                    Data belum tersedia.
                   </p>
-                  <Link href="/dashboard/rekap-proyek?action=new" className="mt-2 text-[9px] font-black text-indigo-600 dark:text-orange-500 uppercase tracking-widest hover:underline inline-block">
+                  <Link 
+                    href="/dashboard/rekap-proyek?action=new" 
+                    className="px-6 py-3 bg-orange-600/10 text-orange-500 text-[9px] font-black uppercase tracking-[0.2em] rounded-xl border border-orange-500/20 hover:bg-orange-600 hover:text-white transition-all inline-block"
+                  >
                     + Buat Proyek
                   </Link>
                 </div>
