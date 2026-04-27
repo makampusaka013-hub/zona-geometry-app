@@ -767,278 +767,320 @@ function DashboardContent() {
 
       <div className="px-4 lg:px-8 mt-8 grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
         <div className="lg:col-span-9 space-y-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />
-            <StatCard icon={ClipboardList} label="Item Pekerjaan" value={`${projectStats?.totalItems || 0} AHSP`} sub="Lingkup Kerja" color="violet" />
-            <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(1)}%`} sub="Aset Lokal" color="blue" />
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
-            <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
-            <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
-              <div>
-                <h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight">Kurva-S Progres Proyek</h3>
-                <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-widest">Biaya Pekerjaan (Rp)</p>
+          {projects.length === 0 ? (
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-20 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center justify-center text-center space-y-6">
+              <div className="relative">
+                <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
+                <img 
+                  src="/empty_state.png" 
+                  alt="No Projects" 
+                  className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl" 
+                />
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <select value={sCurveFreq} onChange={(e) => setSCurveFreq(e.target.value)} className="text-[10px] font-black bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-3 py-2 cursor-pointer focus:ring-2 ring-indigo-500 dark:ring-orange-500 uppercase tracking-widest text-slate-500">
-                  <option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option>
-                </select>
-                <button onClick={() => setSCurveToday(!sCurveToday)} className={`text-[10px] font-black px-4 py-2 rounded-xl border-none uppercase tracking-widest transition-all ${sCurveToday ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 text-slate-500'}`}>
-                  Per Hari Ini
-                </button>
-                <div className="w-px h-6 bg-slate-100 dark:bg-slate-800 mx-2 hidden sm:block" />
-                <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl">
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-500 dark:bg-orange-500" /><span className="text-[10px] font-bold text-slate-500">Realisasi</span></div>
-                  <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-300" /><span className="text-[10px] font-bold text-slate-500">Rencana</span></div>
+              <div className="space-y-2 relative z-10">
+                <h3 className="text-2xl font-black text-slate-800 dark:text-white uppercase tracking-tight">Mulai Proyek Pertama Anda</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 font-medium max-w-sm mx-auto">
+                  Dashboard analitik akan muncul di sini setelah Anda membuat atau bergabung ke sebuah proyek konstruksi.
+                </p>
+              </div>
+              <Link
+                href="/dashboard/rekap-proyek?action=new"
+                className="px-8 py-4 bg-indigo-600 dark:bg-orange-600 text-white font-black rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 uppercase tracking-widest text-xs hover:scale-105 transition-all"
+              >
+                + Buat Proyek Sekarang
+              </Link>
+            </div>
+          ) : (
+            <>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />
+                <StatCard icon={ClipboardList} label="Item Pekerjaan" value={`${projectStats?.totalItems || 0} AHSP`} sub="Lingkup Kerja" color="violet" />
+                <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(1)}%`} sub="Aset Lokal" color="blue" />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
+                <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
+                <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
+              </div>
+
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+                  <div>
+                    <h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight">Kurva-S Progres Proyek</h3>
+                    <p className="text-[10px] font-black text-slate-400 mt-2 uppercase tracking-widest">Biaya Pekerjaan (Rp)</p>
+                  </div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <select value={sCurveFreq} onChange={(e) => setSCurveFreq(e.target.value)} className="text-[10px] font-black bg-slate-50 dark:bg-slate-800 border-none rounded-xl px-3 py-2 cursor-pointer focus:ring-2 ring-indigo-500 dark:ring-orange-500 uppercase tracking-widest text-slate-500">
+                      <option value="daily">Harian</option><option value="weekly">Mingguan</option><option value="monthly">Bulanan</option>
+                    </select>
+                    <button onClick={() => setSCurveToday(!sCurveToday)} className={`text-[10px] font-black px-4 py-2 rounded-xl border-none uppercase tracking-widest transition-all ${sCurveToday ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg' : 'bg-slate-50 dark:bg-slate-800 text-slate-500'}`}>
+                      Per Hari Ini
+                    </button>
+                    <div className="w-px h-6 bg-slate-100 dark:bg-slate-800 mx-2 hidden sm:block" />
+                    <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-800 px-4 py-2 rounded-2xl">
+                      <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-indigo-500 dark:bg-orange-500" /><span className="text-[10px] font-bold text-slate-500">Realisasi</span></div>
+                      <div className="flex items-center gap-2"><div className="w-3 h-3 rounded-full bg-slate-300" /><span className="text-[10px] font-bold text-slate-500">Rencana</span></div>
+                    </div>
+                  </div>
                 </div>
-              </div>
-            </div>
-            {/* S-CURVE CHART CONTAINER with Guard */}
-            <div className="h-[450px] min-h-[400px] min-w-0 bg-slate-50/30 dark:bg-slate-800/20 rounded-[32px] p-6 relative">
-              {chartData.length === 0 ? (
-                <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-40">
-                  <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
-                  <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Menunggu Data Grafik S-Curve...</p>
-                </div>
-              ) : (
-                <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                  <ComposedChart data={processedChartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
-                    <defs>
-                      <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3}/>
-                        <stop offset="95%" stopColor="var(--chart-realis-glow)" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <CartesianGrid
-                      strokeDasharray="3 3"
-                      vertical={false}
-                      stroke={isDark ? '#1e293b' : '#e2e8f0'}
-                    />
-                    <XAxis
-                      dataKey="name"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
-                      interval="preserveStartEnd"
-                      minTickGap={30}
-                    />
-                    {/* Left Axis: Percentage (%) */}
-                    <YAxis
-                      yAxisId="left"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }}
-                      tickFormatter={(v) => `${v}%`}
-                      domain={[0, 100]}
-                      ticks={[0, 20, 40, 60, 80, 100]}
-                    />
-                    {/* Right Axis: Nominal (Rp) */}
-                    <YAxis
-                      yAxisId="right"
-                      orientation="right"
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
-                      tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()}
-                    />
-
-                    <Tooltip
-                      contentStyle={{
-                        backgroundColor: isDark ? '#1e293b' : '#ffffff',
-                        border: 'none',
-                        borderRadius: '16px',
-                        fontSize: '11px',
-                        color: isDark ? '#fff' : '#0f172a',
-                        boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
-                        zIndex: 50
-                      }}
-                      itemStyle={{ padding: '2px 0' }}
-                      labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 800, marginBottom: '8px' }}
-                      labelFormatter={(label, entries) => {
-                        const day = entries[0]?.payload?.day;
-                        if (!day || !selProject?.start_date) return label;
-                        const dt = new Date(selProject.start_date); dt.setDate(dt.getDate() + day - 1);
-                        return dt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
-                      }}
-                      formatter={(v, name, props) => {
-                        if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
-                        if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
-                        return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Tenaga Kerja (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
-                      }}
-                    />
-
-                    {/* Periodic Bars (Grouped & Stacked) */}
-                    <Bar yAxisId="right" dataKey="dailyUpah" stackId="a" fill={isDark ? '#312e81' : '#818cf8'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
-                    <Bar yAxisId="right" dataKey="dailyBahan" stackId="a" fill={isDark ? '#92400e' : '#fbbf24'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
-                    <Bar yAxisId="right" dataKey="dailyAlat" stackId="a" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
-
-                    {/* Cumulative Lines (% on Left Axis) */}
-                    <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
-                    <Area yAxisId="left" type="monotone" dataKey="rencana" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth={3} strokeDasharray="5 5" fill="none" />
-
-                    {sCurveToday && todayPointName && (
-                      <ReferenceLine
-                        yAxisId="left"
-                        x={todayPointName}
-                        stroke="#f97316"
-                        strokeWidth={2}
-                        strokeDasharray="10 5"
-                      >
-                        <Label
-                          value="HARI INI"
-                          position="top"
-                          fill="#f97316"
-                          fontSize={9}
-                          fontWeight={900}
-                          offset={10}
-                          className="tracking-widest"
-                        />
-                      </ReferenceLine>
-                    )}
-                  </ComposedChart>
-                </ResponsiveContainer>
-              )}
-            </div>
-          </div>
-
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-8">
-            <div className="flex flex-wrap items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-6">
-              <div><h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight">Analisis Detail Pekerjaan</h3></div>
-              <div className="flex flex-wrap items-center gap-3">
-                <input type="text" placeholder="Cari..." className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold w-48 focus:ring-2 ring-indigo-500" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
-                <select className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
-                  <option value="all">Semua Tipe</option><option value="bahan">🧱 Material</option><option value="alat">⚙️ Peralatan</option><option value="tenaga">👷 Tenaga</option>
-                </select>
-              </div>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              <div className="space-y-4">
-                <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Per Item (Rp)</h3></div>
-                <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
-                  {!processedItemData.visible || processedItemData.visible.length === 0 ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
-                      <BarChart2 className="w-8 h-8 text-slate-400" />
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pekerjaan Kosong</p>
+                {/* S-CURVE CHART CONTAINER with Guard */}
+                <div className="h-[450px] min-h-[400px] min-w-0 bg-slate-50/30 dark:bg-slate-800/20 rounded-[32px] p-6 relative">
+                  {chartData.length === 0 ? (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 opacity-40">
+                      <Activity className="w-12 h-12 text-slate-300 animate-pulse" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Menunggu Data Grafik S-Curve...</p>
                     </div>
                   ) : (
                     <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                      <BarChart data={processedItemData.visible} margin={{ bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                        <XAxis dataKey="displayName" tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} />
-                        <YAxis width={80} tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                          itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
-                          formatter={(v) => formatIdrFull(v)}
+                      <ComposedChart data={processedChartData} margin={{ top: 20, right: 20, bottom: 20, left: 10 }}>
+                        <defs>
+                          <linearGradient id="colorRealisasi" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="var(--chart-realis-glow)" stopOpacity={0.3}/>
+                            <stop offset="95%" stopColor="var(--chart-realis-glow)" stopOpacity={0}/>
+                          </linearGradient>
+                        </defs>
+                        <CartesianGrid
+                          strokeDasharray="3 3"
+                          vertical={false}
+                          stroke={isDark ? '#1e293b' : '#e2e8f0'}
                         />
-                        <Bar dataKey="progressRupiah" fill={isDark ? '#f97316' : '#4f46e5'} radius={[6, 6, 0, 0]} />
-                        <Bar dataKey="totalRupiah" fill={isDark ? '#334155' : '#cbd5e1'} radius={[6, 6, 0, 0]} opacity={0.3} />
-                      </BarChart>
+                        <XAxis
+                          dataKey="name"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
+                          interval="preserveStartEnd"
+                          minTickGap={30}
+                        />
+                        {/* Left Axis: Percentage (%) */}
+                        <YAxis
+                          yAxisId="left"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 10, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }}
+                          tickFormatter={(v) => `${v}%`}
+                          domain={[0, 100]}
+                          ticks={[0, 20, 40, 60, 80, 100]}
+                        />
+                        {/* Right Axis: Nominal (Rp) */}
+                        <YAxis
+                          yAxisId="right"
+                          orientation="right"
+                          axisLine={false}
+                          tickLine={false}
+                          tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#64748b' }}
+                          tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()}
+                        />
+
+                        <Tooltip
+                          contentStyle={{
+                            backgroundColor: isDark ? '#1e293b' : '#ffffff',
+                            border: 'none',
+                            borderRadius: '16px',
+                            fontSize: '11px',
+                            color: isDark ? '#fff' : '#0f172a',
+                            boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1)',
+                            zIndex: 50
+                          }}
+                          itemStyle={{ padding: '2px 0' }}
+                          labelStyle={{ color: isDark ? '#94a3b8' : '#64748b', fontWeight: 800, marginBottom: '8px' }}
+                          labelFormatter={(label, entries) => {
+                            const day = entries[0]?.payload?.day;
+                            if (!day || !selProject?.start_date) return label;
+                            const dt = new Date(selProject.start_date); dt.setDate(dt.getDate() + day - 1);
+                            return dt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
+                          }}
+                          formatter={(v, name, props) => {
+                            if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
+                            if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
+                            return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Tenaga Kerja (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
+                          }}
+                        />
+
+                        {/* Periodic Bars (Grouped & Stacked) */}
+                        <Bar yAxisId="right" dataKey="dailyUpah" stackId="a" fill={isDark ? '#312e81' : '#818cf8'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
+                        <Bar yAxisId="right" dataKey="dailyBahan" stackId="a" fill={isDark ? '#92400e' : '#fbbf24'} radius={[0, 0, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
+                        <Bar yAxisId="right" dataKey="dailyAlat" stackId="a" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
+
+                        {/* Cumulative Lines (% on Left Axis) */}
+                        <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
+                        <Area yAxisId="left" type="monotone" dataKey="rencana" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth={3} strokeDasharray="5 5" fill="none" />
+
+                        {sCurveToday && todayPointName && (
+                          <ReferenceLine
+                            yAxisId="left"
+                            x={todayPointName}
+                            stroke="#f97316"
+                            strokeWidth={2}
+                            strokeDasharray="10 5"
+                          >
+                            <Label
+                              value="HARI INI"
+                              position="top"
+                              fill="#f97316"
+                              fontSize={9}
+                              fontWeight={900}
+                              offset={10}
+                              className="tracking-widest"
+                            />
+                          </ReferenceLine>
+                        )}
+                      </ComposedChart>
                     </ResponsiveContainer>
                   )}
                 </div>
               </div>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Sumber Daya (Rp)</h3></div>
-                <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
-                  {!processedResourceData.visible || processedResourceData.visible.length === 0 ? (
-                    <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
-                      <Zap className="w-8 h-8 text-slate-400" />
-                      <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sumber Daya Kosong</p>
+
+              <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800 space-y-8">
+                <div className="flex flex-wrap items-center justify-between gap-6 border-b border-slate-100 dark:border-slate-800 pb-6">
+                  <div><h3 className="text-lg font-black text-slate-800 dark:text-white leading-tight">Analisis Detail Pekerjaan</h3></div>
+                  <div className="flex flex-wrap items-center gap-3">
+                    <input type="text" placeholder="Cari..." className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold w-48 focus:ring-2 ring-indigo-500" value={filterSearch} onChange={(e) => setFilterSearch(e.target.value)} />
+                    <select className="px-4 py-2 bg-slate-50 dark:bg-slate-800 border-none rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500" value={filterType} onChange={(e) => setFilterType(e.target.value)}>
+                      <option value="all">Semua Tipe</option><option value="bahan">🧱 Material</option><option value="alat">⚙️ Peralatan</option><option value="tenaga">👷 Tenaga</option>
+                    </select>
+                  </div>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Per Item (Rp)</h3></div>
+                    <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                      {!processedItemData.visible || processedItemData.visible.length === 0 ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
+                          <BarChart2 className="w-8 h-8 text-slate-400" />
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Pekerjaan Kosong</p>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                          <BarChart data={processedItemData.visible} margin={{ bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
+                            <XAxis dataKey="displayName" tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} />
+                            <YAxis width={80} tick={{ fontSize: 9, fontWeight: 700, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                              itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
+                              formatter={(v) => formatIdrFull(v)}
+                            />
+                            <Bar dataKey="progressRupiah" fill={isDark ? '#f97316' : '#4f46e5'} radius={[6, 6, 0, 0]} />
+                            <Bar dataKey="totalRupiah" fill={isDark ? '#334155' : '#cbd5e1'} radius={[6, 6, 0, 0]} opacity={0.3} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
                     </div>
-                  ) : (
-                    <ResponsiveContainer width="100%" height="100%" debounce={1}>
-                      <BarChart data={processedResourceData.visible} margin={{ bottom: 20 }}>
-                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
-                        <XAxis dataKey="uraian" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#475569' }} />
-                        <YAxis width={80} tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
-                          itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
-                          formatter={(v) => formatIdrFull(v)}
-                        />
-                        <Bar dataKey="kontribusi_nilai" radius={[6, 6, 0, 0]} fill={isDark ? '#f97316' : '#4f46e5'} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  )}
+                  </div>
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between"><h3 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Biaya Sumber Daya (Rp)</h3></div>
+                    <div className="h-80 min-h-[300px] min-w-0 bg-slate-50/50 dark:bg-slate-800/30 rounded-2xl p-4 relative">
+                      {!processedResourceData.visible || processedResourceData.visible.length === 0 ? (
+                        <div className="absolute inset-0 flex flex-col items-center justify-center gap-2 opacity-30">
+                          <Zap className="w-8 h-8 text-slate-400" />
+                          <p className="text-[9px] font-black uppercase tracking-widest text-slate-400">Sumber Daya Kosong</p>
+                        </div>
+                      ) : (
+                        <ResponsiveContainer width="100%" height="100%" debounce={1}>
+                          <BarChart data={processedResourceData.visible} margin={{ bottom: 20 }}>
+                            <CartesianGrid strokeDasharray="3 3" vertical={false} stroke={isDark ? '#1e293b' : '#e2e8f0'} />
+                            <XAxis dataKey="uraian" tick={{ fontSize: 8, fill: isDark ? '#94a3b8' : '#475569' }} />
+                            <YAxis width={80} tick={{ fontSize: 9, fill: isDark ? '#94a3b8' : '#475569' }} tickFormatter={(v) => v >= 1000000 ? `${(v / 1000000).toFixed(1)}jt` : v.toLocaleString()} />
+                            <Tooltip
+                              contentStyle={{ backgroundColor: isDark ? '#1e293b' : '#ffffff', border: 'none', borderRadius: '12px', fontSize: '10px' }}
+                              itemStyle={{ color: isDark ? '#f1f5f9' : '#1e293b' }}
+                              formatter={(v) => formatIdrFull(v)}
+                            />
+                            <Bar dataKey="kontribusi_nilai" radius={[6, 6, 0, 0]} fill={isDark ? '#f97316' : '#4f46e5'} />
+                          </BarChart>
+                        </ResponsiveContainer>
+                      )}
+                    </div>
+                  </div>
                 </div>
               </div>
-            </div>
-          </div>
+            </>
+          )}
         </div>
 
         <div className="lg:col-span-3 space-y-8">
-          <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-            <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">{selProject?.code || 'TANPA-KODE'}</h4>
-            <div className="text-xl font-black mb-6">{selName}</div>
-            <div className="space-y-4">
-              <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><Calendar className="w-4 h-4" /> <span className="text-xs font-bold">{selProject?.fiscal_year || '—'}</span></div>
-              <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><MapPin className="w-4 h-4" /> <span className="text-xs font-bold truncate">{selProject?.location || '—'}</span></div>
+          {projects.length > 0 && (
+            <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">{selProject?.code || 'TANPA-KODE'}</h4>
+              <div className="text-xl font-black mb-6">{selName}</div>
+              <div className="space-y-4">
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><Calendar className="w-4 h-4" /> <span className="text-xs font-bold">{selProject?.fiscal_year || '—'}</span></div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><MapPin className="w-4 h-4" /> <span className="text-xs font-bold truncate">{selProject?.location || '—'}</span></div>
+              </div>
+              <Link href={`/dashboard/rekap-proyek?id=${selectedId}`} className="mt-8 w-full bg-white/20 hover:bg-white/30 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
+                Detail Pekerjaan <ChevronRight className="w-4 h-4" />
+              </Link>
             </div>
-            <Link href={`/dashboard/rekap-proyek?id=${selectedId}`} className="mt-8 w-full bg-white/20 hover:bg-white/30 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
-              Detail Pekerjaan <ChevronRight className="w-4 h-4" />
-            </Link>
-          </div>
+          )}
 
           <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 shadow-sm border border-slate-100 dark:border-slate-800">
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-6">Pilih Proyek Aktif</h3>
             <div className="space-y-3 max-h-64 overflow-y-auto scrollbar-hide">
-              {projects.map(p => (
-                <button key={p.id} onClick={() => setSelectedId(p.id)}
-                  className={`w-full text-left px-4 py-3 rounded-2xl border transition-all ${selectedId === p.id ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-50'}`}>
-                  <div className="flex items-center justify-between gap-2">
-                    <div className="text-[11px] font-bold truncate">{p.name || 'Proyek Tanpa Nama'}</div>
-                    <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter shrink-0 ${p.created_by === member?.user_id
-                      ? 'bg-indigo-600 text-white dark:bg-orange-600'
-                      : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
-                      }`}>
-                      {p.created_by === member?.user_id ? 'Owner' : (projectMembers[p.id] || 'Member')}
-                    </span>
-                  </div>
-                  <div className="text-[9px] font-mono opacity-60 mt-0.5 tracking-wider">{p.code || 'TANPA KODE'}</div>
-                </button>
-              ))}
+              {projects.length === 0 ? (
+                <div className="py-6 text-center">
+                  <p className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest leading-relaxed">
+                    Data belum tersedia untuk kriteria ini.
+                  </p>
+                  <Link href="/dashboard/rekap-proyek?action=new" className="mt-2 text-[9px] font-black text-indigo-600 dark:text-orange-500 uppercase tracking-widest hover:underline inline-block">
+                    + Buat Proyek
+                  </Link>
+                </div>
+              ) : (
+                projects.map(p => (
+                  <button key={p.id} onClick={() => setSelectedId(p.id)}
+                    className={`w-full text-left px-4 py-3 rounded-2xl border transition-all ${selectedId === p.id ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-50'}`}>
+                    <div className="flex items-center justify-between gap-2">
+                      <div className="text-[11px] font-bold truncate">{p.name || 'Proyek Tanpa Nama'}</div>
+                      <span className={`px-1.5 py-0.5 rounded text-[7px] font-black uppercase tracking-tighter shrink-0 ${p.created_by === member?.user_id
+                        ? 'bg-indigo-600 text-white dark:bg-orange-600'
+                        : 'bg-slate-200 text-slate-500 dark:bg-slate-800 dark:text-slate-400'
+                        }`}>
+                        {p.created_by === member?.user_id ? 'Owner' : (projectMembers[p.id] || 'Member')}
+                      </span>
+                    </div>
+                    <div className="text-[9px] font-mono opacity-60 mt-0.5 tracking-wider">{p.code || 'TANPA KODE'}</div>
+                  </button>
+                ))
+              )}
             </div>
           </div>
 
-          <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
-            <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Status Pekerjaan</h3>
-            {(() => {
-              const lastDot = chartData[chartData.length - 1] || { realisasi: 0, rencana: 0 };
-              const deviasi = lastDot.realisasi - lastDot.rencana;
-              const isBehind = deviasi < 0;
+          {projects.length > 0 && (
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+              <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Status Pekerjaan</h3>
+              {(() => {
+                const lastDot = chartData[chartData.length - 1] || { realisasi: 0, rencana: 0 };
+                const deviasi = lastDot.realisasi - lastDot.rencana;
+                const isBehind = deviasi < 0;
 
-              return (
-                <div className="space-y-6">
-                  <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
-                    <div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Deviasi Jadwal</div>
-                      <div className={`text-lg font-black font-mono mt-1 ${isBehind ? 'text-amber-600 dark:text-orange-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
-                        {deviasi > 0 ? '+' : ''}{deviasi.toFixed(2)}%
+                return (
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between bg-slate-50 dark:bg-slate-800/50 p-4 rounded-2xl border border-slate-100 dark:border-slate-800">
+                      <div>
+                        <div className="text-[10px] font-black uppercase tracking-widest text-slate-400">Deviasi Jadwal</div>
+                        <div className={`text-lg font-black font-mono mt-1 ${isBehind ? 'text-amber-600 dark:text-orange-500' : 'text-emerald-600 dark:text-emerald-400'}`}>
+                          {deviasi > 0 ? '+' : ''}{deviasi.toFixed(2)}%
+                        </div>
+                      </div>
+                      <div className={`p-2 rounded-xl ${isBehind ? 'bg-amber-100 dark:bg-orange-500/10 text-amber-600 dark:text-orange-500' : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
+                        {isBehind ? <TrendingUp className="w-5 h-5 rotate-180" /> : <TrendingUp className="w-5 h-5" />}
                       </div>
                     </div>
-                    <div className={`p-2 rounded-xl ${isBehind ? 'bg-amber-100 dark:bg-orange-500/10 text-amber-600 dark:text-orange-500' : 'bg-emerald-100 dark:bg-emerald-500/10 text-emerald-600 dark:text-emerald-400'}`}>
-                      {isBehind ? <TrendingUp className="w-5 h-5 rotate-180" /> : <TrendingUp className="w-5 h-5" />}
+
+                    <div className="text-center pt-2">
+                      <div className="text-4xl font-black font-mono text-indigo-600 dark:text-orange-500">{lastDot.realisasi.toFixed(1)}%</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Capaian Realisasi</div>
+                    </div>
+                    <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
+                      <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${lastDot.realisasi}%` }} />
                     </div>
                   </div>
-
-                  <div className="text-center pt-2">
-                    <div className="text-4xl font-black font-mono text-indigo-600 dark:text-orange-500">{lastDot.realisasi.toFixed(1)}%</div>
-                    <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Capaian Realisasi</div>
-                  </div>
-                  <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                    <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${lastDot.realisasi}%` }} />
-                  </div>
-                </div>
-              );
-            })()}
-          </div>
+                );
+              })()}
+            </div>
+          )}
         </div>
       </div>
 

@@ -580,7 +580,24 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
       {subTab === 'export' ? (
         <>
-          {isModeNormal ? (
+          {(!ahspLines || ahspLines.length === 0) ? (
+            <div className="flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl space-y-8 animate-in fade-in zoom-in duration-500">
+              <div className="relative">
+                <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
+                <img 
+                  src="/empty_state.png" 
+                  alt="No Data" 
+                  className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl" 
+                />
+              </div>
+              <div className="text-center space-y-3 max-w-md relative z-10">
+                <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Belum Ada Data RAB</h3>
+                <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
+                  Silakan susun rencana anggaran biaya proyek Anda di tab <b>RAB Proyek</b> terlebih dahulu sebelum dapat menggunakan fitur pelaporan ini.
+                </p>
+              </div>
+            </div>
+          ) : isModeNormal ? (
             <div className="space-y-12">
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
                 <div className="group bg-white dark:bg-slate-900 rounded-[2.5rem] p-8 border border-slate-200 dark:border-slate-800 shadow-xl hover:shadow-2xl transition-all h-full flex flex-col justify-between overflow-hidden relative">
