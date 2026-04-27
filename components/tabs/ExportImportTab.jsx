@@ -582,25 +582,28 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         <>
           {(!ahspLines || ahspLines.length === 0) ? (
             <div className="space-y-6">
-              <div className="flex flex-col items-center justify-center py-24 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[450px]">
+              <div className="flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-8 animate-in fade-in zoom-in duration-700 w-full min-h-[400px]">
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-emerald-500/10 blur-[100px] rounded-full group-hover:blur-[140px] transition-all duration-700" />
-                  <div className="relative z-10 w-24 h-24 bg-emerald-50 dark:bg-slate-800 rounded-3xl flex items-center justify-center shadow-xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500">
-                    <FileSpreadsheet className="w-12 h-12 text-emerald-600 dark:text-emerald-400" />
+                  <div className="absolute inset-0 bg-emerald-500/10 blur-[60px] rounded-full group-hover:blur-[100px] transition-all duration-700" />
+                  <div className="relative z-10 w-20 h-20 bg-white dark:bg-slate-800/50 rounded-[2rem] flex items-center justify-center shadow-xl border border-slate-200 dark:border-slate-700/50 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-white/50 dark:ring-slate-700/50">
+                    <FileSpreadsheet className="w-10 h-10 text-emerald-600 dark:text-emerald-400 stroke-[1.5px]" />
                   </div>
                 </div>
                 <div className="text-center space-y-3 max-w-md relative z-10">
                   <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase italic">Belum Ada Data RAB</h3>
                   <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
-                    Silakan susun rencana anggaran biaya proyek Anda di tab <span className="text-indigo-600 dark:text-orange-500 italic font-black">RAB Proyek</span> terlebih dahulu sebelum dapat menggunakan fitur pelaporan ini.
+                    Silakan susun rencana anggaran biaya proyek Anda di tab <span className="text-indigo-600 dark:text-orange-500 italic font-black underline decoration-2 underline-offset-4">RAB Proyek</span> terlebih dahulu sebelum dapat menggunakan fitur pelaporan ini.
                   </p>
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-50 dark:bg-orange-900/10 border border-indigo-100 dark:border-orange-900/20 shadow-sm">
-                <Info className="w-5 h-5 text-indigo-500 dark:text-orange-500 shrink-0" />
-                <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400 leading-relaxed">
-                  <strong className="italic font-black uppercase text-[8px] tracking-widest mr-2">Tip:</strong> Pastikan data RAB sudah lengkap sebelum melakukan ekspor. Anda dapat mengunduh laporan dalam format Excel (.xlsx) atau PDF profesional yang siap cetak untuk keperluan administrasi proyek.
+              <div className="flex items-start gap-4 p-5 rounded-3xl bg-slate-50/80 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 shadow-sm backdrop-blur-sm">
+                <div className="w-10 h-10 rounded-xl bg-indigo-100 dark:bg-orange-500/10 flex items-center justify-center shrink-0 shadow-inner">
+                  <Info className="w-5 h-5 text-indigo-600 dark:text-orange-500 stroke-[2px]" />
+                </div>
+                <p className="text-[11px] font-bold text-slate-500 dark:text-slate-400 leading-relaxed">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] text-indigo-600 dark:text-orange-500 block mb-1">💡 Professional Tip</span>
+                  Pastikan data RAB sudah lengkap sebelum melakukan ekspor. Anda dapat mengunduh laporan dalam format Excel (.xlsx) atau PDF profesional yang siap cetak untuk keperluan administrasi proyek.
                 </p>
               </div>
             </div>

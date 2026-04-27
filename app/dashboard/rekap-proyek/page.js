@@ -1389,9 +1389,9 @@ function ProyekContent() {
             projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
                 <div className="relative group">
-                  <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
-                  <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-indigo-50 to-indigo-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
-                    <FolderKanban className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
+                  <div className="absolute inset-0 bg-indigo-500/10 dark:bg-orange-500/10 blur-[80px] rounded-full group-hover:blur-[120px] transition-all duration-700" />
+                  <div className="relative z-10 w-24 h-24 bg-white dark:bg-slate-800/50 rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 dark:border-slate-700/50 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-white/50 dark:ring-slate-700/50">
+                    <FolderKanban className="w-12 h-12 text-indigo-600 dark:text-orange-500 stroke-[1.5px]" />
                   </div>
                 </div>
                 
@@ -1504,9 +1504,9 @@ function ProyekContent() {
               {(!selectedProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 bg-white dark:bg-transparent rounded-[3rem] space-y-10 animate-in fade-in zoom-in duration-700 w-full min-h-[500px]">
                   <div className="relative group">
-                    <div className="absolute inset-0 bg-indigo-500/20 dark:bg-orange-500/20 blur-[120px] rounded-full group-hover:blur-[160px] transition-all duration-700" />
-                    <div className="relative z-10 w-32 h-32 bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-[2.5rem] flex items-center justify-center shadow-2xl border border-white dark:border-slate-700 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-slate-200 dark:ring-slate-800">
-                      <LayoutGrid className="w-16 h-16 text-indigo-600 dark:text-orange-500 drop-shadow-xl" />
+                    <div className="absolute inset-0 bg-indigo-500/10 dark:bg-orange-500/10 blur-[80px] rounded-full group-hover:blur-[120px] transition-all duration-700" />
+                    <div className="relative z-10 w-24 h-24 bg-white dark:bg-slate-800/50 rounded-3xl flex items-center justify-center shadow-2xl border border-slate-200 dark:border-slate-700/50 transform group-hover:scale-110 transition-all duration-500 ring-1 ring-white/50 dark:ring-slate-700/50">
+                      <LayoutGrid className="w-12 h-12 text-indigo-600 dark:text-orange-500 stroke-[1.5px]" />
                     </div>
                   </div>
                   
