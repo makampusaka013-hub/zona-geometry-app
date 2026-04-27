@@ -647,10 +647,17 @@ function ProyekContent() {
           return { ...l, harga_satuan: newHarga, jumlah: newJumlah };
         });
 
+        const resources = (resourcesRes.data || []).map(r => ({
+          ...r,
+          jenis: r.jenis_komponen === 'tenaga' ? 'upah' : r.jenis_komponen,
+          total_volume: Number(r.total_volume_terpakai || 0)
+        }));
+
         setTabData(prev => ({
           ...prev,
-          schedule: { lines: finalLines, resources: resources || [] },
+          schedule: { lines: finalLines, resources: resources },
           ahsp: finalLines,
+          harga: resources,
           backup: backup || []
         }));
 
