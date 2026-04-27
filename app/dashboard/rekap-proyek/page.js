@@ -1266,6 +1266,7 @@ function ProyekContent() {
                 {[
                   { id: 'volume', icon: TrendingUp, label: 'Progress Volume' },
                   { id: 'material', icon: Package, label: 'Material' },
+                  { id: 'alat', icon: Package, label: 'Alat' },
                   { id: 'labor', icon: Users, label: 'Tenaga Kerja' }
                 ].map(btn => (
                   <button
@@ -1576,7 +1577,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'progress' && (
-            <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal }} />
+            <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
           )}
 
           {activeTab === 'ahsp' && (

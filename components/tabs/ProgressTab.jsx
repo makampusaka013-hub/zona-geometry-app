@@ -42,7 +42,8 @@ export default function ProgressTab({
   isOwner,
   isModeNormal,
   isAdvance,
-  isPro
+  isPro,
+  currentUserId
 }) {
   const [progressData, setProgressData] = useState({}); // { [entity_id|name]: { [day]: val } }
   const [customRoles, setCustomRoles] = useState([]);
@@ -59,7 +60,8 @@ export default function ProgressTab({
       const { data, error } = await supabase
         .from('project_progress_daily')
         .select('*')
-        .eq('project_id', projectId);
+        .eq('project_id', projectId)
+        .eq('created_by', currentUserId);
       
       if (!error && data) {
         const mapped = {};
@@ -106,9 +108,10 @@ export default function ProgressTab({
       entity_type: type, 
       entity_id: entityId, 
       entity_name: entityName, 
-      entity_key: key, // Match the new unified index
+      entity_key: key, 
       day_number: day, 
-      val 
+      val,
+      created_by: currentUserId
     });
 
     saveTimeout.current = setTimeout(async () => {
@@ -123,7 +126,7 @@ export default function ProgressTab({
 
       const { error } = await supabase
         .from('project_progress_daily')
-        .upsert(payload, { onConflict: 'project_id,day_number,entity_type,entity_key' });
+        .upsert(payload, { onConflict: 'project_id,day_number,entity_type,entity_key,created_by' });
       
       if (error) console.error('Save failed:', error);
       setSavingStatus('saved');
@@ -148,7 +151,15 @@ export default function ProgressTab({
         status_approval: it.status_approval
       }));
     } else if (viewMode === 'material') {
-      return (resources || []).filter(r => r.jenis === 'bahan' || r.jenis === 'alat').map(r => ({
+      return (resources || []).filter(r => r.jenis === 'bahan').map(r => ({
+        id: r.kode_item || r.uraian,
+        name: r.uraian,
+        unit: r.satuan,
+        target: r.total_volume || 0,
+        type: 'resource'
+      }));
+    } else if (viewMode === 'alat') {
+      return (resources || []).filter(r => r.jenis === 'alat').map(r => ({
         id: r.kode_item || r.uraian,
         name: r.uraian,
         unit: r.satuan,
