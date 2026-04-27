@@ -201,32 +201,36 @@ function ProyekContent() {
 
   // ── Unified URL & State Synchronization ──
   useEffect(() => {
-    if (isCheckingAuth.current || loading) return;
-    try {
-      const urlId = searchParams?.get('id');
-      
-      // 1. Sinkronisasi State ke URL (User memilih dari dropdown) - PRIORITAS UTAMA
-      if (selectedProject && urlId !== selectedProject) {
-        const params = new URLSearchParams(searchParams?.toString() || '');
-        params.set('id', selectedProject);
-        router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', selectedProject);
-      } 
-      // 2. Sinkronisasi URL ke State (Load awal atau navigasi browser)
-      else if (urlId && urlId !== selectedProject) {
-        setSelectedProject(urlId);
-        if (typeof window !== 'undefined') localStorage.setItem('bc_last_project', urlId);
-      } 
-      // 3. Fallback: Tidak ada ID di URL maupun State
-      else if (!urlId && !selectedProject && Array.isArray(projects) && projects.length > 0 && !isCreating) {
-        const savedId = typeof window !== 'undefined' ? localStorage.getItem('bc_last_project') : null;
-        const targetId = (savedId && projects.some(p => p?.id === savedId)) ? savedId : projects[0].id;
-        setSelectedProject(targetId);
-      }
-    } catch (err) {
-      console.error('URL Sync Error:', err);
+    if (loading || isCheckingAuth.current) return;
+    
+    const urlId = searchParams?.get('id');
+    const urlTab = searchParams?.get('tab');
+
+    // 1. Sync URL -> State (Initial load or browser navigation)
+    if (urlId && urlId !== selectedProject) {
+      setSelectedProject(urlId);
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
+    if (urlTab && urlTab !== activeTab) {
+      setActiveTab(urlTab);
+    }
+
+    // 2. Sync State -> URL (User interaction)
+    if (selectedProject && urlId !== selectedProject) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', selectedProject);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+    if (activeTab && urlTab !== activeTab) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('tab', activeTab);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+
+    // 3. Fallback: Default to first project if none selected
+    if (!urlId && !selectedProject && projects.length > 0 && !isCreating) {
+      setSelectedProject(projects[0].id);
+    }
+  }, [searchParams, selectedProject, activeTab, projects, pathname, router, isCreating, loading]);
 
   // Reset data tab setiap kali proyek berganti agar memicu fetch data baru
   useEffect(() => {
