@@ -248,19 +248,28 @@ export default function ProgressTab({
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl space-y-8 animate-in fade-in zoom-in duration-500 w-full min-h-[400px]">
-        <div className="relative">
-          <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
-          <img 
-            src="/empty_state.png" 
-            alt="No Data" 
-            className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl" 
-          />
+      <div className="space-y-6 w-full">
+        <div className="flex flex-col items-center justify-center py-20 px-6 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl space-y-8 animate-in fade-in zoom-in duration-500 w-full min-h-[400px]">
+          <div className="relative">
+            <div className="absolute inset-0 bg-indigo-500/20 blur-[100px] rounded-full" />
+            <img 
+              src="/empty_state.png" 
+              alt="No Data" 
+              className="w-64 h-64 object-contain relative z-10 drop-shadow-2xl" 
+            />
+          </div>
+          <div className="text-center space-y-3 max-w-md relative z-10">
+            <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight uppercase">Belum Ada Progres</h3>
+            <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed font-bold">
+              Data item pekerjaan tidak ditemukan. Pastikan Anda sudah mengimpor atau menyusun <span className="text-indigo-600 dark:text-orange-500">RAB Proyek</span> agar dapat mulai mencatat progres harian.
+            </p>
+          </div>
         </div>
-        <div className="text-center space-y-3 max-w-md relative z-10">
-          <h3 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight">Belum Ada Progres</h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 leading-relaxed">
-            Data item pekerjaan tidak ditemukan. Pastikan Anda sudah mengimpor atau menyusun <b>RAB Proyek</b> agar dapat mulai mencatat progres harian.
+
+        <div className="flex items-center gap-3 p-4 rounded-2xl bg-indigo-50 dark:bg-orange-900/10 border border-indigo-100 dark:border-orange-900/20">
+          <AlertCircle className="w-5 h-5 text-indigo-500 dark:text-orange-500 shrink-0" />
+          <p className="text-[10px] font-medium text-slate-500 dark:text-slate-400">
+            <strong>TIP:</strong> Gunakan tombol arah panah atau Tab untuk berpindah antar hari dengan cepat. Perubahan disimpan otomatis dalam rentang 1.5 detik setelah Anda berhenti mengetik. Data progres ini akan menyusun rekapitulasi Laporan Harian secara otomatis.
           </p>
         </div>
       </div>
