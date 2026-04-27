@@ -793,7 +793,7 @@ function ProyekContent() {
     } finally {
       if (version === tabVersionRef.current) setTabLoading(false);
     }
-  }, [tabData.ahsp?.length, tabData.backup?.length, tabData.cco?.length, tabData.dok?.length, tabData.harga?.length, tabData.mc?.length, tabData.tkdn]);
+  }, []);
 
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
@@ -1508,7 +1508,7 @@ function ProyekContent() {
             />
           )}
 
-          {activeTab === 'proyek' && selectedProject && (
+          {activeTab === 'proyek' && (selectedProject || isCreating) && (
             <div className="space-y-6">
               {subTabProyek === 'rab' ? (
                 <RabEditorTab
