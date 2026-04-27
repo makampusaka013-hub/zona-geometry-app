@@ -1488,27 +1488,29 @@ function ProyekContent() {
             )
           )}
 
-          {activeTab === 'proyek' && (
+          {activeTab !== 'daftar' && (!selectedProject && !isCreating) && (
+            <Empty
+              icon={<ClipboardList />}
+              title="Data belum tersedia untuk kriteria ini."
+              description="Silakan pilih proyek di tab Daftar Proyek untuk mulai menyusun RAB dan Jadwal."
+              action={(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
+                <button
+                  onClick={handleNewProject}
+                  disabled={ownedLimitReached}
+                  className={`px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0 ${ownedLimitReached
+                    ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
+                    : 'bg-indigo-600 dark:bg-orange-600 text-white hover:shadow-orange-500/20'
+                  }`}
+                >
+                  {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Baru'}
+                </button>
+              )}
+            />
+          )}
+
+          {activeTab === 'proyek' && selectedProject && (
             <div className="space-y-6">
-              {(!selectedProject && !isCreating) ? (
-                <Empty
-                  icon={<ClipboardList />}
-                  title="Data belum tersedia untuk kriteria ini."
-                  description="Silakan pilih proyek di tab Daftar Proyek untuk mulai menyusun RAB dan Jadwal."
-                  action={(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                    <button
-                      onClick={handleNewProject}
-                      disabled={ownedLimitReached}
-                      className={`px-10 py-5 text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] transition-all shadow-2xl hover:translate-y-[-4px] active:translate-y-0 ${ownedLimitReached
-                        ? 'bg-slate-300 text-slate-500 cursor-not-allowed'
-                        : 'bg-indigo-600 dark:bg-orange-600 text-white hover:shadow-orange-500/20'
-                      }`}
-                    >
-                      {ownedLimitReached ? 'Batas Proyek Tercapai' : '+ Buat Proyek Baru'}
-                    </button>
-                  )}
-                />
-              ) : subTabProyek === 'rab' ? (
+              {subTabProyek === 'rab' ? (
                 <RabEditorTab
                   projectId={selectedProject}
                   initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
@@ -1545,18 +1547,18 @@ function ProyekContent() {
             </div>
           )}
 
-          {activeTab === 'progress' && (
+          {activeTab === 'progress' && !!selectedProject && (
             <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
           )}
 
-          {activeTab === 'ahsp' && (
+          {activeTab === 'ahsp' && !!selectedProject && (
             <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
           )}
 
-          {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
-          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />}
-          {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
-          {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
+          {activeTab === 'terpakai' && !!selectedProject && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
+          {activeTab === 'perubahan' && !!selectedProject && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />}
+          {activeTab === 'tkdn' && !!selectedProject && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
+          {activeTab === 'dok' && !!selectedProject && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
           {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />}
         </div>
       </div>
