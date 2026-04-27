@@ -1387,7 +1387,6 @@ function ProyekContent() {
         <div className="rounded-b-[32px] border-x-2 border-b-2 border-indigo-600/10 dark:border-orange-500/20 bg-white dark:bg-[#0f172a] shadow-2xl p-0 ring-1 ring-slate-200 dark:ring-slate-800 overflow-hidden">
           {activeTab === 'daftar' && (
             projects.length === 0 ? (
-            projects.length === 0 ? (
               <Empty
                 icon={<LayoutGrid />}
                 title="Belum Ada Proyek"
@@ -1405,7 +1404,6 @@ function ProyekContent() {
                   </button>
                 )}
               />
-            ) : (
             ) : (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-[#1e293b] shadow-xl">
                 <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
