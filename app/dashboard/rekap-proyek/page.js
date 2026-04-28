@@ -814,7 +814,7 @@ function ProyekContent() {
     } finally {
       if (version === tabVersionRef.current) setTabLoading(false);
     }
-  }, [tabData.ahsp?.length, tabData.backup?.length, tabData.cco?.length, tabData.dok?.length, tabData.harga?.length, tabData.mc?.length, tabData.tkdn]);
+  }, [tabData.ahsp?.length, tabData.backup?.length, tabData.cco?.length, tabData.dok?.length, tabData.harga?.length, tabData.mc?.length, tabData.tkdn, currentProjectObj?.overhead_percent, currentProjectObj?.profit_percent]);
 
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
@@ -1531,7 +1531,7 @@ function ProyekContent() {
               {(!selectedProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                   <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">!!! EMPTY STATE !!! D A T A  P R O Y E K</h3>
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P R O Y E K</h3>
                 </div>
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab
@@ -1635,7 +1635,7 @@ function ProyekContent() {
             !selectedProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">!!! EMPTY STATE !!! E X P O R T  /  I M P O R T</h3>
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
               </div>
             ) : (
               <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />

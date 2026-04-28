@@ -62,7 +62,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">!!! EMPTY STATE !!! E X P O R T  /  I M P O R T</h3>
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
       </div>
     );
   }

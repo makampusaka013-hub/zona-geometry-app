@@ -137,7 +137,7 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
       const p = getOverridePrice(d.kode_item) || d.harga_konversi || d.harga || 0;
       return s + (Number(d.koefisien || 0) * Number(p));
     }, 0) : 0;
-  }, [details, hargaRows]);
+  }, [details, hargaRows, getOverridePrice]);
 
   const profitPercent = item.profit_percent !== null && item.profit_percent !== undefined ? Number(item.profit_percent) : 15;
   const hargaSatuanRAB = Math.round(subtotalAnalisa * (1 + (profitPercent / 100)));

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect, useTransition } from 'react';
 import { createPortal } from 'react-dom';
+import Spinner from '../Spinner';
 import { supabase } from '@/lib/supabase';
 import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar } from 'lucide-react';
 import LocationSelect from '@/components/LocationSelect';
@@ -696,7 +697,7 @@ export default function RabEditorTab({
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">!!! EMPTY STATE !!! Belum Ada Data Rencana Anggaran Biaya</h3>
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Rencana Anggaran Biaya</h3>
       </div>
     );
   }
