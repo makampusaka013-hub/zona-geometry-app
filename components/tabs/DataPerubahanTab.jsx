@@ -263,15 +263,6 @@ function CcoView({ items, ccoData, projectId, onSaveStart, onSaveEnd, isSaving, 
   const canEdit = !isApproved && (isAdmin || userSlotRole === 'kontraktor');
   const canApprove = !isApproved && (isAdmin || userSlotRole === 'konsultan' || userSlotRole === 'instansi');
 
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <Activity className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tambahkan AHSP Untuk Mengelola CCO</h3>
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 px-2">
@@ -469,15 +460,6 @@ function McView({ items, mcData, projectId, onSaveStart, onSaveEnd, isSaving, us
       onSaveEnd({ type: 'error', msg: err.message });
     }
   };
-
-  if (items.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <Activity className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tambahkan AHSP Untuk Mengelola MC</h3>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

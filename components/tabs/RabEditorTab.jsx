@@ -468,10 +468,10 @@ export default function RabEditorTab({
               namaBab: bab,
               lines: lines
             }))
-          : []
+          : [createEmptySection('PEKERJAAN PERSIAPAN')]
       );
     } else {
-      setSections([]);
+      setSections([createEmptySection('PEKERJAAN PERSIAPAN')]);
     }
     setLoading(false);
   }, [projectId, initialIdentity]);
