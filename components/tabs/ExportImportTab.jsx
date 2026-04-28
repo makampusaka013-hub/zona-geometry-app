@@ -60,9 +60,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
   if (!project) {
     return (
-      <div className="flex flex-col h-64 items-center justify-center space-y-4 bg-white dark:bg-slate-900 rounded-[3rem] border border-slate-200 dark:border-slate-800 shadow-xl">
-        <Info className="w-12 h-12 text-slate-300" />
-        <p className="text-sm font-black text-slate-400 uppercase tracking-widest">Pilih Proyek Terlebih Dahulu</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
       </div>
     );
   }

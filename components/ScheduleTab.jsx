@@ -72,9 +72,9 @@ export default function ScheduleTab({
 
   if (tabData.schedule.lines.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-center py-16 text-slate-400">
-        <CalendarDays className="w-10 h-10 mx-auto mb-3 opacity-20" />
-        <p className="font-bold">Belum ada data RAB. Tambahkan AHSP ke proyek untuk melihat jadwal.</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <CalendarDays className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data RAB Untuk Jadwal</h3>
       </div>
     );
   }

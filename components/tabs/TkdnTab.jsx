@@ -7,7 +7,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
 
   if (tabLoading) return <Spinner />;
 
-  if (!tabData?.tkdn) {
+  if (!tabData?.tkdn || !tabData.tkdn.total_nilai || tabData.tkdn.total_nilai === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <Factory className="w-20 h-20 text-slate-400 dark:text-slate-500" />
