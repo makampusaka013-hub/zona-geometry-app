@@ -479,7 +479,35 @@ function ProyekContent() {
 
       if (version !== dataVersionRef.current) return;
 
-      setProjects(proj || []);
+      const loadedProjects = proj || [];
+      
+      // Fetch progress realization days
+      if (loadedProjects.length > 0) {
+        const pIds = loadedProjects.map(p => p.id);
+        try {
+          const { data: progData } = await supabase.from('project_progress_daily')
+            .select('project_id, day_number')
+            .in('project_id', pIds);
+            
+          const progMap = {};
+          if (progData) {
+            progData.forEach(p => {
+              const dNum = Number(p.day_number) || 0;
+              if (dNum > (progMap[p.project_id] || 0)) {
+                progMap[p.project_id] = dNum;
+              }
+            });
+          }
+          
+          loadedProjects.forEach(p => {
+            p.realization_days = progMap[p.id] || 0;
+          });
+        } catch (err) {
+          console.error("Failed fetching progress days", err);
+        }
+      }
+
+      setProjects(loadedProjects);
       if (proj && proj.length > 0 && !isCreating) {
         // Biarkan Unified URL & State Synchronization yang menangani seleksi proyek
         // loadData hanya bertugas memperbarui list proyek
@@ -1440,9 +1468,9 @@ function ProyekContent() {
                           <td className="px-6 py-6 text-center font-mono font-black text-slate-700 dark:text-slate-300 text-[11px]">{formatIdr(rounded)}</td>
                           <td className="px-6 py-6 text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{p.duration || 0} Hari</span>
+                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{p.manual_duration || 0} / {p.realization_days || 0} Hari</span>
                               <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: '0%' }} />
+                                <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.manual_duration > 0 ? Math.min(100, ((p.realization_days || 0) / p.manual_duration) * 100) : 0}%` }} />
                               </div>
                             </div>
                           </td>
