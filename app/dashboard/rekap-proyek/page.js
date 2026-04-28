@@ -201,9 +201,9 @@ function ProyekContent() {
   // ── Sinkronisasi URL & State ──
   useEffect(() => {
     if (loading || isCheckingAuth.current) return;
-    
+
     const urlId = searchParams.get('id');
-    
+
     // 1. Jika ada ID di URL tapi tidak di state (Load awal)
     if (urlId && urlId !== selectedProject) {
       setSelectedProject(urlId);
@@ -480,7 +480,7 @@ function ProyekContent() {
       if (version !== dataVersionRef.current) return;
 
       const loadedProjects = proj || [];
-      
+
       // Fetch progress realization days
       if (loadedProjects.length > 0) {
         const pIds = loadedProjects.map(p => p.id);
@@ -488,7 +488,7 @@ function ProyekContent() {
           const { data: progData } = await supabase.from('project_progress_daily')
             .select('project_id, day_number')
             .in('project_id', pIds);
-            
+
           const progMap = {};
           if (progData) {
             progData.forEach(p => {
@@ -498,7 +498,7 @@ function ProyekContent() {
               }
             });
           }
-          
+
           loadedProjects.forEach(p => {
             p.realization_days = progMap[p.id] || 0;
           });
@@ -1408,9 +1408,20 @@ function ProyekContent() {
         <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
           {activeTab === 'daftar' && (
             projects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-                <LayoutGrid className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Proyek Tersedia</h3>
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-4">
+                <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
+                  <LayoutGrid className="w-10 h-10 text-slate-500" />
+                </div>
+                <h3 className="text-xl font-bold text-white">Belum Ada Proyek</h3>
+                <p className="text-sm text-slate-400 max-w-sm">
+                  Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda.
+                </p>
+                <button 
+                  onClick={handleNewProject}
+                  className="mt-4 px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-orange-600/20"
+                >
+                  <Plus className="w-5 h-5" /> Buat Proyek Pertama
+                </button>
               </div>
             ) : (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
@@ -1520,7 +1531,7 @@ function ProyekContent() {
               {(!selectedProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                   <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Data Proyek Belum Tersedia</h3>
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P R O Y E K</h3>
                 </div>
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab

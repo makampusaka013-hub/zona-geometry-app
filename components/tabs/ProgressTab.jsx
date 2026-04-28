@@ -2,15 +2,15 @@
 
 import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
-import { 
-  BarChart3, 
-  Package, 
-  Users, 
-  Calendar, 
-  ChevronLeft, 
-  ChevronRight, 
-  Plus, 
-  Save, 
+import {
+  BarChart3,
+  Package,
+  Users,
+  Calendar,
+  ChevronLeft,
+  ChevronRight,
+  Plus,
+  Save,
   Trash2,
   TrendingUp,
   AlertCircle,
@@ -22,10 +22,10 @@ import ModernConfirmModal from '../ModernConfirmModal';
 
 function fmt(n) { return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
 
-export default function ProgressTab({ 
-  projectId, 
-  activeTab, 
-  tabLoading, 
+export default function ProgressTab({
+  projectId,
+  activeTab,
+  tabLoading,
   items, // ahsp_lines
   resources, // tabData.harga (bahans, upahs, alats)
   viewMode, // volume, material, labor
@@ -63,7 +63,7 @@ export default function ProgressTab({
         .select('*')
         .eq('project_id', projectId)
         .eq('created_by', currentUserId);
-      
+
       if (!error && data) {
         const mapped = {};
         const customs = new Set();
@@ -132,7 +132,7 @@ export default function ProgressTab({
   const updateCell = (entityId, entityName, type, day, value) => {
     const val = parseFloat(value) || 0;
     const key = entityId || entityName;
-    
+
     // UI Update (Real-time)
     setProgressData(prev => ({
       ...prev,
@@ -145,14 +145,14 @@ export default function ProgressTab({
     // Queue for DB
     setSavingStatus('saving');
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
-    
-    saveQueue.current.push({ 
-      project_id: projectId, 
-      entity_type: type, 
-      entity_id: entityId, 
-      entity_name: entityName, 
-      entity_key: key, 
-      day_number: day, 
+
+    saveQueue.current.push({
+      project_id: projectId,
+      entity_type: type,
+      entity_id: entityId,
+      entity_name: entityName,
+      entity_key: key,
+      day_number: day,
       val,
       created_by: currentUserId
     });
@@ -170,7 +170,7 @@ export default function ProgressTab({
       const { error } = await supabase
         .from('project_progress_daily')
         .upsert(payload, { onConflict: 'project_id,day_number,entity_type,entity_key,created_by' });
-      
+
       if (error) console.error('Save failed:', error);
       setSavingStatus('saved');
       setTimeout(() => setSavingStatus(null), 2000);
@@ -265,15 +265,14 @@ export default function ProgressTab({
             Laporan Harian - {viewMode === 'volume' ? 'Volume Pekerjaan' : viewMode === 'material' ? 'Material' : viewMode === 'alat' ? 'Alat' : 'Tenaga Kerja'}
           </span>
         </div>
-        
-        <button 
+
+        <button
           onClick={handleManualSave}
           disabled={savingStatus === 'saving'}
-          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${
-            savingStatus === 'saving' 
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed' 
+          className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${savingStatus === 'saving'
+              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
               : 'bg-indigo-600 dark:bg-orange-600 hover:bg-indigo-700 dark:hover:bg-orange-700 text-white shadow-indigo-500/20 dark:shadow-orange-900/20'
-          }`}
+            }`}
         >
           {savingStatus === 'saving' ? <Spinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
           {savingStatus === 'saving' ? 'Menyimpan...' : 'Simpan Progress'}
@@ -282,7 +281,7 @@ export default function ProgressTab({
 
       <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm">
         <div className="overflow-x-auto max-h-[700px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
-          <table 
+          <table
             className="text-sm border-separate border-spacing-0 table-fixed min-w-[320px]"
             style={{ width: `calc(320px + (${timeRange} * 85px))` }}
           >
@@ -295,7 +294,7 @@ export default function ProgressTab({
                 <th className="lg:sticky lg:left-[540px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[100px] min-w-[100px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
                 {Array.from({ length: timeRange }).map((_, idx) => (
                   <th key={idx} className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 text-[9px] font-black w-[85px] min-w-[85px] whitespace-nowrap bg-slate-100 dark:bg-slate-900">
-                    H-{idx + 1}<br/><span className="text-[8px] opacity-60 font-black uppercase text-slate-400 dark:text-slate-500">{getDateLabel(idx)}</span>
+                    H-{idx + 1}<br /><span className="text-[8px] opacity-60 font-black uppercase text-slate-400 dark:text-slate-500">{getDateLabel(idx)}</span>
                   </th>
                 ))}
               </tr>
@@ -307,7 +306,7 @@ export default function ProgressTab({
                 const daily = progressData[key] || {};
                 const totalReal = Object.values(daily).reduce((a, b) => a + b, 0);
                 const diff = row.target - totalReal;
-                
+
                 // Use OPAQUE backgrounds for sticky columns to prevent overlap visibility
                 const rowBgNormal = 'bg-white dark:bg-[#020617]';
                 const rowBgSelected = 'bg-slate-100 dark:bg-slate-800';
@@ -339,50 +338,50 @@ export default function ProgressTab({
                     <td className={`lg:sticky lg:left-[540px] z-10 ${rowBgClass} px-4 py-6 text-right text-[11px] font-black border-r border-slate-100 dark:border-slate-800/50 w-[100px] ${diff < 0 ? 'text-red-500' : 'text-emerald-500'}`}>
                       <div className="flex flex-col items-end gap-1.5">
                         <span>{fmt(diff)}</span>
-                        
+
                         {/* Stakeholder Actions */}
                         {row.type === 'ahsp_item' && (
                           <div className="flex flex-col items-end gap-1">
-                             {canVerify && row.status_approval === 'draft' && (
-                               <button 
-                                 onClick={(e) => handleStatusUpdate(e, row.id, 'verified')}
-                                 className="text-[8px] font-black text-white uppercase bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded-md shadow-sm"
-                               >
-                                 Verifikasi
-                               </button>
-                             )}
-                             {canVerify && row.status_approval === 'verified' && (
-                               <button 
-                                 onClick={(e) => handleStatusUpdate(e, row.id, 'draft')}
-                                 className="text-[8px] font-black text-red-600 uppercase border border-red-200 px-2 py-1 rounded-md"
-                               >
-                                 Reject
-                               </button>
-                             )}
-                             {(isOwner || isAdmin || isAdvance || isPro) && row.status_approval === 'final' && (
-                               <button 
-                                 onClick={(e) => {
-                                   e.stopPropagation();
-                                   setConfirmModal({ isOpen: true, rowId: row.id });
-                                 }}
-                                 className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
-                               >
-                                 Batal Final
-                               </button>
-                             )}
-                             {canApproveFinal && row.status_approval === 'verified' && (
-                               <button 
-                                 onClick={(e) => handleStatusUpdate(e, row.id, 'final')}
-                                 className="text-[8px] font-black text-white uppercase bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-md shadow-sm"
-                               >
-                                 Set FINAL
-                               </button>
-                             )}
+                            {canVerify && row.status_approval === 'draft' && (
+                              <button
+                                onClick={(e) => handleStatusUpdate(e, row.id, 'verified')}
+                                className="text-[8px] font-black text-white uppercase bg-indigo-600 hover:bg-indigo-700 px-2 py-1 rounded-md shadow-sm"
+                              >
+                                Verifikasi
+                              </button>
+                            )}
+                            {canVerify && row.status_approval === 'verified' && (
+                              <button
+                                onClick={(e) => handleStatusUpdate(e, row.id, 'draft')}
+                                className="text-[8px] font-black text-red-600 uppercase border border-red-200 px-2 py-1 rounded-md"
+                              >
+                                Reject
+                              </button>
+                            )}
+                            {(isOwner || isAdmin || isAdvance || isPro) && row.status_approval === 'final' && (
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmModal({ isOpen: true, rowId: row.id });
+                                }}
+                                className="text-[8px] font-black text-amber-600 uppercase border border-amber-200 px-2 py-1 rounded-md hover:bg-amber-50 transition-all"
+                              >
+                                Batal Final
+                              </button>
+                            )}
+                            {canApproveFinal && row.status_approval === 'verified' && (
+                              <button
+                                onClick={(e) => handleStatusUpdate(e, row.id, 'final')}
+                                className="text-[8px] font-black text-white uppercase bg-emerald-600 hover:bg-emerald-700 px-2 py-1 rounded-md shadow-sm"
+                              >
+                                Set FINAL
+                              </button>
+                            )}
                           </div>
                         )}
                       </div>
                     </td>
-                    
+
                     {Array.from({ length: timeRange }).map((_, idx) => {
                       const day = idx + 1;
                       return (
@@ -411,8 +410,8 @@ export default function ProgressTab({
           <TrendingUp className="w-5 h-5 text-indigo-500" />
           <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest">Tambah Peran Non-PROYEK:</span>
           <div className="flex-1 max-w-sm flex gap-2">
-            <input 
-              type="text" 
+            <input
+              type="text"
               placeholder="Misal: PPK, Inspektorat, PPTK..."
               value={newRoleName}
               onChange={e => setNewRoleName(e.target.value)}
