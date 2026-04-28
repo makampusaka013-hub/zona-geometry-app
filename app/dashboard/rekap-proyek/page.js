@@ -77,8 +77,8 @@ const getBabWeight = (bab) => {
 };
 
 const TABS = [
-  { id: 'daftar', label: 'Data Proyek', icon: LayoutGrid, desc: 'Kelola semua proyek Anda' },
-  { id: 'proyek', label: 'PROYEK', icon: ClipboardList, desc: 'Kelola RAB & Jadwal Pekerjaan' },
+  { id: 'daftar', label: 'PROYEK', icon: LayoutGrid, desc: 'Kelola semua proyek Anda' },
+  { id: 'proyek', label: 'DATA PROYEK', icon: ClipboardList, desc: 'Kelola RAB & Jadwal Pekerjaan' },
   { id: 'progress', label: 'Progress', icon: TrendingUp, desc: 'Input harian Volume, Bahan, Alat & Tenaga' },
   { id: 'terpakai', label: 'Data Terpakai', icon: Package, desc: 'Rekap AHSP dan Komponen yang digunakan' },
   { id: 'perubahan', label: 'Data Perubahan', icon: Activity, desc: 'Kelola CCO dan Mutual Check (MC)' },
@@ -1520,7 +1520,7 @@ function ProyekContent() {
               {(!selectedProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                   <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Proyek Belum Dipilih</h3>
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Data Proyek Belum Tersedia</h3>
                 </div>
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab
