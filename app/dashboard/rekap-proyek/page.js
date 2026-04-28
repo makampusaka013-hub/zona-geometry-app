@@ -1448,16 +1448,26 @@ function ProyekContent() {
                           </td>
                           <td className="px-6 py-6 text-center">
                             <div className="flex items-center justify-center gap-2">
-                              <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-mono font-black tracking-widest">{p.share_code || '—'}</code>
-                              {p.share_code && (
+                              <code className="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400 rounded text-[9px] font-mono font-black tracking-widest">{p.unique_code || '—'}</code>
+                              {p.unique_code && (
                                 <button
                                   onClick={() => {
-                                    navigator.clipboard.writeText(p.share_code);
+                                    navigator.clipboard.writeText(p.unique_code);
                                     toast.success('Kode Berbagi berhasil disalin!');
                                   }}
                                   className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                  title="Salin Kode"
                                 >
                                   <Copy className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                              {(myRole === 'Owner' || member?.role === 'admin') && p.unique_code && (
+                                <button
+                                  onClick={() => setShowShareModal(p)}
+                                  className="p-1.5 text-slate-400 hover:text-indigo-600 transition-colors"
+                                  title="Manajemen Anggota"
+                                >
+                                  <Users className="w-3.5 h-3.5" />
                                 </button>
                               )}
                             </div>
@@ -1467,7 +1477,7 @@ function ProyekContent() {
                               {(myRole === 'Owner' || member?.role === 'admin') && (
                                 <button
                                   onClick={() => handleDeleteProject(p.id)}
-                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                                   title="Hapus Proyek"
                                 >
                                   <Trash2 className="w-4 h-4" />
