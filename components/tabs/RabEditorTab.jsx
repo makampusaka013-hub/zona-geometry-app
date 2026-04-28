@@ -637,7 +637,6 @@ export default function RabEditorTab({
             volume: parseNum(r.volume),
             harga_satuan: parseNum(r.hargaSatuan),
             jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
-            profit_percent: parseNum(r.profitPercent),
             analisa_custom: r.analisaDetails || []
           });
         }
