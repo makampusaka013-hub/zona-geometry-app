@@ -401,7 +401,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
             projectPrices, 
-            globalOverhead: project.overhead_percent || project.profit_percent || 15, 
+            globalOverhead: project?.profit_percent ?? project?.overhead_percent ?? 10, 
             ppnPercent: project.ppn_percent ?? 12,
             headerImage: hImg, 
             paperSize, 
