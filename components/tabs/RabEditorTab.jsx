@@ -679,12 +679,15 @@ export default function RabEditorTab({
   };
 
   const isRabEmpty = useMemo(() => {
-    if (sections.length === 0) return true;
-    if (sections.length === 1 && sections[0].lines.length === 1) {
-      const first = sections[0].lines[0];
-      return !first.uraian && !first.masterAhspId && !first.uraianCustom;
-    }
-    return false;
+    if (!sections || sections.length === 0) return true;
+    const hasAnyContent = sections.some(s => 
+      s.lines && s.lines.some(l => 
+        (l.uraian && l.uraian.trim().length > 0) || 
+        l.masterAhspId || 
+        (l.uraianCustom && l.uraianCustom.trim().length > 0)
+      )
+    );
+    return !hasAnyContent;
   }, [sections]);
 
   if (loading) return <Spinner />;
@@ -693,7 +696,7 @@ export default function RabEditorTab({
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Rencana Anggaran Biaya</h3>
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">!!! EMPTY STATE !!! Belum Ada Data Rencana Anggaran Biaya</h3>
       </div>
     );
   }
