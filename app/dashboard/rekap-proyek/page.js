@@ -1570,18 +1570,77 @@ function ProyekContent() {
           )}
 
           {activeTab === 'progress' && (
-            <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <TrendingUp className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">P R O G R E S S</h3>
+              </div>
+            ) : (
+              <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+            )
           )}
 
           {activeTab === 'ahsp' && (
-            <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">A H S P</h3>
+              </div>
+            ) : (
+              <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
+            )
           )}
 
-          {activeTab === 'terpakai' && <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />}
-          {activeTab === 'perubahan' && <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />}
-          {activeTab === 'tkdn' && <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
-          {activeTab === 'dok' && <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />}
-          {activeTab === 'export' && !!selectedProject && <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />}
+          {activeTab === 'terpakai' && (
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  T E R P A K A I</h3>
+              </div>
+            ) : (
+              <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+            )
+          )}
+          {activeTab === 'perubahan' && (
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <Activity className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P E R U B A H A N</h3>
+              </div>
+            ) : (
+              <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+            )
+          )}
+          {activeTab === 'tkdn' && (
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <Factory className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">T K D N</h3>
+              </div>
+            ) : (
+              <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+            )
+          )}
+          {activeTab === 'dok' && (
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <Camera className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D O K U M E N T A S I</h3>
+              </div>
+            ) : (
+              <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+            )
+          )}
+          {activeTab === 'export' && (
+            !selectedProject ? (
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
+              </div>
+            ) : (
+              <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+            )
+          )}
         </div>
       </div>
 

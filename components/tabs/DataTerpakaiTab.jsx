@@ -52,9 +52,9 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <ClipboardList className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Tidak ada rincian AHSP</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tidak Ada Rincian AHSP</h3>
       </div>
     );
   }
@@ -478,9 +478,9 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <Package className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Belum ada data harga satuan terpakai</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Harga Satuan Terpakai</h3>
       </div>
     );
   }
