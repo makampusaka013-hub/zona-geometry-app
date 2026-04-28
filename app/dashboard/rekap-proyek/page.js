@@ -158,7 +158,8 @@ function ProyekContent() {
     start_date: new Date().toISOString().split('T')[0]
   });
 
-  const dataVersionRef = useRef(0);
+  const dataVersionRef = useRef(0);  const isValidId = (id) => !!id && id !== 'null' && id !== 'undefined' && id !== '';
+  const hasProject = isValidId(selectedProject);
   const tabVersionRef = useRef(0);
   const abortControllerRef = useRef(null);
   const actionProcessed = useRef(null);
@@ -205,7 +206,7 @@ function ProyekContent() {
     const urlId = searchParams.get('id');
 
     // 1. Jika ada ID di URL tapi tidak di state (Load awal)
-    if (urlId && urlId !== selectedProject) {
+    if (urlId && urlId !== 'null' && urlId !== 'undefined' && urlId !== selectedProject) {
       setSelectedProject(urlId);
     }
     // 2. Jika ada ID di state tapi tidak di URL (User memilih proyek)
@@ -215,7 +216,7 @@ function ProyekContent() {
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
     // 3. Fallback: Jika tidak ada di keduanya, ambil proyek pertama
-    else if (!urlId && !selectedProject && projects.length > 0 && !isCreating) {
+    else if (!isValidId(urlId) && !isValidId(selectedProject) && projects.length > 0 && !isCreating) {
       setSelectedProject(projects[0].id);
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
@@ -1528,7 +1529,7 @@ function ProyekContent() {
 
           {activeTab === 'proyek' && (
             <div className="space-y-6">
-              {(!selectedProject && !isCreating) ? (
+              {(!hasProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                   <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                   <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P R O Y E K</h3>
@@ -1536,7 +1537,7 @@ function ProyekContent() {
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab
                   projectId={selectedProject}
-                  initialIdentity={isCreating && !selectedProject ? createForm : currentProjectObj}
+                  initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
                   backupData={tabData.backup}
                   member={member}
                   onRefresh={(newId) => {
@@ -1570,7 +1571,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'progress' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <TrendingUp className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">P R O G R E S S</h3>
@@ -1581,7 +1582,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'ahsp' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">A H S P</h3>
@@ -1592,7 +1593,7 @@ function ProyekContent() {
           )}
 
           {activeTab === 'terpakai' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  T E R P A K A I</h3>
@@ -1602,7 +1603,7 @@ function ProyekContent() {
             )
           )}
           {activeTab === 'perubahan' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <Activity className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P E R U B A H A N</h3>
@@ -1612,7 +1613,7 @@ function ProyekContent() {
             )
           )}
           {activeTab === 'tkdn' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <Factory className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">T K D N</h3>
@@ -1622,7 +1623,7 @@ function ProyekContent() {
             )
           )}
           {activeTab === 'dok' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <Camera className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D O K U M E N T A S I</h3>
@@ -1632,7 +1633,7 @@ function ProyekContent() {
             )
           )}
           {activeTab === 'export' && (
-            !selectedProject ? (
+            !hasProject ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                 <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
                 <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
