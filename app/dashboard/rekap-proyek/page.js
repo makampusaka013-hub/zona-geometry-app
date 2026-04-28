@@ -654,18 +654,18 @@ function ProyekContent() {
         }
 
         const finalLines = processedLines.map(l => {
-          if (!l.master_ahsp_id || !catalog[l.master_ahsp_id]) return l;
+          if (!l.master_ahsp_id || !catalog[l.master_ahsp_id]) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
           const details = catalog[l.master_ahsp_id];
           let newBase = 0;
           details.forEach(d => {
             const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
             newBase += (Number(d.koefisien || 0) * Number(p));
           });
-          if (newBase === 0) return l;
-          const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : 15;
+          if (newBase === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
+          const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : (currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15);
           const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
           const newJumlah = (Number(l.volume || 0) * newHarga);
-          return { ...l, harga_satuan: newHarga, jumlah: newJumlah };
+          return { ...l, profit_percent: profitPct, harga_satuan: newHarga, jumlah: newJumlah };
         });
 
         const resources = (resourcesRes.data || []).map(r => ({
@@ -695,15 +695,16 @@ function ProyekContent() {
           finalLines = (lines || []).map(l => {
             const details = catalogData?.find(c => c.master_ahsp_id === l.master_ahsp_id)?.details || [];
             if (details.length === 0) return l;
+            if (details.length === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
             let newBase = 0;
             details.forEach(d => {
               const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
               newBase += (Number(d.koefisien || 0) * Number(p));
             });
-            if (newBase === 0) return l;
-            const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : 15;
+            if (newBase === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
+            const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : (currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15);
             const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
-            return { ...l, harga_satuan: newHarga, jumlah: (Number(l.volume || 0) * newHarga) };
+            return { ...l, profit_percent: profitPct, harga_satuan: newHarga, jumlah: (Number(l.volume || 0) * newHarga) };
           });
         }
         setTabData(prev => ({ ...prev, ahsp: finalLines }));
