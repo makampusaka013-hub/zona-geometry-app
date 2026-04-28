@@ -550,8 +550,8 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                           <button
                             onClick={() => setOverrideItem(item)}
                             className={`p-2 rounded-xl transition-all ${isOverridden
-                                ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
-                                : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 hover:bg-indigo-50 dark:hover:bg-orange-500/10'
+                              ? 'text-orange-500 dark:text-orange-400 hover:bg-orange-50 dark:hover:bg-orange-500/10'
+                              : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400 hover:bg-indigo-50 dark:hover:bg-orange-500/10'
                               }`}
                           >
                             <Edit3 className="w-4 h-4" />

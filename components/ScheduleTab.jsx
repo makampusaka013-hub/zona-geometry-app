@@ -72,9 +72,9 @@ export default function ScheduleTab({
 
   if (tabData.schedule.lines.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <CalendarDays className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data RAB Untuk Jadwal</h3>
+      <div className="rounded-2xl border border-dashed border-slate-300 dark:border-slate-700 bg-white dark:bg-[#1e293b] text-center py-16 text-slate-400">
+        <CalendarDays className="w-10 h-10 mx-auto mb-3 opacity-20" />
+        <p className="font-bold">Belum ada data RAB. Tambahkan AHSP ke proyek untuk melihat jadwal.</p>
       </div>
     );
   }
@@ -117,10 +117,10 @@ export default function ScheduleTab({
               </p>
             </div>
           </div>
-          
+
           <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900/50 px-4 py-2 rounded-2xl border border-slate-100 dark:border-slate-800">
             <div className="w-2 h-2 rounded-full bg-indigo-500 dark:bg-orange-500" />
-            <input type="date" value={projectStartDate} 
+            <input type="date" value={projectStartDate}
               disabled={userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro}
               onChange={e => setProjectStartDate(e.target.value)}
               className="text-xs font-black bg-transparent border-0 focus:ring-0 p-0 text-slate-700 dark:text-white disabled:opacity-50" />
@@ -253,8 +253,8 @@ export default function ScheduleTab({
                     <div className="font-bold text-slate-800 dark:text-white text-[11px] leading-snug whitespace-normal break-words">{r.uraian}</div>
                   </td>
                   <td className="px-4 py-3 text-right font-mono text-[10px] font-bold text-slate-400">{fmt(r.volume)}</td>
-                  
-                   <td className="px-4 py-3 text-center">
+
+                  <td className="px-4 py-3 text-center">
                     <div className="relative inline-block scale-90 origin-center">
                       <input type="number" defaultValue={r.pekerja_input || ''} placeholder="auto"
                         disabled={r.status_approval === 'final' || (userSlotRole === 'normal' && !isAdmin && !isAdvance && !isPro) || !!r.durasi_input}
@@ -285,7 +285,7 @@ export default function ScheduleTab({
                           className="text-[10px] font-bold bg-transparent border-0 focus:ring-0 p-0 text-slate-600 dark:text-slate-300 disabled:opacity-30 w-18" />
                       </div>
                       <div className="text-[9px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-tighter">
-                        s/d {r.seq_end ? new Date(r.seq_end).toLocaleDateString('id-ID', { day:'numeric', month:'short' }) : '—'}
+                        s/d {r.seq_end ? new Date(r.seq_end).toLocaleDateString('id-ID', { day: 'numeric', month: 'short' }) : '—'}
                       </div>
                     </div>
                   </td>
