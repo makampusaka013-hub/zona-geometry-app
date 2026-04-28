@@ -1464,6 +1464,15 @@ function ProyekContent() {
                           </td>
                           <td className="px-8 py-6 text-right">
                             <div className="flex items-center justify-end gap-2">
+                              {(myRole === 'Owner' || member?.role === 'admin') && (
+                                <button
+                                  onClick={() => handleDeleteProject(p.id)}
+                                  className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all"
+                                  title="Hapus Proyek"
+                                >
+                                  <Trash2 className="w-4 h-4" />
+                                </button>
+                              )}
                               <button
                                 onClick={() => { setSelectedProject(p.id); setActiveTab('proyek'); }}
                                 className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[9px] font-black uppercase tracking-[0.2em] rounded-xl hover:scale-[1.05] active:scale-95 transition-all shadow-lg shadow-indigo-200 dark:shadow-none"
