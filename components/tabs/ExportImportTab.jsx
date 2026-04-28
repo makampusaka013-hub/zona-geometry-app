@@ -58,7 +58,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     );
   }
 
-  if (!project) {
+  if (!project || !ahspLines || ahspLines.length === 0) {
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
