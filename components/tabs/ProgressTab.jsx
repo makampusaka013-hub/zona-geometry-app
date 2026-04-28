@@ -249,9 +249,9 @@ export default function ProgressTab({
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <TrendingUp className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Belum ada progres tersedia</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <TrendingUp className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Progres Tersedia</h3>
       </div>
     );
   }

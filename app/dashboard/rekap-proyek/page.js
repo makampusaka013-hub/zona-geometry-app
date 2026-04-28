@@ -1408,23 +1408,9 @@ function ProyekContent() {
         <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
           {activeTab === 'daftar' && (
             projects.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
-                <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-                  <LayoutGrid className="w-8 h-8" />
-                </div>
-                <div className="space-y-1">
-                  <h3 className="text-lg font-bold text-slate-800 dark:text-white">Belum Ada Proyek</h3>
-                  <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda.</p>
-                </div>
-                {(member?.role === 'admin' || member?.role === 'pro' || member?.role === 'normal') && (
-                  <button
-                    onClick={handleNewProject}
-                    disabled={ownedLimitReached}
-                    className={`px-8 py-3 text-xs font-bold rounded-xl transition-all ${ownedLimitReached ? 'bg-slate-100 text-slate-400' : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-105'}`}
-                  >
-                    + Buat Proyek Pertama
-                  </button>
-                )}
+              <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                <LayoutGrid className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Proyek Tersedia</h3>
               </div>
             ) : (
               <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
@@ -1532,14 +1518,9 @@ function ProyekContent() {
           {activeTab === 'proyek' && (
             <div className="space-y-6">
               {(!selectedProject && !isCreating) ? (
-                <div className="flex flex-col items-center justify-center py-20 px-6 text-center space-y-4">
-                  <div className="w-16 h-16 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center text-slate-400">
-                    <ClipboardList className="w-8 h-8" />
-                  </div>
-                  <div className="space-y-1">
-                    <h3 className="text-lg font-bold text-slate-800 dark:text-white">Proyek Belum Dipilih</h3>
-                    <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">Silakan pilih proyek di tab Daftar Proyek untuk mulai menyusun RAB dan Jadwal.</p>
-                  </div>
+                <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+                  <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Proyek Belum Dipilih</h3>
                 </div>
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab

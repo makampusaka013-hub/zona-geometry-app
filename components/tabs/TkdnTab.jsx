@@ -9,9 +9,9 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
 
   if (!tabData?.tkdn) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <Factory className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Belum ada data kalkulasi TKDN</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Factory className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Kalkulasi TKDN</h3>
       </div>
     );
   }

@@ -9,9 +9,9 @@ export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, can
 
   if (!tabData?.ahsp || tabData.ahsp.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <ClipboardList className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Tidak ada rincian AHSP</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tidak Ada Rincian AHSP</h3>
       </div>
     );
   }

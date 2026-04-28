@@ -10,9 +10,9 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
 
   if (!tabData?.dok || tabData.dok.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-20 opacity-30">
-        <Camera className="w-16 h-16 mb-4" />
-        <p className="text-sm font-bold uppercase tracking-widest">Belum ada dokumentasi foto</p>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Camera className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Dokumentasi Foto</h3>
       </div>
     );
   }
