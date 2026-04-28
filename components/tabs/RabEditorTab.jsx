@@ -656,7 +656,7 @@ export default function RabEditorTab({
         hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
         overhead_percent: parseNum(globalOverhead),
-        profit_percent: parseNum(globalOverhead), // <--- WAJIB ADA AGAR DB MEMBACA PROFIT PROYEK
+        profit_percent: parseNum(globalOverhead),
         start_date: identity.start_date || new Date().toISOString().split('T')[0]
       };
 
@@ -664,14 +664,39 @@ export default function RabEditorTab({
         throw new Error('Nama Pekerjaan wajib diisi untuk membuat proyek baru.');
       }
 
-      const { data: resultId, error: rpcError } = await supabase.rpc('save_project_transactional', {
-        p_project_id: projectId || null,
-        p_project_data: identityPayload,
-        p_lines: items
-      });
+      // =========================================================================
+      // BYPASS TOTAL: KITA TIDAK LAGI PAKAI RPC 'save_project_transactional'
+      // =========================================================================
+      let currentProjectId = projectId;
 
-      if (rpcError) throw rpcError;
-      if (onRefresh) onRefresh(resultId || projectId);
+      // 1. Simpan atau Update Data Proyek
+      if (currentProjectId) {
+        const { error: pErr } = await supabase.from('projects').update(identityPayload).eq('id', currentProjectId);
+        if (pErr) throw pErr;
+      } else {
+        const { data: pData, error: pErr } = await supabase.from('projects').insert(identityPayload).select().single();
+        if (pErr) throw pErr;
+        currentProjectId = pData.id;
+      }
+
+      // 2. Hapus Item yang Dibuang oleh User di UI
+      if (currentProjectId) {
+        const keptIds = items.map(it => it.id).filter(id => id != null);
+        if (keptIds.length > 0) {
+          await supabase.from('ahsp_lines').delete().eq('project_id', currentProjectId).not('id', 'in', `(${keptIds.join(',')})`);
+        } else {
+          await supabase.from('ahsp_lines').delete().eq('project_id', currentProjectId);
+        }
+      }
+
+      // 3. Simpan / Update Item RAB
+      if (items.length > 0) {
+        const linesPayload = items.map(it => ({ ...it, project_id: currentProjectId }));
+        const { error: lErr } = await supabase.from('ahsp_lines').upsert(linesPayload);
+        if (lErr) throw lErr;
+      }
+
+      if (onRefresh) onRefresh(currentProjectId);
     } catch (err) {
       setError(err.message);
     } finally {

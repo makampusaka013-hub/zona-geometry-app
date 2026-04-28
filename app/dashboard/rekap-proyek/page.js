@@ -815,7 +815,7 @@ function ProyekContent() {
     } finally {
       if (version === tabVersionRef.current) setTabLoading(false);
     }
-  }, [tabData.ahsp?.length, tabData.backup?.length, tabData.cco?.length, tabData.dok?.length, tabData.harga?.length, tabData.mc?.length, tabData.tkdn, currentProjectObj?.overhead_percent, currentProjectObj?.profit_percent]);
+  }, [supabase]);
 
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
