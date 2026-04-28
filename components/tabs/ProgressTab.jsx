@@ -247,6 +247,15 @@ export default function ProgressTab({
   if (activeTab !== 'progress') return null;
   if (tabLoading || loadingProgress) return <Spinner />;
 
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <TrendingUp className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Progres Tersedia</h3>
+      </div>
+    );
+  }
+
   return (
     <div className="w-full h-full space-y-4">
       <div className="flex justify-between items-center px-4 py-2">

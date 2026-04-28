@@ -50,6 +50,15 @@ export default function DataTerpakaiTab({
 function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
   const [selectedAhsp, setSelectedAhsp] = useState(null);
 
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tidak Ada Rincian AHSP</h3>
+      </div>
+    );
+  }
+
   return (
     <>
       <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl bg-white dark:bg-[#1e293b]">
@@ -466,6 +475,15 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
 // ─── Tabel Komponen Terpakai ────────────────────────────────────────────
 function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
   const [overrideItem, setOverrideItem] = useState(null);
+
+  if (rows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Harga Satuan Terpakai</h3>
+      </div>
+    );
+  }
 
   return (
     <>

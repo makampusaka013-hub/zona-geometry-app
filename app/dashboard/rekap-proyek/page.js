@@ -1416,7 +1416,7 @@ function ProyekContent() {
                 <p className="text-sm text-slate-400 max-w-sm">
                   Database proyek Anda masih kosong. Silakan buat proyek baru atau gabung proyek rekan Anda.
                 </p>
-                <button 
+                <button
                   onClick={handleNewProject}
                   className="mt-4 px-8 py-3 bg-orange-600 hover:bg-orange-700 text-white rounded-xl font-bold flex items-center gap-2 transition-all shadow-lg shadow-orange-600/20"
                 >
@@ -1531,7 +1531,7 @@ function ProyekContent() {
               {(!selectedProject && !isCreating) ? (
                 <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
                   <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E D I T  R A B</h3>
+                  <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">D A T A  P R O Y E K</h3>
                 </div>
               ) : subTabProyek === 'rab' ? (
                 <RabEditorTab

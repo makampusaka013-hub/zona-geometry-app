@@ -7,7 +7,16 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
 
   if (tabLoading) return <Spinner />;
 
-  const tkdnData = tabData?.tkdn || { total_nilai: 0, total_nilai_tkdn: 0, total_tkdn_pct: 0, byJenis: {} };
+  if (!tabData?.tkdn || Number(tabData.tkdn.total_nilai || 0) === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <Factory className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Kalkulasi TKDN</h3>
+      </div>
+    );
+  }
+
+  const tkdnData = tabData.tkdn;
   const items = tabData?.harga || [];
 
   return (
