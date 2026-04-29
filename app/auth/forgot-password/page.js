@@ -24,7 +24,20 @@ export default function ForgotPasswordPage() {
       
       setMessage('Link reset password telah dikirim ke email Anda. Silakan cek Inbox atau folder Spam.');
     } catch (err) {
-      setError(err.message || 'Gagal mengirim email reset.');
+      console.error('Forgot Password UI Error:', err);
+      
+      // Handle specific Supabase error messages for better UX
+      let errorMessage = err.message || 'Gagal mengirim email reset.';
+      
+      if (errorMessage.toLowerCase().includes('rate limit')) {
+        errorMessage = 'Terlalu banyak permintaan. Silakan tunggu 60 detik sebelum mencoba lagi.';
+      } else if (errorMessage.toLowerCase().includes('email provider')) {
+        errorMessage = 'Layanan email sedang bermasalah atau belum dikonfigurasi. Hubungi Admin.';
+      } else if (errorMessage.toLowerCase().includes('network')) {
+        errorMessage = 'Koneksi internet bermasalah. Periksa jaringan Anda.';
+      }
+      
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
