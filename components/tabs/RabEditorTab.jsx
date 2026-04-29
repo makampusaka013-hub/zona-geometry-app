@@ -271,11 +271,15 @@ export default function RabEditorTab({
   const [recap, setRecap] = useState({ subtotal: 0, ppn: 0, total: 0, rounded: 0, sectionTotals: [] });
   const [isPending, startTransition] = useTransition();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
+  const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // idle | saving | saved | error
+  const [lastSaved, setLastSaved] = useState(null);
   const [identity, setIdentity] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     hsp_value: 0, ppn_percent: 12, program_name: '', activity_name: '', work_name: '',
     start_date: new Date().toISOString().split('T')[0]
   });
+
+  const lastSavedSnapshot = useRef(null);
 
   useEffect(() => {
     if (initialIdentity && !projectId) {
@@ -471,11 +475,55 @@ export default function RabEditorTab({
             }))
           : [createEmptySection('PEKERJAAN PERSIAPAN', [], finalGlobalProfit)]
       );
+
+      // Take snapshot after initial load
+      const initialSnapshot = {
+        identity: { ...proj },
+        sections: Object.entries(grouped).map(([bab, lines]) => ({
+          namaBab: bab,
+          lines: lines.map(l => ({ ...l }))
+        }))
+      };
+      lastSavedSnapshot.current = JSON.stringify(initialSnapshot);
     } else {
-      setSections([createEmptySection('PEKERJAAN PERSIAPAN', [], globalOverhead)]);
+      const defaultSections = [createEmptySection('PEKERJAAN PERSIAPAN', [], globalOverhead)];
+      setSections(defaultSections);
+      lastSavedSnapshot.current = JSON.stringify({
+        identity: {},
+        sections: defaultSections
+      });
     }
     setLoading(false);
   }, [projectId, initialIdentity]);
+
+  // Mechanism: Debounced Auto-Save
+  useEffect(() => {
+    // Only auto-save if project exists and not currently loading or manual saving
+    if (!projectId || loading || saving) return;
+    
+    const timer = setTimeout(() => {
+      // Only auto-save if not already auto-saving
+      if (autoSaveStatus === 'saving') return;
+      
+      const performAutoSave = async () => {
+        setAutoSaveStatus('saving');
+        try {
+          await saveRab(true); // Call saveRab with silent=true
+          setAutoSaveStatus('saved');
+          setLastSaved(new Date());
+          // Return to idle after 3 seconds
+          setTimeout(() => setAutoSaveStatus('idle'), 3000);
+        } catch (err) {
+          console.error('Auto-save failed:', err);
+          setAutoSaveStatus('error');
+        }
+      };
+      
+      performAutoSave();
+    }, 5000); // 5 seconds debounce
+
+    return () => clearTimeout(timer);
+  }, [sections, identity, projectMeta, globalOverhead]);
 
   useEffect(() => { 
     loadRab();
@@ -617,11 +665,15 @@ export default function RabEditorTab({
     } catch (err) { setError('Gagal simpan pagu: ' + err.message); }
   };
 
-  const saveRab = async () => {
-    setError(null);
-    setSaving(true);
+  const saveRab = async (silent = false) => {
+    if (!silent) {
+      setError(null);
+      setSaving(true);
+    }
+
     try {
-      const items = [];
+      // 1. Prepare Data
+      const allLines = [];
       let counter = 0;
       for (const sec of sections) {
         for (const r of sec.lines) {
@@ -641,7 +693,7 @@ export default function RabEditorTab({
             analisa_custom: r.analisaDetails || []
           };
           if (lineId) lineItem.id = lineId;
-          items.push(lineItem);
+          allLines.push(lineItem);
         }
       }
 
@@ -665,24 +717,80 @@ export default function RabEditorTab({
         throw new Error('Nama Pekerjaan wajib diisi untuk membuat proyek baru.');
       }
 
-      // =========================================================================
-      // BYPASS TOTAL: KITA TIDAK LAGI PAKAI RPC 'save_project_transactional'
-      // =========================================================================
-      let currentProjectId = projectId;
+      // 2. Perform Diffing (Dirty Checking)
+      let linesToUpsert = allLines;
+      let identityToSave = identityPayload;
+      let shouldDelete = !silent;
 
-      // 1. Simpan atau Update Data Proyek
-      if (currentProjectId) {
-        const { error: pErr } = await supabase.from('projects').update(identityPayload).eq('id', currentProjectId);
-        if (pErr) throw pErr;
-      } else {
-        const { data: pData, error: pErr } = await supabase.from('projects').insert(identityPayload).select().single();
-        if (pErr) throw pErr;
-        currentProjectId = pData.id;
+      if (silent && lastSavedSnapshot.current) {
+        const snapshot = JSON.parse(lastSavedSnapshot.current);
+        
+        // Diff Identity
+        const isIdentityDirty = JSON.stringify(identityPayload) !== JSON.stringify(snapshot.identity);
+        identityToSave = isIdentityDirty ? identityPayload : null;
+
+        // Diff Lines
+        const lastLinesMap = new Map();
+        (snapshot.sections || []).forEach(s => {
+          s.lines.forEach(l => {
+            // Include bab context for comparison
+            const flatLine = { ...l, bab_pekerjaan: s.namaBab };
+            lastLinesMap.set(l.id || l.key, flatLine);
+          });
+        });
+
+        linesToUpsert = allLines.filter(line => {
+          const snapshotLine = lastLinesMap.get(line.id || line.key);
+          if (!snapshotLine) return true; // New line
+          
+          // Compare relevant fields
+          const currentCompare = { 
+            uraian: line.uraian, 
+            volume: line.volume, 
+            harga_satuan: line.harga_satuan, 
+            profit_percent: line.profit_percent,
+            bab_pekerjaan: line.bab_pekerjaan,
+            sort_order: line.sort_order,
+            analisa_custom: line.analisa_custom
+          };
+          
+          const snapshotCompare = {
+            uraian: snapshotLine.uraian,
+            volume: parseNum(snapshotLine.volume),
+            harga_satuan: parseNum(snapshotLine.hargaSatuan),
+            profit_percent: parseNum(snapshotLine.profitPercent),
+            bab_pekerjaan: snapshotLine.bab_pekerjaan,
+            sort_order: snapshotLine.sort_order,
+            analisa_custom: snapshotLine.analisaDetails || []
+          };
+
+          return JSON.stringify(currentCompare) !== JSON.stringify(snapshotCompare);
+        });
+
+        // If nothing changed, exit early
+        if (!identityToSave && linesToUpsert.length === 0) {
+          return;
+        }
       }
 
-      // 2. Hapus Item yang Dibuang oleh User di UI
-      if (currentProjectId) {
-        const keptIds = items.map(it => it.id).filter(id => id != null);
+      // 3. Execution
+      let currentProjectId = projectId;
+
+      // Identity Sync
+      if (identityToSave) {
+        if (currentProjectId) {
+          const { error: pErr } = await supabase.from('projects').update(identityToSave).eq('id', currentProjectId);
+          if (pErr) throw pErr;
+        } else {
+          const { data: pData, error: pErr } = await supabase.from('projects').insert(identityToSave).select().single();
+          if (pErr) throw pErr;
+          currentProjectId = pData.id;
+        }
+      }
+
+      // Removal Sync (Only on manual save)
+      if (shouldDelete && currentProjectId) {
+        const keptIds = allLines.map(it => it.id).filter(id => id != null);
         if (keptIds.length > 0) {
           await supabase.from('ahsp_lines').delete().eq('project_id', currentProjectId).not('id', 'in', `(${keptIds.join(',')})`);
         } else {
@@ -690,18 +798,29 @@ export default function RabEditorTab({
         }
       }
 
-      // 3. Simpan / Update Item RAB
-      if (items.length > 0) {
-        const linesPayload = items.map(it => ({ ...it, project_id: currentProjectId }));
+      // Line Sync
+      if (linesToUpsert.length > 0 && currentProjectId) {
+        const linesPayload = linesToUpsert.map(it => ({ ...it, project_id: currentProjectId }));
         const { error: lErr } = await supabase.from('ahsp_lines').upsert(linesPayload);
         if (lErr) throw lErr;
       }
 
-      if (onRefresh) onRefresh(currentProjectId);
+      // 4. Update Snapshot for next cycle
+      const newSnapshot = {
+        identity: identityPayload,
+        sections: sections.map(s => ({
+          namaBab: s.namaBab,
+          lines: s.lines.map(l => ({ ...l }))
+        }))
+      };
+      lastSavedSnapshot.current = JSON.stringify(newSnapshot);
+
+      if (onRefresh && !silent) onRefresh(currentProjectId);
     } catch (err) {
-      setError(err.message);
+      if (!silent) setError(err.message);
+      else throw err;
     } finally {
-      setSaving(false);
+      if (!silent) setSaving(false);
     }
   };
 
@@ -783,6 +902,14 @@ export default function RabEditorTab({
                 <div>
                    <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                       Builder RAB — Mode Advanced
+                      {autoSaveStatus !== 'idle' && (
+                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 ml-2">
+                            <div className={`w-1 h-1 rounded-full ${autoSaveStatus === 'saving' ? 'bg-amber-500 animate-pulse' : autoSaveStatus === 'saved' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                               {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Synced' : 'Error'}
+                            </span>
+                         </div>
+                      )}
                    </h3>
                    <button 
                      onClick={() => onEditIdentity && onEditIdentity()}

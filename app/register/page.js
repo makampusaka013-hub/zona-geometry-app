@@ -3,9 +3,9 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { LogoMark } from '@/components/LogoMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { authService } from '@/lib/services/authService';
 
 const DEFAULT_MEMBER_ROLE = 'normal';
 
@@ -21,23 +21,9 @@ export default function RegisterPage() {
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     setError(null);
-    try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const redirectUrl = `${siteUrl}/auth/callback`;
-      
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account',
-          },
-        },
-      });
-      if (error) throw error;
-    } catch (err) {
-      setError(err.message);
+    const { error } = await authService.loginWithGoogle();
+    if (error) {
+      setError(error.message);
       setGoogleLoading(false);
     }
   }
@@ -47,72 +33,16 @@ export default function RegisterPage() {
     setError(null);
     setLoading(true);
 
-    try {
-      const { data: authData, error: signUpError } = await supabase.auth.signUp({
-        email: email.trim(),
-        password,
-        options: {
-          data: {
-            full_name: fullName.trim(),
-            role: DEFAULT_MEMBER_ROLE,
-          },
-        },
-      });
+    const { data, error: registerError } = await authService.register(email, password, fullName);
 
-      if (signUpError) {
-        console.error('Signup Error from Supabase:', signUpError);
-        const msg = signUpError.message || (typeof signUpError === 'object' ? JSON.stringify(signUpError) : String(signUpError));
-        setError(msg);
-        setLoading(false);
-        return;
-      }
-
-      const user = authData?.user;
-      if (!user?.id) {
-        setError(
-          'Registrasi tidak mengembalikan data pengguna. Periksa pengaturan email confirmation di Supabase.'
-        );
-        return;
-      }
-
-      // Notify Admin via Resend
-      try {
-        await fetch('/api/admin/notify', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            userEmail: email.trim(),
-            fullName: fullName.trim(),
-          }),
-        });
-      } catch (notifyError) {
-        console.error('Failed to notify admin:', notifyError);
-      }
-
-      // Send Initial User Verification Email
-      try {
-        await fetch('/api/auth/send-verification', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            userId: user.id,
-            email: email.trim(),
-            fullName: fullName.trim()
-          })
-        });
-      } catch (verifyEmailError) {
-        console.error('Failed to send verification email:', verifyEmailError);
-      }
-
-      const successMsg = 'Registrasi berhasil! Silakan cek email Anda untuk verifikasi.';
-      router.push(`/login?message=${encodeURIComponent(successMsg)}`);
-    } catch (err) {
-      console.error('Unexpected catch error:', err);
-      setError(err?.message || 'Terjadi kesalahan tak terduga.');
-    } finally {
+    if (registerError) {
+      setError(registerError.message);
       setLoading(false);
+      return;
     }
+
+    const successMsg = 'Registrasi berhasil! Silakan cek email Anda untuk verifikasi.';
+    router.push(`/login?message=${encodeURIComponent(successMsg)}`);
   }
 
   return (

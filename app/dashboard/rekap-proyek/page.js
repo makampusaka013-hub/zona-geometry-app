@@ -32,6 +32,7 @@ import BackupVolumeTab from '@/components/tabs/BackupVolumeTab';
 import LocationSelect from '@/components/LocationSelect';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
+import { useProjectPresence } from '@/lib/hooks/useProjectPresence';
 
 function formatIdr(n) {
   return new Intl.NumberFormat('id-ID', {
@@ -99,6 +100,8 @@ function ProyekContent() {
   const isCheckingAuth = React.useRef(false);
   const [activeTab, setActiveTab] = useState('daftar');
   const [subTabProyek, setSubTabProyek] = useState('rab'); // rab | schedule
+  
+  const onlineUsers = useProjectPresence(selectedProject, member);
   const [tabData, setTabData] = useState({
     ahsp: [], harga: [], tkdn: null, dok: [],
     schedule: { lines: [], resources: [] },
@@ -1383,6 +1386,22 @@ function ProyekContent() {
                 </div>
               </div>
             )}
+            
+            {/* Collaboration Presence Indicators */}
+            {activeTab !== 'daftar' && onlineUsers.length > 1 && (
+              <div className="flex items-center -space-x-2 mr-2">
+                {onlineUsers.filter(u => u.user_id !== member?.user_id).map((u, i) => (
+                  <div 
+                    key={i} 
+                    title={`${u.name} sedang melihat`}
+                    className="w-7 h-7 rounded-full bg-indigo-600 dark:bg-orange-600 border-2 border-white dark:border-slate-900 flex items-center justify-center text-[9px] font-black text-white cursor-help shadow-md"
+                  >
+                    {u.name?.substring(0, 2).toUpperCase() || '??'}
+                  </div>
+                ))}
+              </div>
+            )}
+
             <div className="flex flex-col items-end">
               <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">
                 {projectMetrics.isCco ? `Total Kontrak (${projectMetrics.version})` : 'Total Kontrak'}

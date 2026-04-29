@@ -3,9 +3,9 @@
 import { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { LogoMark } from '@/components/LogoMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
+import { authService } from '@/lib/services/authService';
 
 function LoginContent() {
   const router = useRouter();
@@ -17,55 +17,13 @@ function LoginContent() {
   const [googleLoading, setGoogleLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  // Existing check online logic
-  async function checkOnlineStatus(emailAddr) {
-    try {
-      const { getClientType } = require('@/lib/supabase');
-      const actualClientType = getClientType();
-
-      const { data: onlineStatus, error: rpcError } = await supabase.rpc('check_user_online_status', { 
-        p_email: emailAddr.trim() 
-      });
-
-      if (!rpcError && onlineStatus) {
-        const isConflict = (actualClientType === 'web' && onlineStatus.web_active) || 
-                          (actualClientType === 'mobile' && onlineStatus.mobile_active);
-                          
-        if (isConflict) {
-          const platformName = actualClientType === 'web' ? 'Browser/Laptop' : 'Aplikasi HP';
-          return `Akun ini sedang digunakan di ${platformName} lain.`;
-        }
-      }
-      return null;
-    } catch (err) {
-      console.error('Check online status failed:', err);
-      return null;
-    }
-  }
 
   async function handleGoogleLogin() {
     setGoogleLoading(true);
     setError(null);
-    try {
-      // Gunakan alamat dasar dari environment atau fallback ke localhost
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const redirectUrl = `${siteUrl}/auth/callback`;
-      
-      console.log('Redirecting to Google. Site URL:', siteUrl);
-
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'select_account', // Memaksa muncul kotak pilih akun agar sesi segar
-          },
-        },
-      });
-      if (error) throw error;
-    } catch (err) {
-      setError(err.message);
+    const { error } = await authService.loginWithGoogle();
+    if (error) {
+      setError(error.message);
       setGoogleLoading(false);
     }
   }
@@ -75,40 +33,16 @@ function LoginContent() {
     setError(null);
     setLoading(true);
 
-    try {
-      const conflictError = await checkOnlineStatus(email);
-      if (conflictError) {
-        setError(conflictError);
-        setLoading(false);
-        return;
-      }
+    const { data, error: loginError } = await authService.login(email, password);
 
-      const { data: authData, error: signInError } = await supabase.auth.signInWithPassword({
-        email: email.trim(),
-        password,
-      });
-
-      if (signInError) {
-        setError(signInError.message);
-        setLoading(false);
-        return;
-      }
-
-      if (authData?.session) {
-        const { getClientType } = require('@/lib/supabase');
-        await supabase.rpc('update_user_heartbeat', { 
-          p_session_id: authData.session.access_token,
-          p_client_type: getClientType()
-        });
-      }
-
-      router.push('/dashboard');
-      router.refresh();
-    } catch (err) {
-      setError(err?.message || 'Terjadi kesalahan tak terduga.');
-    } finally {
+    if (loginError) {
+      setError(loginError.message);
       setLoading(false);
+      return;
     }
+
+    router.push('/dashboard');
+    router.refresh();
   }
 
   return (

@@ -10,7 +10,8 @@ graph TD
     subgraph Authentication
         Landing --> Login[/login]
         Landing --> Register[/register]
-        Login --> AuthHandler[Auth Logic]
+        Login --> AuthHandler[authService.js]
+        Register --> AuthHandler
     end
 
     subgraph Dashboard_Core
@@ -33,6 +34,13 @@ graph TD
         Editor <--> db_ahsp[(ahsp_lines)]
         KatAHSP <--> db_katalog[(master_ahsp)]
         KatHarga <--> db_harga[(master_harga)]
+        Presence <--> Realtime[Presence/Realtime]
+    end
+
+    subgraph Service_Layer
+        Editor --> Service[rabService.js]
+        Service --> Validation[rabSchema.js]
+        Validation --> Supabase[(Supabase)]
     end
 ```
 
@@ -61,7 +69,12 @@ graph TD
     *   **`IfcVolumeExtractor.jsx`**: Integrasi dengan file BIM/IFC.
 
 ### 3. ⚙️ Utilities & Backend (`/lib`, `/supabase`)
-*   **`supabase/`**: Konfigurasi client dan migrasi database.
+*   **`lib/services/`**: Service Layer (Decoupling UI from DB).
+    *   `rabService.js`: Business logic untuk transaksi RAB.
+    *   `authService.js`: Centralized Auth Handler (Login, Register, OAuth).
+*   **`lib/validations/`**: Schema validation menggunakan Zod.
+    *   `rabSchema.js`: Aturan integritas data proyek dan item.
+*   **`lib/hooks/`**: Custom hooks (e.g., `useProjectPresence.js`).
 *   **`lib/`**: Fungsi pembantu untuk kalkulasi keuangan dan format angka Indonesia.
 
 ---
@@ -70,8 +83,9 @@ graph TD
 *   **Frontend**: Next.js 15 (App Router), React 19.
 *   **Styling**: Tailwind CSS (Vanilla).
 *   **Icons**: Lucide React.
-*   **Backend/DB**: Supabase (PostgreSQL, Realtime, Auth).
+*   **Backend/DB**: Supabase (PostgreSQL, Realtime Presence, Auth).
 *   **Reporting**: ExcelJS for Custom XLSX Generation.
+*   **Validation**: Zod (Schema-based).
 
 ---
-*Main Map Last Updated: 2026-04-29*
+*Main Map Last Updated: 2026-04-29 (Phase 6 Completed)*
