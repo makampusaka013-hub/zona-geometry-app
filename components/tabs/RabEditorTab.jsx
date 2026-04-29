@@ -4,7 +4,7 @@ import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffe
 import { createPortal } from 'react-dom';
 import Spinner from '../Spinner';
 import { supabase } from '@/lib/supabase';
-import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar } from 'lucide-react';
+import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box } from 'lucide-react';
 import LocationSelect from '@/components/LocationSelect';
 
 // Helper Utilities
@@ -749,8 +749,40 @@ export default function RabEditorTab({
         </div>
       )}
 
-      {/* ── Mobile Details Bottom Sheet ── (Rest of the code...) */}
-      {/* ... (keep existing mobile sheet logic) ... */}
+      {/* ── Mobile Details Bottom Sheet ── */}
+      {showMobileDetails && !isRabEmpty && (
+        <div className="lg:hidden fixed inset-0 z-[110] animate-in fade-in duration-300">
+          <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMobileDetails(false)} />
+          <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
+            <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" onClick={() => setShowMobileDetails(false)} />
+            <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Ringkasan Biaya</h3>
+            
+            <div className="space-y-4 mb-8">
+              <div className="flex justify-between items-center text-xs font-bold px-1">
+                 <span className="text-slate-500">SUBTOTAL</span>
+                 <span className="font-mono text-slate-900 dark:text-white uppercase">{formatIdr(recap.subtotal)}</span>
+              </div>
+              <div className="flex justify-between items-center text-xs font-bold px-1 border-t border-slate-100 dark:border-slate-800 pt-4">
+                 <span className="text-slate-500">PPN ({identity.ppn_percent}%)</span>
+                 <span className="font-mono text-slate-900 dark:text-white uppercase">+{formatIdr(recap.ppn)}</span>
+              </div>
+              <div className="flex justify-between items-center bg-indigo-50 dark:bg-orange-900/20 p-4 rounded-2xl border border-indigo-100 dark:border-orange-500/20">
+                 <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest">Grand Total</span>
+                 <span className="text-lg font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
+              </div>
+              <div className={`p-4 rounded-2xl border flex justify-between items-center font-mono text-xs font-bold ${projectMeta.hsp_value >= recap.rounded ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
+                 <span className="text-[10px] font-black opacity-60 uppercase">Selisih Pagu:</span>
+                 <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
+              </div>
+            </div>
+
+            <button onClick={() => setShowMobileDetails(false)} className="w-full h-14 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl text-xs font-black uppercase tracking-widest">Tutup</button>
+          </div>
+        </div>
+      )}
+
+      {/* ── Main Layout ── (Added space at bottom for mobile bar) */}
+      <div className="pb-24 lg:pb-0">
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
         <div className="lg:col-span-3 space-y-6">
@@ -1079,9 +1111,9 @@ export default function RabEditorTab({
               <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
               <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
             </div>
-          </div>
         </div>
       </div>
     </div>
+  </div>
   );
 }
