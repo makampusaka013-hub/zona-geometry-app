@@ -1528,10 +1528,10 @@ function ProyekContent() {
           )}
 
           {activeTab !== 'daftar' && !hasProject && !isCreating ? (
-            <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+            <div className="flex flex-col items-center justify-center py-40 w-full opacity-30 dark:opacity-20 pointer-events-none select-none">
               <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-              <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">
-                BELUM ADA PROYEK YANG DIPILIH
+              <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+                PILIH PROYEK TERLEBIH DAHULU
               </h3>
             </div>
           ) : (
