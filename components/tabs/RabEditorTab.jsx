@@ -276,20 +276,20 @@ function RabSectionTable({
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
       <div
         ref={parentRef}
-        className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 px-2 pb-4"
+        className="overflow-x-hidden overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 px-2 pb-4"
       >
-        <table className="w-full border-separate border-spacing-0 min-w-[900px] relative">
+        <table className="w-full border-separate border-spacing-0 relative table-fixed">
           <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-sm">
             <tr className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
-              <th className="px-2 py-3 text-left w-8">NO</th>
-              <th className="px-3 py-3 text-left w-52">CARI ANALISA</th>
-              <th className="px-3 py-3 text-left">URAIAN</th>
-              <th className="px-1 py-3 text-center w-12">SAT</th>
-              <th className="px-3 py-3 text-center w-24">PROFIT</th>
-              <th className="px-3 py-3 text-right w-22">VOL</th>
-              <th className="px-3 py-3 text-right w-44">HARGA</th>
-              <th className="px-3 py-3 text-right w-48">TOTAL</th>
-              <th className="px-1 py-3 w-8"></th>
+              <th className="px-1 py-3 text-left w-[3%]">NO</th>
+              <th className="px-2 py-3 text-left w-[18%]">CARI ANALISA</th>
+              <th className="px-2 py-3 text-left w-[25%]">URAIAN</th>
+              <th className="px-1 py-3 text-center w-[6%]">SAT</th>
+              <th className="px-2 py-3 text-center w-[10%]">PROFIT</th>
+              <th className="px-2 py-3 text-right w-[10%]">VOL</th>
+              <th className="px-2 py-3 text-right w-[13%]">HARGA</th>
+              <th className="px-2 py-3 text-right w-[13%]">TOTAL</th>
+              <th className="px-1 py-3 w-[2%]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
