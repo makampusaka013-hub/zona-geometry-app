@@ -704,23 +704,6 @@ export default function RabEditorTab({
     }
   };
 
-  const [forceShowEditor, setForceShowEditor] = useState(false);
-
-  const isRabEmpty = useMemo(() => {
-    if (!sections || sections.length === 0) return true;
-    const hasAnyContent = sections.some(s => 
-      s.lines && s.lines.some(l => 
-        (l.uraian && l.uraian.trim().length > 0) || 
-        l.masterAhspId || 
-        (l.uraianCustom && l.uraianCustom.trim().length > 0)
-      )
-    );
-    return !hasAnyContent;
-  }, [sections]);
-
-  useEffect(() => {
-    if (!isRabEmpty) setForceShowEditor(false);
-  }, [isRabEmpty]);
 
   if (loading) return <Spinner />;
 
@@ -728,7 +711,6 @@ export default function RabEditorTab({
     <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
       
       {/* ── Mobile Sticky Summary Bar ── */}
-      {!isRabEmpty && (
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
           <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
             <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
@@ -747,10 +729,9 @@ export default function RabEditorTab({
             {saving ? 'Simpan...' : 'Simpan'}
           </button>
         </div>
-      )}
 
       {/* ── Mobile Details Bottom Sheet ── */}
-      {showMobileDetails && !isRabEmpty && (
+      {showMobileDetails && (
         <div className="lg:hidden fixed inset-0 z-[110] animate-in fade-in duration-300">
           <div className="absolute inset-0 bg-slate-900/40 backdrop-blur-sm" onClick={() => setShowMobileDetails(false)} />
           <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
@@ -793,8 +774,7 @@ export default function RabEditorTab({
             </div>
           )}
 
-          {(!isRabEmpty || forceShowEditor) && (
-            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
              <div>
                 <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
                    <Settings className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
@@ -837,26 +817,9 @@ export default function RabEditorTab({
                    </button>
                 </div>
              </div>
+              </div>
             </div>
-          )}
 
-          {(isRabEmpty && !forceShowEditor) ? (
-            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full animate-in fade-in duration-700">
-               <div className="opacity-40 dark:opacity-20 flex flex-col items-center pointer-events-none select-none">
-                   <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-                   <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center mb-8">
-                     BELUM ADA DATA PEKERJAAN
-                   </h3>
-               </div>
-               <button 
-                 onClick={() => setForceShowEditor(true)}
-                 className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 dark:shadow-none transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
-               >
-                 <Plus className="w-4 h-4" /> Mulai Susun RAB
-               </button>
-            </div>
-          ) : (
-            <>
               {sections.map((sec, sIdx) => (
                 <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
                    {/* ... (existing section render code) ... */}
@@ -1002,13 +965,10 @@ export default function RabEditorTab({
                     <span className="text-xs font-black uppercase tracking-[0.2em]">+ Tambah Bab Pekerjaan Baru</span>
                  </button>
               </div>
-            </>
-          )}
         </div>
         
         {/* Right Sidebar */}
         <div className="lg:sticky lg:top-[120px] space-y-4">
-           {(!isRabEmpty || forceShowEditor) && (
              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in duration-700">
                 {/* ... (recap content) ... */}
                 <div className="bg-slate-700 dark:bg-slate-950 pt-6 pb-5 px-6 text-white text-center">
@@ -1100,14 +1060,11 @@ export default function RabEditorTab({
                     </button>
                  </div>
              </div>
-           )}
 
-            {(!isRabEmpty || forceShowEditor) && (
               <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
                 <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
                 <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
               </div>
-            )}
         </div>
       </div>
     </div>
