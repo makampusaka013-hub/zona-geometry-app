@@ -841,26 +841,11 @@ export default function RabEditorTab({
           )}
 
           {(isRabEmpty && !forceShowEditor) ? (
-            <div className="flex flex-col items-center justify-center py-20 w-full animate-in fade-in zoom-in-95 duration-500">
-               <div className="flex flex-col items-center justify-center opacity-40 dark:opacity-20 pointer-events-none select-none mb-12">
-                  <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-                  <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-                    BELUM ADA DATA PEKERJAAN
-                  </h3>
-               </div>
-               
-               <button 
-                 onClick={() => setForceShowEditor(true)}
-                 className="group relative flex items-center gap-4 bg-white dark:bg-slate-900 border-2 border-dashed border-slate-200 dark:border-slate-800 hover:border-indigo-500 dark:hover:border-orange-500 px-12 py-8 rounded-[2rem] transition-all shadow-sm hover:shadow-xl active:scale-95"
-               >
-                 <div className="w-12 h-12 rounded-2xl bg-slate-50 dark:bg-slate-800 flex items-center justify-center text-slate-400 group-hover:bg-indigo-600 group-hover:text-white transition-all">
-                   <Plus className="w-6 h-6" />
-                 </div>
-                 <div className="text-left">
-                   <div className="text-xs font-black text-slate-900 dark:text-white uppercase tracking-widest">Mulai Susun RAB</div>
-                   <div className="text-[10px] text-slate-400 font-bold uppercase tracking-widest mt-1">Klik untuk menambah bab pertama</div>
-                 </div>
-               </button>
+            <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none animate-in fade-in duration-700">
+               <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+               <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+                 BELUM ADA DATA PEKERJAAN
+               </h3>
             </div>
           ) : (
             <>
