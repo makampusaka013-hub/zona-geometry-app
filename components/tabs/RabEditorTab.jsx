@@ -775,12 +775,21 @@ export default function RabEditorTab({
           )}
 
           <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-             <div>
-                <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                   <Settings className="w-4 h-4 text-indigo-600 dark:text-orange-500" />
-                   Builder RAB — Mode Advanced
-                </h3>
-                <p className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">Muat analisa standar dari Katalog AHSP untuk menyusun anggaran</p>
+             <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900 dark:bg-opacity-30 rounded-2xl flex items-center justify-center text-indigo-600">
+                   <Settings className="w-6 h-6" />
+                </div>
+                <div>
+                   <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                      Builder RAB — Mode Advanced
+                   </h3>
+                   <button 
+                     onClick={() => onEditIdentity && onEditIdentity()}
+                     className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-orange-400 dark:hover:text-orange-300 uppercase tracking-wider transition-colors"
+                   >
+                     <Edit3 className="w-3 h-3" /> Buat Identitas Proyek
+                   </button>
+                </div>
              </div>
              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/50 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
@@ -817,8 +826,7 @@ export default function RabEditorTab({
                    </button>
                 </div>
              </div>
-              </div>
-            </div>
+          </div>
 
               {sections.map((sec, sIdx) => (
                 <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
@@ -1018,14 +1026,14 @@ export default function RabEditorTab({
                    </div>
 
                    <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
-                      <div className="flex justify-between items-center bg-indigo-50/50 dark:bg-orange-900/20 p-2 rounded-lg">
+                      <div className="flex justify-between items-center bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 p-2 rounded-lg">
                          <span className="text-[10px] font-bold text-slate-600 dark:text-orange-400 uppercase">Grand Total</span>
                          <span className="text-sm font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
                       </div>
                    </div>
                 </div>
 
-                <div className="p-5 bg-slate-50 dark:bg-slate-900/50 space-y-3">
+                <div className="p-5 bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 space-y-3">
                    <div className="flex justify-between items-center px-1">
                       <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pagu Anggaran</span>
                       <button onClick={() => setIsEditingPagu(!isEditingPagu)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><Edit3 className="w-3 h-3" /></button>
@@ -1062,12 +1070,14 @@ export default function RabEditorTab({
              </div>
 
               <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900/30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
+                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900 dark:bg-opacity-30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
                 <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
               </div>
         </div>
       </div>
     </div>
   </div>
+</div>
+</div>
   );
 }
