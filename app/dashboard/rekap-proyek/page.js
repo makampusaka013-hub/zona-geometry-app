@@ -33,6 +33,7 @@ import LocationSelect from '@/components/LocationSelect';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
 import { useProjectPresence } from '@/lib/hooks/useProjectPresence';
+import useProjectStore from '@/store/useProjectStore';
 
 function formatIdr(n) {
   return new Intl.NumberFormat('id-ID', {
@@ -102,16 +103,15 @@ function ProyekContent() {
   const [subTabProyek, setSubTabProyek] = useState('rab'); // rab | schedule
   
   const onlineUsers = useProjectPresence(selectedProject, member);
-  const [tabData, setTabData] = useState({
-    ahsp: [], harga: [], tkdn: null, dok: [],
-    schedule: { lines: [], resources: [] },
-    cco: [], mc: [],
-    backup: [],
-  });
-  const [tabLoading, setTabLoading] = useState(false);
+  const { 
+    tabData, setTabData, 
+    tabLoading, setTabLoading, 
+    fetchTabData, 
+    ahspCatalog 
+  } = useProjectStore();
+
   const [selectedBab, setSelectedBab] = useState('all');
   const [laborSettings, setLaborSettings] = useState({});
-  const [ahspCatalog, setAhspCatalog] = useState({});
   const [mpTargetDurasi, setMpTargetDurasi] = useState(0);
   const [itemWorkers, setItemWorkers] = useState({});
   const [itemDurasi, setItemDurasi] = useState({});
@@ -162,9 +162,9 @@ function ProyekContent() {
     start_date: new Date().toISOString().split('T')[0]
   });
 
-  const dataVersionRef = useRef(0);  const isValidId = (id) => !!id && id !== 'null' && id !== 'undefined' && id !== '';
+  const dataVersionRef = useRef(0);
+  const isValidId = (id) => !!id && id !== 'null' && id !== 'undefined' && id !== '';
   const hasProject = isValidId(selectedProject);
-  const tabVersionRef = useRef(0);
   const abortControllerRef = useRef(null);
   const actionProcessed = useRef(null);
 
@@ -230,7 +230,7 @@ function ProyekContent() {
     if (selectedProject) {
       setTabData({ ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] });
     }
-  }, [selectedProject]);
+  }, [selectedProject, setTabData]);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
@@ -595,236 +595,10 @@ function ProyekContent() {
     }
   }, [selectedProject, projects, member?.user_id]);
 
-  const loadTabData = useCallback(async (tab, projectId, babFilter = 'all') => {
-    if (!projectId) {
-      setTabData({ ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] });
-      setTabLoading(false);
-      return;
-    }
-    const version = ++tabVersionRef.current;
-
-    // SWR-style: only show spinner if we have no data yet for this data type
-    // This prevents the UI from flickering/blocking when switching between known tabs
-    const hasExistingData = (() => {
-      switch (tab) {
-        case 'proyek': case 'progress': case 'schedule': case 'export': return tabData.ahsp?.length > 0;
-        case 'terpakai': return tabData.harga?.length > 0;
-        case 'perubahan': return tabData.cco?.length > 0 || tabData.mc?.length > 0;
-        case 'tkdn': return tabData.tkdn !== null;
-        case 'dok': return tabData.dok?.length > 0;
-        case 'backup': return tabData.backup?.length > 0 || tabData.ahsp?.length > 0;
-        default: return false;
-      }
-    })();
-
-    if (!hasExistingData) {
-      setTabLoading(true);
-    }
-
-    try {
-      const { data: overrides } = await supabase.from('master_harga_custom').select('kode_item, harga_satuan, tkdn_percent, id');
-      const overrideMap = Object.fromEntries((overrides || []).map(o => [o.kode_item, o]));
-
-      if (tab === 'proyek' || tab === 'progress' || tab === 'schedule' || tab === 'export') {
-        const [effectiveRes, linesRes, backupRes, resourcesRes] = await Promise.all([
-          supabase.rpc('get_effective_project_budget', { p_project_id: projectId }),
-          supabase.from('ahsp_lines').select('*, master_ahsp(kode_ahsp)').eq('project_id', projectId).order('bab_pekerjaan'),
-          supabase.from('project_backup_volume').select('*').eq('project_id', projectId),
-          supabase.rpc('get_project_resource_aggregation', { p_project_id: projectId })
-        ]);
-
-        if (version !== tabVersionRef.current) return;
-
-        const effectiveItems = effectiveRes.data;
-        const lines = linesRes.data;
-        const backup = backupRes.data;
-        const rawResources = resourcesRes.data;
-
-        const processedLines = (lines || []).map(l => {
-          const eff = (effectiveItems || []).find(e => e.line_id === l.id);
-          return {
-            ...l,
-            volume: eff ? parseFloat(eff.volume) : l.volume,
-            harga_satuan: eff ? parseFloat(eff.harga_satuan) : l.harga_satuan,
-            jumlah: eff ? parseFloat(eff.jumlah) : l.jumlah,
-          };
-        });
-
-        const catalog = {};
-        const uniqueMasterIds = [...new Set((lines || []).map(l => l.master_ahsp_id).filter(Boolean))];
-
-        if (uniqueMasterIds.length > 0) {
-          const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', uniqueMasterIds);
-          (catalogData || []).forEach(item => { catalog[item.master_ahsp_id] = item.details || []; });
-        }
-
-        const finalLines = processedLines.map(l => {
-          if (!l.master_ahsp_id || !catalog[l.master_ahsp_id]) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
-          const details = catalog[l.master_ahsp_id];
-          let newBase = 0;
-          details.forEach(d => {
-            const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
-            newBase += (Number(d.koefisien || 0) * Number(p));
-          });
-          if (newBase === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
-          const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : (currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15);
-          const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
-          const newJumlah = (Number(l.volume || 0) * newHarga);
-          return { ...l, profit_percent: profitPct, harga_satuan: newHarga, jumlah: newJumlah };
-        });
-
-        const resources = (resourcesRes.data || []).map(r => ({
-          ...r,
-          jenis: r.jenis_komponen === 'tenaga' ? 'upah' : r.jenis_komponen,
-          total_volume: Number(r.total_volume_terpakai || 0)
-        }));
-
-        setTabData(prev => ({
-          ...prev,
-          schedule: { lines: finalLines, resources: resources },
-          ahsp: finalLines,
-          harga: resources,
-          backup: backup || []
-        }));
-
-        setAhspCatalog(catalog);
-      }
-      else if (tab === 'ahsp') {
-        const { data: lines } = await supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan');
-        if (version !== tabVersionRef.current) return;
-
-        const uniqueMasterIds = [...new Set((lines || []).map(l => l.master_ahsp_id).filter(Boolean))];
-        let finalLines = lines || [];
-        if (uniqueMasterIds.length > 0) {
-          const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', uniqueMasterIds);
-          finalLines = (lines || []).map(l => {
-            const details = catalogData?.find(c => c.master_ahsp_id === l.master_ahsp_id)?.details || [];
-            if (details.length === 0) return l;
-            if (details.length === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
-            let newBase = 0;
-            details.forEach(d => {
-              const p = overrideMap[d.kode_item]?.harga_satuan || d.harga_konversi || 0;
-              newBase += (Number(d.koefisien || 0) * Number(p));
-            });
-            if (newBase === 0) return { ...l, profit_percent: l.profit_percent ?? currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15 };
-            const profitPct = l.profit_percent !== null && l.profit_percent !== undefined ? Number(l.profit_percent) : (currentProjectObj?.overhead_percent ?? currentProjectObj?.profit_percent ?? 15);
-            const newHarga = Math.round(newBase * (1 + (profitPct / 100)));
-            return { ...l, profit_percent: profitPct, harga_satuan: newHarga, jumlah: (Number(l.volume || 0) * newHarga) };
-          });
-        }
-        setTabData(prev => ({ ...prev, ahsp: finalLines }));
-      }
-      else if (tab === 'terpakai') {
-        const [ahspRes, resourceSumRes, overridesRes] = await Promise.all([
-          supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan'),
-          supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId),
-          supabase.from('master_harga_custom').select('*')
-        ]);
-
-        if (version !== tabVersionRef.current) return;
-
-        const ahsp = ahspRes.data;
-        const resourceSum = resourceSumRes.data;
-        const overrides = overridesRes.data || [];
-        const overrideMap = Object.fromEntries(overrides.map(o => [o.kode_item, o]));
-
-        const aggregated = {};
-        (resourceSum || []).forEach(r => {
-          const k = r.key_item;
-          const ov = overrideMap[k];
-
-          if (!aggregated[k]) {
-            aggregated[k] = { ...r };
-            if (ov && ov.harga_satuan > 0) {
-              aggregated[k].harga_snapshot = ov.harga_satuan;
-              aggregated[k].tkdn_percent = ov.tkdn_percent;
-              aggregated[k].source_table = 'master_harga_custom';
-              aggregated[k].overrides_id = ov.id;
-              // Re-hitung kontribusi nilai & tkdn berdasarkan harga baru
-              aggregated[k].kontribusi_nilai = (parseFloat(r.total_volume_terpakai) || 0) * ov.harga_satuan;
-              aggregated[k].nilai_tkdn = aggregated[k].kontribusi_nilai * (ov.tkdn_percent / 100);
-            }
-          }
-          else {
-            aggregated[k].total_volume_terpakai = (parseFloat(aggregated[k].total_volume_terpakai) || 0) + (parseFloat(r.total_volume_terpakai) || 0);
-
-            if (ov && ov.harga_satuan > 0) {
-              // Jika ada override, gunakan harga override untuk total akumulasi
-              const newKontribusi = (parseFloat(r.total_volume_terpakai) || 0) * ov.harga_satuan;
-              aggregated[k].kontribusi_nilai = (parseFloat(aggregated[k].kontribusi_nilai) || 0) + newKontribusi;
-              aggregated[k].nilai_tkdn = (parseFloat(aggregated[k].nilai_tkdn) || 0) + (newKontribusi * (ov.tkdn_percent / 100));
-            } else {
-              aggregated[k].kontribusi_nilai = (parseFloat(aggregated[k].kontribusi_nilai) || 0) + (parseFloat(r.kontribusi_nilai) || 0);
-              aggregated[k].nilai_tkdn = (parseFloat(aggregated[k].nilai_tkdn) || 0) + (parseFloat(r.nilai_tkdn) || 0);
-            }
-          }
-        });
-
-        const priorityMap = { upah: 1, bahan: 2, alat: 3 };
-        setTabData(prev => ({
-          ...prev,
-          ahsp: ahsp || [],
-          harga: Object.values(aggregated).sort((a, b) => {
-            const pa = priorityMap[a.jenis_komponen?.toLowerCase()] || 99;
-            const pb = priorityMap[b.jenis_komponen?.toLowerCase()] || 99;
-            if (pa !== pb) return pa - pb;
-            return (a.uraian || '').localeCompare(b.uraian || '');
-          })
-        }));
-      }
-      else if (tab === 'perubahan') {
-        const { data: { user } } = await supabase.auth.getUser();
-        const userId = user?.id;
-
-        const [ccoRes, mcRes] = await Promise.all([
-          supabase.from('project_cco')
-            .select('*')
-            .eq('project_id', projectId)
-            .or(`status.eq.approved,created_by.eq.${userId}`)
-            .order('cco_type', { ascending: true }),
-          supabase.from('project_mc')
-            .select('*')
-            .eq('project_id', projectId)
-            .eq('created_by', userId)
-            .order('mc_type', { ascending: true })
-        ]);
-        if (version !== tabVersionRef.current) return;
-        setTabData(prev => ({ ...prev, cco: ccoRes.data || [], mc: mcRes.data || [] }));
-      }
-      else if (tab === 'tkdn') {
-        const { data: resSum } = await supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId);
-        if (version !== tabVersionRef.current) return;
-
-        let total_nilai = 0, total_tkdn_nilai = 0;
-        const byJenis = { upah: { nilai: 0, tkdn: 0 }, bahan: { nilai: 0, tkdn: 0 }, alat: { nilai: 0, tkdn: 0 } };
-        const list = (resSum || []).map(r => {
-          const v_nilai = parseFloat(r.kontribusi_nilai) || 0;
-          const v_tkdn_v = parseFloat(r.nilai_tkdn) || 0;
-          const j = (r.jenis_komponen || r.jenis || '').toLowerCase();
-          total_nilai += v_nilai; total_tkdn_nilai += v_tkdn_v;
-          if (byJenis[j]) { byJenis[j].nilai += v_nilai; byJenis[j].tkdn += v_tkdn_v; }
-          return { ...r, total_nilai: v_nilai, total_tkdn_nilai: v_tkdn_v, tkdn: parseFloat(r.tkdn_pct || r.tkdn || 0) };
-        });
-        const total_tkdn_pct = total_nilai > 0 ? (total_tkdn_nilai / total_nilai) * 100 : 0;
-        setTabData(prev => ({ ...prev, harga: list, tkdn: { total_nilai, total_tkdn_nilai, total_tkdn_pct, byJenis } }));
-      }
-      else if (tab === 'backup') {
-        const [ahspRes, backupRes] = await Promise.all([
-          supabase.from('ahsp_lines').select('*, master_ahsp(*)').eq('project_id', projectId).order('bab_pekerjaan'),
-          supabase.from('project_backup_volume').select('*').eq('project_id', projectId)
-        ]);
-        if (version !== tabVersionRef.current) return;
-        setTabData(prev => ({ ...prev, ahsp: ahspRes.data || [], backup: backupRes.data || [] }));
-      }
-    } finally {
-      if (version === tabVersionRef.current) setTabLoading(false);
-    }
-  }, [supabase]);
-
   useEffect(() => {
     if (!selectedProject || activeTab === 'daftar') return;
-    loadTabData(activeTab, selectedProject, selectedBab);
-  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, loadTabData]);
+    fetchTabData(activeTab, selectedProject, currentProjectObj);
+  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, fetchTabData, currentProjectObj]);
 
   async function updateProjectStartDate(val) {
     if (!selectedProject) return;
@@ -1579,7 +1353,7 @@ function ProyekContent() {
                         const targetId = newId || selectedProject;
                         if (newId) setSelectedProject(newId);
                         loadData();
-                        loadTabData(activeTab, targetId, selectedBab);
+                        fetchTabData(activeTab, targetId, currentProjectObj);
                       }}
                       onEditIdentity={handleNewProject}
                       ownerId={projectOwnerId || member?.user_id}
@@ -1589,7 +1363,7 @@ function ProyekContent() {
                   ) : subTabProyek === 'backup' ? (
                     <BackupVolumeTab {...{
                       activeTab, tabLoading, tabData, projectId: selectedProject,
-                      onRefresh: () => loadTabData(activeTab, selectedProject),
+                      onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj),
                       userSlotRole, isAdmin, isOwner,
                       memberRole: member?.role,
                       selectedLineId: selectedBackupLineId,
@@ -1610,11 +1384,11 @@ function ProyekContent() {
               )}
 
               {activeTab === 'terpakai' && hasProject && (
-                <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+                <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
               )}
 
               {activeTab === 'perubahan' && hasProject && (
-                <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+                <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
               )}
 
               {activeTab === 'tkdn' && hasProject && (
