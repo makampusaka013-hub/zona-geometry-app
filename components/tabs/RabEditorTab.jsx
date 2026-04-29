@@ -626,8 +626,7 @@ export default function RabEditorTab({
         for (const r of sec.lines) {
           if (!r.uraian) throw new Error(`Kolom Pekerjaan pada Bab ${sec.namaBab} wajib diisi!`);
           const lineId = (r.key && r.key.length === 36) ? r.key : null;
-          items.push({
-            id: lineId,
+          const lineItem = {
             master_ahsp_id: r.master_ahsp_id || r.masterAhspId || null,
             bab_pekerjaan: sec.namaBab,
             sort_order: counter++,
@@ -637,8 +636,11 @@ export default function RabEditorTab({
             volume: parseNum(r.volume),
             harga_satuan: parseNum(r.hargaSatuan),
             jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
-            analisa_custom: r.analisaDetails || []
-          });
+            analisa_custom: r.analisaDetails || [],
+            profit_percent: parseNum(r.profitPercent)
+          };
+          if (lineId) lineItem.id = lineId;
+          items.push(lineItem);
         }
       }
 
@@ -654,6 +656,7 @@ export default function RabEditorTab({
         contract_number: identity.contract_number || null,
         hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
+        overhead_percent: parseNum(globalOverhead),
         start_date: identity.start_date || new Date().toISOString().split('T')[0]
       };
 
