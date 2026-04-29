@@ -1182,7 +1182,10 @@ function ProyekContent() {
               </span>
               <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-orange-500">{formatIdr(projectMetrics.total)}</span>
             </div>
-            <div className="flex flex-col items-end pl-4 border-l border-slate-200 dark:border-slate-800">
+            <div 
+              className="flex flex-col items-end pl-4 border-l border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-70 transition-opacity"
+              onClick={() => setShowCalendar(true)}
+            >
               <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Durasi</span>
               <span className="text-[10px] font-black text-slate-900 dark:text-white">{projectMetrics.duration || manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span></span>
             </div>

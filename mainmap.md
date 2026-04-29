@@ -77,6 +77,11 @@ graph TD
 *   **`lib/hooks/`**: Custom hooks (e.g., `useProjectPresence.js`).
 *   **`lib/`**: Fungsi pembantu untuk kalkulasi keuangan dan format angka Indonesia.
 
+### 4. 📊 Reporting Engines (`/lib`)
+*   **`excel_engine_static.js`**: Engine khusus ekspor RAB, AHSP, dan HSP.
+*   **`laporan_excel_static.js`**: Engine khusus laporan progres fisik (Harian, Mingguan, Bulanan) dengan integrasi sheet `database` otomatis.
+*   **`excel_utils.js`**: Library utilitas bersama untuk pemformatan, border, dan setup printer Excel.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -84,8 +89,8 @@ graph TD
 *   **Styling**: Tailwind CSS (Vanilla).
 *   **Icons**: Lucide React.
 *   **Backend/DB**: Supabase (PostgreSQL, Realtime Presence, Auth).
-*   **Reporting**: ExcelJS for Custom XLSX Generation.
+*   **Reporting**: ExcelJS for Custom XLSX Generation (Refactored specialized engines).
 *   **Validation**: Zod (Schema-based).
 
 ---
-*Main Map Last Updated: 2026-04-29 (Phase 6 Completed)*
+*Main Map Last Updated: 2026-04-30 (Phase 8 - Reporting Refactor & UI Polish)*
