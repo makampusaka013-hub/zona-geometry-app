@@ -1076,12 +1076,7 @@ export default function RabEditorTab({
                          </div>
                       )}
                    </h3>
-                   <button
-                     onClick={() => onEditIdentity && onEditIdentity()}
-                     className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-orange-400 dark:hover:text-orange-300 uppercase tracking-wider transition-colors"
-                   >
-                     <Edit3 className="w-3 h-3" /> Buat Identitas Proyek
-                   </button>
+
                 </div>
              </div>
              <div className="flex flex-wrap items-center gap-3">

@@ -8,6 +8,7 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
+import { generateLaporanReport } from '@/lib/laporan_excel_static';
 import { generateProjectPDF } from '@/lib/pdf_engine';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
@@ -90,24 +91,31 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
       if (error) throw error;
 
-      const dailyMap = {};
-      progressData.forEach(row => {
-        if (!dailyMap[row.line_id]) dailyMap[row.line_id] = {};
-        dailyMap[row.line_id][row.day_number] = row.value;
-      });
+      // Ambil harga satuan snapshot/katalog untuk kalkulasi bobot di database
+      const [projectRes, catalogRes, overrideRes] = await Promise.all([
+        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
+        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
+        supabase.from('master_harga_custom').select('kode_item, harga_satuan')
+      ]);
+      const mergedMap = {};
+      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-      exportReportToExcel({
-        type: reportType,
-        project,
-        items: ahspLines,
-        dailyProgress: dailyMap,
-        startDate: dateRange.start,
-        endDate: dateRange.end
+      const hImg = headerImage || null;
+
+      await generateLaporanReport(project, userMember, ahspLines, [reportType, 'database'], {
+        progressData,
+        projectPrices,
+        headerImage: hImg,
+        paperSize,
+        fileName: `Laporan_${reportType}_${project.name || 'Export'}.xlsx`
       });
 
       toast.success(`Laporan ${reportType} berhasil diunduh.`);
     } catch (err) {
-      toast.error('Gagal mengambil data progres: ' + err.message);
+      toast.error('Gagal generate laporan: ' + err.message);
     } finally {
       setLoadingReport(false);
     }
@@ -340,13 +348,12 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, ahspLines, ['schedule'], { 
+        await generateLaporanReport(project, userMember, ahspLines, ['schedule', 'database'], { 
           scheduleData: sequenced, 
           progressData: progData, 
           projectPrices, 
           paperSize: paperSize || 'A4', 
           headerImage: hImg, 
-          isStandalone: true,
           fileName: `Kurva-S ${project.name || ''}`
         });
       } catch (err) {
@@ -401,7 +408,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+          // Tentukan engine mana yang digunakan
+          const isLaporan = selectedSheets.some(s => ['harian', 'mingguan', 'bulanan', 'schedule'].includes(s.toLowerCase()));
+          const engine = isLaporan ? generateLaporanReport : generateProjectReport;
+
+          await engine(project, userMember, enrichedLines, selectedSheets, { 
             projectPrices, 
             globalOverhead: project?.profit_percent ?? project?.overhead_percent ?? 10, 
             ppnPercent: project.ppn_percent ?? 12,
