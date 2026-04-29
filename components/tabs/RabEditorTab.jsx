@@ -66,7 +66,7 @@ function generateNextCode(type, sections, dbMax = 0) {
   return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
-const createEmptyRow = (type = 'ahsp', sections = []) => ({
+const createEmptyRow = (type = 'ahsp', sections = [], defaultProfit = '15') => ({
   key: Math.random().toString(36).substring(7),
   masterAhspId: null,
   masterAhspKode: '',
@@ -79,14 +79,14 @@ const createEmptyRow = (type = 'ahsp', sections = []) => ({
   mode: type, // 'ahsp' or 'lumsum'
   isExpanded: false,
   analisaDetails: [],
-  profitPercent: '15'
+  profitPercent: String(defaultProfit)
 });
 
-function createEmptySection(name, currentSections = []) {
+function createEmptySection(name, currentSections = [], defaultProfit = '15') {
   return {
     id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : String(Date.now() + Math.random()),
     namaBab: name || 'Pekerjaan Baru',
-    lines: [createEmptyRow('ahsp', currentSections)]
+    lines: [createEmptyRow('ahsp', currentSections, defaultProfit)]
   };
 }
 
@@ -332,7 +332,7 @@ export default function RabEditorTab({
 
   const loadRab = useCallback(async () => {
     if (!projectId) {
-      setSections([createEmptySection('PEKERJAAN PERSIAPAN')]);
+      setSections([createEmptySection('PEKERJAAN PERSIAPAN', [], globalOverhead)]);
       if (!initialIdentity) {
         setIdentity({
           name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
@@ -419,25 +419,26 @@ export default function RabEditorTab({
            basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
         }
 
-        // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur -> Global -> Default 15%)
-        let savedItemProfit = item.profit_percent !== null && item.profit_percent !== undefined ? parseNum(item.profit_percent) : null;
-        let reverseEngineeredProfit = null;
+        // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur (untuk data lama) -> Global -> Default 15%)
+        let finalProfit = 15;
+        const dbProfit = item.profit_percent;
         
-        if (basePrice > 0 && parseNum(item.harga_satuan) > 0) {
-           reverseEngineeredProfit = Math.round(((parseNum(item.harga_satuan) / basePrice) - 1) * 100);
-        }
-
-        let finalProfit = 15; 
-        if (savedItemProfit !== null) {
-            finalProfit = savedItemProfit;
-        } else if (reverseEngineeredProfit !== null) {
-            finalProfit = reverseEngineeredProfit;
+        if (dbProfit !== null && dbProfit !== undefined) {
+          // Jika ada di DB, gunakan nilai tersebut secara mutlak
+          finalProfit = parseNum(dbProfit);
         } else {
+          // Jika tidak ada di DB, coba hitung mundur (backward compatibility)
+          if (basePrice > 0 && parseNum(item.harga_satuan) > 0) {
+            finalProfit = Math.round(((parseNum(item.harga_satuan) / basePrice) - 1) * 100);
+          } else {
+            // Fallback ke profit global proyek
             finalProfit = finalGlobalProfit;
+          }
         }
 
-        // 3. Kalkulasi Harga Dasar untuk Lumpsum
+        // 3. Kalkulasi Harga Dasar untuk Lumpsum (Reconstruction)
         if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
+           // Untuk Lumpsum, basePrice = Harga Satuan / (1 + Profit)
            basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
         }
 
@@ -468,10 +469,10 @@ export default function RabEditorTab({
               namaBab: bab,
               lines: lines
             }))
-          : [createEmptySection('PEKERJAAN PERSIAPAN')]
+          : [createEmptySection('PEKERJAAN PERSIAPAN', [], finalGlobalProfit)]
       );
     } else {
-      setSections([createEmptySection('PEKERJAAN PERSIAPAN')]);
+      setSections([createEmptySection('PEKERJAAN PERSIAPAN', [], globalOverhead)]);
     }
     setLoading(false);
   }, [projectId, initialIdentity]);
@@ -953,8 +954,8 @@ export default function RabEditorTab({
                             <tr>
                               <td colSpan={9} className="px-6 py-4">
                                   <div className="flex gap-4">
-                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('ahsp', prev), masterAhspKode: '' }] } : s))} className="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900 bg-opacity-50 uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">+ Item Analisa</button>
-                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('lumsum', prev), masterAhspKode: generateNextCode('lumsum', prev, dbMaxLsNum) }] } : s))} className="text-[9px] font-black text-amber-600 bg-amber-50 dark:bg-amber-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900 bg-opacity-50 uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">+ Item Lumpsum</button>
+                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('ahsp', prev, globalOverhead), masterAhspKode: '' }] } : s))} className="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900 bg-opacity-50 uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">+ Item Analisa</button>
+                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('lumsum', prev, globalOverhead), masterAhspKode: generateNextCode('lumsum', prev, dbMaxLsNum) }] } : s))} className="text-[9px] font-black text-amber-600 bg-amber-50 dark:bg-amber-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900 bg-opacity-50 uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">+ Item Lumpsum</button>
                                   </div>
                               </td>
                             </tr>
@@ -966,7 +967,7 @@ export default function RabEditorTab({
 
               <div className="flex justify-center pt-4">
                  <button 
-                   onClick={() => setSections(prev => [...prev, createEmptySection('', prev)])} 
+                   onClick={() => setSections(prev => [...prev, createEmptySection('', prev, globalOverhead)])} 
                    className="group flex items-center gap-3 px-8 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-orange-500 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-600 dark:hover:border-orange-500 transition-all shadow-sm"
                  >
                     <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
