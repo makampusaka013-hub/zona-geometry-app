@@ -1528,11 +1528,19 @@ function ProyekContent() {
           )}
 
           {activeTab !== 'daftar' && !hasProject && !isCreating ? (
-            <div className="flex flex-col items-center justify-center py-40 w-full opacity-30 dark:opacity-20 pointer-events-none select-none">
-              <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-              <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-                PILIH PROYEK TERLEBIH DAHULU
-              </h3>
+            <div className="flex flex-col items-center justify-center min-h-[60vh] w-full animate-in fade-in duration-700">
+               <div className="opacity-30 dark:opacity-20 flex flex-col items-center pointer-events-none select-none">
+                  <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+                  <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center mb-8">
+                    PILIH PROYEK TERLEBIH DAHULU
+                  </h3>
+               </div>
+               <button 
+                 onClick={handleNewProject}
+                 className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 dark:shadow-none transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
+               >
+                 <Plus className="w-4 h-4" /> Mulai Susun RAB
+               </button>
             </div>
           ) : (
             <>

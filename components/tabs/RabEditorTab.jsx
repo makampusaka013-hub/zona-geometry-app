@@ -849,7 +849,7 @@ export default function RabEditorTab({
                    </h3>
                </div>
                <button 
-                 onClick={() => onEditIdentity && onEditIdentity()}
+                 onClick={() => setForceShowEditor(true)}
                  className="px-8 py-4 bg-indigo-600 hover:bg-indigo-700 dark:bg-orange-600 dark:hover:bg-orange-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 dark:shadow-none transition-all hover:scale-105 active:scale-95 flex items-center gap-2"
                >
                  <Plus className="w-4 h-4" /> Mulai Susun RAB
