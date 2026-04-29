@@ -276,20 +276,20 @@ function RabSectionTable({
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
       <div
         ref={parentRef}
-        className="overflow-x-hidden overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 px-2 pb-4"
+        className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 pb-4"
       >
         <table className="w-full border-separate border-spacing-0 relative table-fixed">
           <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-sm">
-            <tr className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
-              <th className="px-1 py-3 text-left w-[3%]">NO</th>
-              <th className="px-2 py-3 text-left w-[18%]">CARI ANALISA</th>
-              <th className="px-2 py-3 text-left w-[25%]">URAIAN</th>
-              <th className="px-1 py-3 text-center w-[6%]">SAT</th>
-              <th className="px-2 py-3 text-center w-[10%]">PROFIT</th>
-              <th className="px-2 py-3 text-right w-[10%]">VOL</th>
-              <th className="px-2 py-3 text-right w-[13%]">HARGA</th>
-              <th className="px-2 py-3 text-right w-[13%]">TOTAL</th>
-              <th className="px-1 py-3 w-[2%]"></th>
+            <tr className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
+              <th className="px-1 py-2 text-left w-[2%]">#</th>
+              <th className="px-1 py-2 text-left w-[14%]">ANALISA</th>
+              <th className="px-1 py-2 text-left w-[38%]">URAIAN PEKERJAAN</th>
+              <th className="px-1 py-2 text-center w-[4%]">SAT</th>
+              <th className="px-1 py-2 text-center w-[7%]">PROFIT</th>
+              <th className="px-1 py-2 text-right w-[8%]">VOL</th>
+              <th className="px-1 py-2 text-right w-[12%]">HARGA</th>
+              <th className="px-1 py-2 text-right w-[13%]">TOTAL</th>
+              <th className="px-1 py-2 w-[2%]"></th>
             </tr>
           </thead>
           <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
@@ -308,65 +308,67 @@ function RabSectionTable({
                   key={row.key}
                   ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group h-[72px]"
+                  className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group h-[64px]"
                 >
-                  <td className="px-2 py-4 text-slate-400 font-mono text-[10px] w-8">{rIdx + 1}</td>
-                  <td className="px-3 py-4 relative group-code w-52">
+                  <td className="px-1 py-2 text-slate-400 font-mono text-[9px] truncate">
+                    {rIdx + 1}
+                  </td>
+                  <td className="px-1 py-2 relative group-code">
                     <AsyncCombobox
                       value={row.uraian}
                       kode={row.masterAhspKode}
                       mode={row.mode}
                       locationId={identity.location_id || member?.selected_location_id}
                       onSelect={data => handleAhspSelect(sec.id, row.key, data)}
-                      placeholder={row.mode === 'lumsum' ? "CARI..." : "CARI..."}
+                      placeholder="CARI..."
                     />
                   </td>
-                  <td className="px-3 py-4 min-w-[150px]">
+                  <td className="px-1 py-2">
                     <input
                       value={row.uraianCustom || row.uraian || ''}
                       onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })}
                       onFocus={(e) => e.target.select()}
-                      className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400 bg-opacity-50"
-                      placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."}
+                      className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
+                      placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
                     />
                   </td>
-                  <td className="px-1 py-4 text-center w-12">
-                    <span className="text-[10px] font-bold text-slate-500 uppercase">{row.satuan || '-'}</span>
+                  <td className="px-1 py-2 text-center">
+                    <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
                   </td>
-                  <td className="px-2 py-4 text-center w-24">
-                    <div className="flex items-center justify-center gap-1">
+                  <td className="px-1 py-2 text-center">
+                    <div className="flex items-center justify-center gap-0.5">
                       <input
                         type="number"
                         value={row.profitPercent ?? ''}
                         onFocus={e => e.target.select()}
                         onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
-                        className="w-12 h-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
+                        className="w-8 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[9px] font-black text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
                       />
-                      <span className="text-[9px] text-slate-400 font-bold">%</span>
+                      <span className="text-[8px] text-slate-400 font-bold">%</span>
                     </div>
                   </td>
-                  <td className="px-3 py-4 w-22 text-right">
-                    <div className="flex flex-col items-center gap-1.5 relative group-vol">
+                  <td className="px-1 py-2 text-right">
+                    <div className="flex flex-col items-end gap-1 relative group-vol">
                       <input
                         type="number"
                         value={row.volume ?? ''}
                         onFocus={e => e.target.select()}
                         onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })}
-                        className={`w-16 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-2 py-1 text-right font-mono font-bold text-[11px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
+                        className={`w-12 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-1 py-0.5 text-right font-mono font-black text-[9px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
                         placeholder="0"
                       />
                       {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
                         <button
                           onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
-                          className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all hover:scale-110 active:scale-90"
-                          title={`Terapkan Volume dari Backup Data: ${backupTotals[row.id || row.key].toLocaleString('id-ID')} ${row.satuan}`}
+                          className="absolute -left-4 top-1/2 -translate-y-1/2 p-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all scale-75"
+                          title={`Val: ${backupTotals[row.id || row.key]}`}
                         >
-                          <Calculator className="w-3 h-3" />
+                          <Calculator className="w-2 h-2" />
                         </button>
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-4 w-44">
+                  <td className="px-1 py-2">
                     {row.mode === 'lumsum' || !row.masterAhspId ? (
                       <div className="flex flex-col gap-1">
                         <input
@@ -374,20 +376,19 @@ function RabSectionTable({
                           value={row.hargaSatuan ?? ''}
                           onFocus={e => e.target.select()}
                           onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
-                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-2 py-1 text-right font-mono font-bold text-indigo-700 dark:text-orange-500 rounded"
+                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
                         />
-                        {row.mode === 'lumsum' && <button onClick={() => saveToMasterLumsum(row)} className="text-[8px] font-bold text-indigo-400 hover:text-indigo-600 uppercase self-end transition-colors">Simpan Katalog</button>}
                       </div>
                     ) : (
-                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-bold text-[11px]">{formatIdr(parseNum(row.hargaSatuan))}</div>
+                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-black text-[9px] truncate">{formatIdr(parseNum(row.hargaSatuan))}</div>
                     )}
                   </td>
-                  <td className="px-3 py-4 text-right font-mono font-bold text-slate-900 dark:text-white text-[11px] w-48">
+                  <td className="px-1 py-2 text-right font-mono font-black text-slate-900 dark:text-white text-[10px] truncate">
                     {formatIdr(parseNum(row.volume) * parseNum(row.hargaSatuan))}
                   </td>
-                  <td className="px-1 py-4 text-center w-8">
-                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-3.5 h-3.5" />
+                  <td className="px-0.5 py-2 text-center">
+                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-0.5 text-slate-300 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-2.5 h-2.5" />
                     </button>
                   </td>
                 </tr>
@@ -1049,7 +1050,7 @@ export default function RabEditorTab({
       {/* ── Main Layout ── (Added space at bottom for mobile bar) */}
       <div className="pb-24 lg:pb-0">
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
         <div className="lg:col-span-3 space-y-6">
           {error && (
             <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top duration-300">
