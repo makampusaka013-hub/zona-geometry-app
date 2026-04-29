@@ -93,4 +93,4 @@ graph TD
 *   **Validation**: Zod (Schema-based).
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 9 - Integrated Weekly/Monthly Data Mapping)*
+*Main Map Last Updated: 2026-04-30 (Phase 9 - Integrated Weekly/Monthly Data Mapping & UI Viewport Optimization)*

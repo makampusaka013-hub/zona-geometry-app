@@ -105,11 +105,16 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
       const hImg = headerImage || null;
 
+      const formatDate = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '';
+      const dateRangeLabel = `${formatDate(dateRange.start)} - ${formatDate(dateRange.end)}`;
+
       await generateLaporanReport(project, userMember, ahspLines, [reportType, 'database'], {
         progressData,
         projectPrices,
         startDate: dateRange.start,
         endDate: dateRange.end,
+        periodLabel: reportType === 'mingguan' ? 'Mingguan' : reportType === 'bulanan' ? 'Bulanan' : 'Harian',
+        dateRangeLabel: dateRangeLabel,
         headerImage: hImg,
         paperSize,
         fileName: `Laporan_${reportType}_${project.name || 'Export'}.xlsx`

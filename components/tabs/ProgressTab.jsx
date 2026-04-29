@@ -53,6 +53,8 @@ export default function ProgressTab({
   const [newRoleName, setNewRoleName] = useState('');
   const [selectedRowId, setSelectedRowId] = useState(null);
   const [confirmModal, setConfirmModal] = useState({ isOpen: false, rowId: null });
+  const [viewStartIndex, setViewStartIndex] = useState(0);
+  const daysPerPage = 7;
 
   // ── Load Existing Progress ──
   useEffect(() => {
@@ -269,6 +271,29 @@ export default function ProgressTab({
           </span>
         </div>
 
+        <div className="flex items-center gap-4 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700">
+          <button
+            onClick={() => setViewStartIndex(prev => Math.max(0, prev - daysPerPage))}
+            disabled={viewStartIndex === 0}
+            className="p-2 bg-white dark:bg-slate-900 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm border border-slate-200 dark:border-slate-700"
+          >
+            <ChevronLeft className="w-4 h-4" />
+          </button>
+          <div className="flex flex-col items-center min-w-[120px]">
+             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rentang Hari</span>
+             <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest leading-none">
+               {viewStartIndex + 1} - {Math.min(timeRange, viewStartIndex + daysPerPage)} dari {timeRange}
+             </span>
+          </div>
+          <button
+            onClick={() => setViewStartIndex(prev => Math.min(timeRange - 1, prev + daysPerPage))}
+            disabled={viewStartIndex + daysPerPage >= timeRange}
+            className="p-2 bg-white dark:bg-slate-900 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed transition-all shadow-sm border border-slate-200 dark:border-slate-700"
+          >
+            <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+
         <button
           onClick={handleManualSave}
           disabled={savingStatus === 'saving'}
@@ -285,8 +310,7 @@ export default function ProgressTab({
       <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm">
         <div className="overflow-x-auto max-h-[700px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800 relative">
           <table
-            className="text-sm border-separate border-spacing-0 table-fixed min-w-[320px]"
-            style={{ width: `calc(320px + (${timeRange} * 85px))` }}
+            className="text-sm border-separate border-spacing-0 table-fixed min-w-full"
           >
             <thead className="sticky top-0 z-50">
               <tr className="bg-slate-100 dark:bg-slate-900 text-[10px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 shadow-sm">
@@ -295,11 +319,14 @@ export default function ProgressTab({
                 <th className="lg:sticky lg:left-[360px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Target</th>
                 <th className="lg:sticky lg:left-[450px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[90px] min-w-[90px] border-b border-slate-200 dark:border-slate-800">Realisasi</th>
                 <th className="lg:sticky lg:left-[540px] z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-right w-[100px] min-w-[100px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
-                {Array.from({ length: timeRange }).map((_, idx) => (
-                  <th key={idx} className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 text-[9px] font-black w-[85px] min-w-[85px] whitespace-nowrap bg-slate-100 dark:bg-slate-900">
-                    H-{idx + 1}<br /><span className="text-[8px] opacity-60 font-black uppercase text-slate-400 dark:text-slate-500">{getDateLabel(idx)}</span>
-                  </th>
-                ))}
+                {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
+                  const actualDayIdx = viewStartIndex + idx;
+                  return (
+                    <th key={actualDayIdx} className="px-4 py-4 text-center border-b border-slate-200 dark:border-slate-800 text-[9px] font-black w-[85px] min-w-[85px] whitespace-nowrap bg-slate-100 dark:bg-slate-900">
+                      H-{actualDayIdx + 1}<br /><span className="text-[8px] opacity-60 font-black uppercase text-slate-400 dark:text-slate-500">{getDateLabel(actualDayIdx)}</span>
+                    </th>
+                  );
+                })}
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
@@ -385,10 +412,10 @@ export default function ProgressTab({
                       </div>
                     </td>
 
-                    {Array.from({ length: timeRange }).map((_, idx) => {
-                      const day = idx + 1;
+                    {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
+                      const day = viewStartIndex + idx + 1;
                       return (
-                        <td key={idx} className="px-2 py-6 text-center w-[85px]">
+                        <td key={day} className="px-2 py-6 text-center w-[85px]">
                           <input
                             type="number"
                             value={daily[day] || ''}
