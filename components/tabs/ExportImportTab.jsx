@@ -108,6 +108,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       await generateLaporanReport(project, userMember, ahspLines, [reportType, 'database'], {
         progressData,
         projectPrices,
+        startDate: dateRange.start,
+        endDate: dateRange.end,
         headerImage: hImg,
         paperSize,
         fileName: `Laporan_${reportType}_${project.name || 'Export'}.xlsx`
