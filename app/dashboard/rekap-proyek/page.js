@@ -11,7 +11,7 @@ import {
   Camera, MapPin, ClipboardList, Activity, Package, Factory,
   LayoutGrid, ChevronRight, Users, BarChart2, Clock, CalendarDays, Zap, FileSpreadsheet,
   TrendingUp, Trash2, Save, Plus, LogOut, Copy, Check, UserMinus, Settings2, Settings, Tag, ShieldCheck,
-  FolderKanban
+  FolderKanban, Box
 } from 'lucide-react';
 import {
   BarChart, Bar, Cell
@@ -1527,82 +1527,79 @@ function ProyekContent() {
             )
           )}
 
-          {activeTab !== 'daftar' && !hasProject && !isCreating && (
-            <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6">
-              <div className="w-24 h-24 bg-slate-100 dark:bg-slate-800/50 rounded-full flex items-center justify-center shadow-inner">
-                 <LayoutGrid className="w-10 h-10 text-slate-400 dark:text-slate-500" />
-              </div>
-              <div className="space-y-2">
-                <h3 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">Pilih Proyek Terlebih Dahulu</h3>
-                <p className="text-sm font-medium text-slate-500 dark:text-slate-400 max-w-md mx-auto">
-                  Silakan pilih proyek dari menu dropdown di atas untuk melihat detail, mengedit RAB, atau mengekspor dokumen.
-                </p>
-              </div>
+          {activeTab !== 'daftar' && !hasProject && !isCreating ? (
+            <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+              <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+              <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">
+                BELUM ADA PROYEK YANG DIPILIH
+              </h3>
             </div>
-          )}
-
-          {activeTab === 'proyek' && (hasProject || isCreating) && (
-            <div className="space-y-6">
-              {subTabProyek === 'rab' ? (
-                <RabEditorTab
-                  projectId={selectedProject}
-                  initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
-                  backupData={tabData.backup}
-                  member={member}
-                  onRefresh={(newId) => {
-                    setIsCreating(false);
-                    setLocalTotalKontrak(null);
-                    const targetId = newId || selectedProject;
-                    if (newId) setSelectedProject(newId);
-                    loadData();
-                    loadTabData(activeTab, targetId, selectedBab);
-                  }}
-                  onEditIdentity={() => setIsIdentityModalOpen(true)}
-                  ownerId={projectOwnerId || member?.user_id}
-                  projectStartDate={projectStartDate}
-                  setProjectStartDate={updateProjectStartDate}
-                />
-              ) : subTabProyek === 'backup' ? (
-                <BackupVolumeTab {...{
-                  activeTab, tabLoading, tabData, projectId: selectedProject,
-                  onRefresh: () => loadTabData(activeTab, selectedProject),
-                  userSlotRole, isAdmin, isOwner,
-                  memberRole: member?.role,
-                  selectedLineId: selectedBackupLineId,
-                  onSelectLineId: setSelectedBackupLineId
-                }} />
-              ) : (
-                <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
+          ) : (
+            <>
+              {activeTab === 'proyek' && (hasProject || isCreating) && (
+                <div className="space-y-6">
+                  {subTabProyek === 'rab' ? (
+                    <RabEditorTab
+                      projectId={selectedProject}
+                      initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
+                      backupData={tabData.backup}
+                      member={member}
+                      onRefresh={(newId) => {
+                        setIsCreating(false);
+                        setLocalTotalKontrak(null);
+                        const targetId = newId || selectedProject;
+                        if (newId) setSelectedProject(newId);
+                        loadData();
+                        loadTabData(activeTab, targetId, selectedBab);
+                      }}
+                      onEditIdentity={() => setIsIdentityModalOpen(true)}
+                      ownerId={projectOwnerId || member?.user_id}
+                      projectStartDate={projectStartDate}
+                      setProjectStartDate={updateProjectStartDate}
+                    />
+                  ) : subTabProyek === 'backup' ? (
+                    <BackupVolumeTab {...{
+                      activeTab, tabLoading, tabData, projectId: selectedProject,
+                      onRefresh: () => loadTabData(activeTab, selectedProject),
+                      userSlotRole, isAdmin, isOwner,
+                      memberRole: member?.role,
+                      selectedLineId: selectedBackupLineId,
+                      onSelectLineId: setSelectedBackupLineId
+                    }} />
+                  ) : (
+                    <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
+                  )}
+                </div>
               )}
-            </div>
-          )}
 
-          {activeTab === 'progress' && hasProject && (
-            <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
-          )}
+              {activeTab === 'progress' && hasProject && (
+                <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+              )}
 
-          {activeTab === 'ahsp' && hasProject && (
-            <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
-          )}
+              {activeTab === 'ahsp' && hasProject && (
+                <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
+              )}
 
-          {activeTab === 'terpakai' && hasProject && (
-            <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
-          )}
+              {activeTab === 'terpakai' && hasProject && (
+                <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => loadTabData(activeTab, selectedProject), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+              )}
 
-          {activeTab === 'perubahan' && hasProject && (
-            <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
-          )}
+              {activeTab === 'perubahan' && hasProject && (
+                <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => loadTabData(activeTab, selectedProject, selectedBab), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+              )}
 
-          {activeTab === 'tkdn' && hasProject && (
-            <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
-          )}
+              {activeTab === 'tkdn' && hasProject && (
+                <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+              )}
 
-          {activeTab === 'dok' && hasProject && (
-            <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
-          )}
+              {activeTab === 'dok' && hasProject && (
+                <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+              )}
 
-          {activeTab === 'export' && hasProject && (
-            <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+              {activeTab === 'export' && hasProject && (
+                <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+              )}
+            </>
           )}
         </div>
       </div>
