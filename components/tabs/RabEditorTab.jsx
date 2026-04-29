@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useEffect, useCallback, useMemo, useRef, useLayoutEffect, useTransition } from 'react';
 import { createPortal } from 'react-dom';
+import { useVirtualizer } from '@tanstack/react-virtual';
 import Spinner from '../Spinner';
 import { supabase } from '@/lib/supabase';
 import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box } from 'lucide-react';
@@ -249,6 +249,169 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         </div>,
         document.body
       )}
+    </div>
+  );
+}
+
+function RabSectionTable({ 
+  sec, sIdx, identity, member, backupTotals, isPrivileged, 
+  updateRow, updateProfitRow, handleAhspSelect, saveToMasterLumsum, 
+  setSections, dbMaxLsNum, generateNextCode, globalOverhead, 
+  createEmptyRow, formatIdr, parseNum, toRoman, calculateHargaSatuan
+}) {
+  const parentRef = useRef(null);
+  
+  const virtualizer = useVirtualizer({
+    count: sec.lines.length,
+    getScrollElement: () => parentRef.current,
+    estimateSize: () => 72, 
+    overscan: 5,
+  });
+
+  const virtualItems = virtualizer.getVirtualItems();
+  const totalSize = virtualizer.getTotalSize();
+
+  return (
+    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+      <div 
+        ref={parentRef}
+        className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 px-2 pb-4"
+      >
+        <table className="w-full border-separate border-spacing-0 min-w-[900px] relative">
+          <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-sm">
+            <tr className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
+              <th className="px-2 py-3 text-left w-8">NO</th>
+              <th className="px-3 py-3 text-left w-52">CARI ANALISA</th>
+              <th className="px-3 py-3 text-left">URAIAN</th>
+              <th className="px-1 py-3 text-center w-12">SAT</th>
+              <th className="px-3 py-3 text-center w-24">PROFIT</th>
+              <th className="px-3 py-3 text-right w-22">VOL</th>
+              <th className="px-3 py-3 text-right w-44">HARGA</th>
+              <th className="px-3 py-3 text-right w-48">TOTAL</th>
+              <th className="px-1 py-3 w-8"></th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+            {/* Top Spacer */}
+            {virtualItems.length > 0 && virtualItems[0].start > 0 && (
+              <tr>
+                <td colSpan={9} style={{ height: `${virtualItems[0].start}px` }} />
+              </tr>
+            )}
+
+            {virtualItems.map((virtualRow) => {
+              const row = sec.lines[virtualRow.index];
+              const rIdx = virtualRow.index;
+              return (
+                <tr 
+                  key={row.key} 
+                  ref={virtualizer.measureElement} 
+                  data-index={virtualRow.index}
+                  className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group h-[72px]"
+                >
+                  <td className="px-2 py-4 text-slate-400 font-mono text-[10px] w-8">{rIdx + 1}</td>
+                  <td className="px-3 py-4 relative group-code w-52">
+                    <AsyncCombobox 
+                      value={row.uraian} 
+                      kode={row.masterAhspKode} 
+                      mode={row.mode}
+                      locationId={identity.location_id || member?.selected_location_id}
+                      onSelect={data => handleAhspSelect(sec.id, row.key, data)} 
+                      placeholder={row.mode === 'lumsum' ? "CARI..." : "CARI..."} 
+                    />
+                  </td>
+                  <td className="px-3 py-4 min-w-[150px]">
+                    <input 
+                      value={row.uraianCustom || row.uraian || ''} 
+                      onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })} 
+                      onFocus={(e) => e.target.select()}
+                      className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400 bg-opacity-50" 
+                      placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."} 
+                    />
+                  </td>
+                  <td className="px-1 py-4 text-center w-12">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase">{row.satuan || '-'}</span>
+                  </td>
+                  <td className="px-2 py-4 text-center w-24">
+                    <div className="flex items-center justify-center gap-1">
+                      <input 
+                        type="number" 
+                        value={row.profitPercent ?? ''} 
+                        onFocus={e => e.target.select()}
+                        onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
+                        className="w-12 h-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
+                      />
+                      <span className="text-[9px] text-slate-400 font-bold">%</span>
+                    </div>
+                  </td>
+                  <td className="px-3 py-4 w-22 text-right">
+                    <div className="flex flex-col items-center gap-1.5 relative group-vol">
+                      <input 
+                        type="number" 
+                        value={row.volume ?? ''} 
+                        onFocus={e => e.target.select()} 
+                        onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })} 
+                        className={`w-16 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-2 py-1 text-right font-mono font-bold text-[11px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`} 
+                        placeholder="0" 
+                      />
+                      {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
+                        <button 
+                          onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
+                          className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all hover:scale-110 active:scale-90"
+                          title={`Terapkan Volume dari Backup Data: ${backupTotals[row.id || row.key].toLocaleString('id-ID')} ${row.satuan}`}
+                        >
+                          <Calculator className="w-3 h-3" />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                  <td className="px-3 py-4 w-44">
+                    {row.mode === 'lumsum' || !row.masterAhspId ? (
+                      <div className="flex flex-col gap-1">
+                        <input 
+                          type="number" 
+                          value={row.hargaSatuan ?? ''} 
+                          onFocus={e => e.target.select()} 
+                          onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })} 
+                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-2 py-1 text-right font-mono font-bold text-indigo-700 dark:text-orange-500 rounded" 
+                        />
+                        {row.mode === 'lumsum' && <button onClick={() => saveToMasterLumsum(row)} className="text-[8px] font-bold text-indigo-400 hover:text-indigo-600 uppercase self-end transition-colors">Simpan Katalog</button>}
+                      </div>
+                    ) : (
+                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-bold text-[11px]">{formatIdr(parseNum(row.hargaSatuan))}</div>
+                    )}
+                  </td>
+                  <td className="px-3 py-4 text-right font-mono font-bold text-slate-900 dark:text-white text-[11px] w-48">
+                    {formatIdr(parseNum(row.volume) * parseNum(row.hargaSatuan))}
+                  </td>
+                  <td className="px-1 py-4 text-center w-8">
+                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </td>
+                </tr>
+              );
+            })}
+
+            {/* Bottom Spacer */}
+            {virtualItems.length > 0 && (totalSize - virtualItems[virtualItems.length - 1].end) > 0 && (
+              <tr>
+                <td colSpan={9} style={{ height: `${totalSize - virtualItems[virtualItems.length - 1].end}px` }} />
+              </tr>
+            )}
+          </tbody>
+          <tfoot className="bg-slate-50 bg-opacity-30 dark:bg-slate-900 bg-opacity-10 border-t border-slate-100 dark:border-slate-800 sticky bottom-0 z-10 backdrop-blur-sm">
+            <tr>
+              <td colSpan={9} className="px-6 py-4">
+                <div className="flex gap-4">
+                  <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('ahsp', prev, globalOverhead), masterAhspKode: '' }] } : s))} className="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900 bg-opacity-50 uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">+ Item Analisa</button>
+                  <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('lumsum', prev, globalOverhead), masterAhspKode: generateNextCode('lumsum', prev, dbMaxLsNum) }] } : s))} className="text-[9px] font-black text-amber-600 bg-amber-50 dark:bg-amber-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900 bg-opacity-50 uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">+ Item Lumpsum</button>
+                </div>
+              </td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
     </div>
   );
 }
@@ -953,144 +1116,47 @@ export default function RabEditorTab({
                      Terapkan
                    </button>
                 </div>
-             </div>
-          </div>
-
-              {sections.map((sec, sIdx) => (
-                <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
-                   {/* ... (existing section render code) ... */}
-                   {/* I'll use the original code here */}
-                   <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
-                      <div className="flex items-center gap-3 w-full">
-                        <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
-                        <input 
-                          value={sec.namaBab} 
-                          onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))} 
-                          onFocus={(e) => e.target.select()}
-                          className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white" 
-                          placeholder="NAMA BAB PEKERJAAN..." 
-                        />
-                      </div>
-                      <button onClick={() => setSections(prev => prev.filter(s => s.id !== sec.id))} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                   </div>
-                   
-                   <div className="bg-white dark:bg-slate-900 overflow-x-auto px-2 pb-4">
-                      <table className="w-full border-separate border-spacing-0 min-w-[800px]">
-                         <thead>
-                            <tr className="text-[10px] font-bold uppercase text-slate-500 dark:text-slate-400 tracking-wider border-b border-slate-200 dark:border-slate-700 bg-slate-50 bg-opacity-50 dark:bg-slate-900 bg-opacity-50 dark:bg-opacity-50">
-                              <th className="px-2 py-3 text-left w-8">NO</th>
-                              <th className="px-3 py-3 text-left w-52">CARI ANALISA</th>
-                              <th className="px-3 py-3 text-left">URAIAN</th>
-                              <th className="px-1 py-3 text-center w-12">SAT</th>
-                              <th className="px-3 py-3 text-center w-24">PROFIT</th>
-                              <th className="px-3 py-3 text-right w-22">VOL</th>
-                              <th className="px-3 py-3 text-right w-44">HARGA</th>
-                              <th className="px-3 py-3 text-right w-48">TOTAL</th>
-                              <th className="px-1 py-3 w-8"></th>
-                            </tr>
-                         </thead>
-                         <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                            {sec.lines.map((row, rIdx) => (
-                              <tr key={row.key} className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group">
-                                <td className="px-2 py-4 text-slate-400 font-mono text-[10px] w-8">{rIdx + 1}</td>
-                                <td className="px-3 py-4 relative group-code w-52">
-                                   <AsyncCombobox 
-                                     value={row.uraian} 
-                                     kode={row.masterAhspKode} 
-                                     mode={row.mode}
-                                     locationId={identity.location_id || member?.selected_location_id}
-                                     onSelect={data => handleAhspSelect(sec.id, row.key, data)} 
-                                     placeholder={row.mode === 'lumsum' ? "CARI..." : "CARI..."} 
-                                   />
-                                </td>
-                                <td className="px-3 py-4 min-w-[150px]">
-                                   <input 
-                                     value={row.uraianCustom || row.uraian || ''} 
-                                     onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })} 
-                                     onFocus={(e) => e.target.select()}
-                                     className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400 bg-opacity-50" 
-                                     placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."} 
-                                   />
-                                </td>
-                                <td className="px-1 py-4 text-center w-12">
-                                   <span className="text-[10px] font-bold text-slate-500 uppercase">{row.satuan || '-'}</span>
-                                </td>
-                                <td className="px-2 py-4 text-center w-24">
-                                   <div className="flex items-center justify-center gap-1">
-                                     <input 
-                                       type="number" 
-                                       value={row.profitPercent ?? ''} 
-                                       onFocus={e => e.target.select()}
-                                       onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
-                                       className="w-12 h-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
-                                     />
-                                     <span className="text-[9px] text-slate-400 font-bold">%</span>
-                                   </div>
-                                </td>
-                                <td className="px-3 py-4 w-22 text-right">
-                                  <div className="flex flex-col items-center gap-1.5 relative group-vol">
-                                    <input 
-                                      type="number" 
-                                      value={row.volume ?? ''} 
-                                      onFocus={e => e.target.select()} 
-                                      onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })} 
-                                      className={`w-16 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-2 py-1 text-right font-mono font-bold text-[11px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`} 
-                                      placeholder="0" 
-                                    />
-                                    {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
-                                      <button 
-                                        onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
-                                        className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all hover:scale-110 active:scale-90"
-                                        title={`Terapkan Volume dari Backup Data: ${backupTotals[row.id || row.key].toLocaleString('id-ID')} ${row.satuan}`}
-                                      >
-                                        <Calculator className="w-3 h-3" />
-                                      </button>
-                                    )}
-                                  </div>
-                                </td>
-                                <td className="px-3 py-4 w-44">
-                                   {row.mode === 'lumsum' || !row.masterAhspId ? (
-                                     <div className="flex flex-col gap-1">
-                                       <input 
-                                         type="number" 
-                                         value={row.hargaSatuan ?? ''} 
-                                         onFocus={e => e.target.select()} 
-                                         onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })} 
-                                         className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-2 py-1 text-right font-mono font-bold text-indigo-700 dark:text-orange-500 rounded" 
-                                       />
-                                       {row.mode === 'lumsum' && <button onClick={() => saveToMasterLumsum(row)} className="text-[8px] font-bold text-indigo-400 hover:text-indigo-600 uppercase self-end transition-colors">Simpan Katalog</button>}
-                                     </div>
-                                   ) : (
-                                     <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-bold text-[11px]">{formatIdr(parseNum(row.hargaSatuan))}</div>
-                                   )}
-                                </td>
-                                <td className="px-3 py-4 text-right font-mono font-bold text-slate-900 dark:text-white text-[11px] w-48">
-                                   {formatIdr(parseNum(row.volume) * parseNum(row.hargaSatuan))}
-                                </td>
-                                <td className="px-1 py-4 text-center w-8">
-                                  <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-1 text-slate-300 hover:text-red-500 transition-colors">
-                                    <Trash2 className="w-3.5 h-3.5" />
-                                  </button>
-                                </td>
-                              </tr>
-                            ))}
-                          </tbody>
-                         <tfoot className="bg-slate-50 bg-opacity-30 dark:bg-slate-900 bg-opacity-10 border-t border-slate-100 dark:border-slate-800">
-                            <tr>
-                              <td colSpan={9} className="px-6 py-4">
-                                  <div className="flex gap-4">
-                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('ahsp', prev, globalOverhead), masterAhspKode: '' }] } : s))} className="text-[9px] font-black text-indigo-600 bg-indigo-50 dark:bg-indigo-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-indigo-100 dark:border-indigo-900 bg-opacity-50 uppercase tracking-widest hover:bg-indigo-600 hover:text-white transition-all">+ Item Analisa</button>
-                                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: [...s.lines, { ...createEmptyRow('lumsum', prev, globalOverhead), masterAhspKode: generateNextCode('lumsum', prev, dbMaxLsNum) }] } : s))} className="text-[9px] font-black text-amber-600 bg-amber-50 dark:bg-amber-900 bg-opacity-20 px-3 py-1.5 rounded-lg border border-amber-100 dark:border-amber-900 bg-opacity-50 uppercase tracking-widest hover:bg-amber-600 hover:text-white transition-all">+ Item Lumpsum</button>
-                                  </div>
-                              </td>
-                            </tr>
-                         </tfoot>
-                      </table>
-                   </div>
-                </div>
-              ))}
+                           {sections.map((sec, sIdx) => (
+                 <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
+                    <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                       <div className="flex items-center gap-3 w-full">
+                         <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
+                         <input 
+                           value={sec.namaBab} 
+                           onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))} 
+                           onFocus={(e) => e.target.select()}
+                           className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white" 
+                           placeholder="NAMA BAB PEKERJAAN..." 
+                         />
+                       </div>
+                       <button onClick={() => setSections(prev => prev.filter(s => s.id !== sec.id))} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                         <Trash2 className="w-3.5 h-3.5" />
+                       </button>
+                    </div>
+                    
+                    <RabSectionTable 
+                       sec={sec}
+                       sIdx={sIdx}
+                       identity={identity}
+                       member={member}
+                       backupTotals={backupTotals}
+                       isPrivileged={isPrivileged}
+                       updateRow={updateRow}
+                       updateProfitRow={updateProfitRow}
+                       handleAhspSelect={handleAhspSelect}
+                       saveToMasterLumsum={saveToMasterLumsum}
+                       setSections={setSections}
+                       dbMaxLsNum={dbMaxLsNum}
+                       generateNextCode={generateNextCode}
+                       globalOverhead={globalOverhead}
+                       createEmptyRow={createEmptyRow}
+                       formatIdr={formatIdr}
+                       parseNum={parseNum}
+                       toRoman={toRoman}
+                       calculateHargaSatuan={calculateHargaSatuan}
+                    />
+                 </div>
+               ))}
 
               <div className="flex justify-center pt-4">
                  <button 
