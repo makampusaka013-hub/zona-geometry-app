@@ -723,9 +723,9 @@ export default function RabEditorTab({
           <button 
             onClick={saveRab} 
             disabled={saving} 
-            className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-lg shadow-indigo-600 bg-opacity-20 dark:shadow-orange-600 bg-opacity-20 active:scale-95 transition-all disabled:opacity-50"
+            className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(79,70,229,0.2)] dark:shadow-[0_10px_20px_rgba(249,115,22,0.2)] active:scale-95 transition-all disabled:opacity-50"
           >
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white bg-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
+            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
             {saving ? 'Simpan...' : 'Simpan'}
           </button>
         </div>
@@ -1060,13 +1060,12 @@ export default function RabEditorTab({
                          <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
                       </div>
                    )}
-                </div>
-
-                <div className="p-5">
-                    <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-lg shadow-indigo-600 bg-opacity-20 dark:shadow-orange-600 dark:bg-opacity-10 hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2">
+                   <div className="p-5">
+                    <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-[0_10px_30px_rgba(79,70,229,0.3)] dark:shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2">
                        <Save className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan RAB'}
                     </button>
                  </div>
+                </div>
              </div>
 
               <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
