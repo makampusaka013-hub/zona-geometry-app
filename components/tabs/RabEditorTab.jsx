@@ -711,7 +711,7 @@ export default function RabEditorTab({
     <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
       
       {/* ── Mobile Sticky Summary Bar ── */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white/80 dark:bg-slate-900/90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
+        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white bg-opacity-80 dark:bg-slate-900 dark:bg-opacity-90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
           <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
             <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
                Grand Total <ChevronDown className={`w-2 h-2 transition-transform ${showMobileDetails ? 'rotate-180' : ''}`} />
@@ -867,7 +867,7 @@ export default function RabEditorTab({
                             {sec.lines.map((row, rIdx) => (
                               <tr key={row.key} className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group">
                                 <td className="px-2 py-4 text-slate-400 font-mono text-[10px] w-8">{rIdx + 1}</td>
-                                <td className="px-3 py-4 relative group/code w-52">
+                                <td className="px-3 py-4 relative group-code w-52">
                                    <AsyncCombobox 
                                      value={row.uraian} 
                                      kode={row.masterAhspKode} 
@@ -902,7 +902,7 @@ export default function RabEditorTab({
                                    </div>
                                 </td>
                                 <td className="px-3 py-4 w-22 text-right">
-                                  <div className="flex flex-col items-center gap-1.5 relative group/vol">
+                                  <div className="flex flex-col items-center gap-1.5 relative group-vol">
                                     <input 
                                       type="number" 
                                       value={row.volume ?? ''} 
@@ -914,7 +914,7 @@ export default function RabEditorTab({
                                     {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
                                       <button 
                                         onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
-                                        className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover/vol:opacity-100 transition-all hover:scale-110 active:scale-90"
+                                        className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all hover:scale-110 active:scale-90"
                                         title={`Terapkan Volume dari Backup Data: ${backupTotals[row.id || row.key].toLocaleString('id-ID')} ${row.satuan}`}
                                       >
                                         <Calculator className="w-3 h-3" />
