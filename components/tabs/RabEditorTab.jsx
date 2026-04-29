@@ -159,11 +159,11 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
             .or(`kode_ahsp.ilike.%${query.trim()}%,nama_pekerjaan.ilike.%${query.trim()}%`)
             .order('kode_ahsp')
             .limit(20);
-          
-          if (!error) combined = (data || []).map(d => ({ 
-            ...d, 
-            id: d.id, 
-            type: 'ahsp' 
+
+          if (!error) combined = (data || []).map(d => ({
+            ...d,
+            id: d.id,
+            type: 'ahsp'
           }));
         } else {
           const { data: lumsum, error } = await supabase.from('view_master_harga_gabungan')
@@ -171,13 +171,13 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
             .eq('kategori_item', 'Lumpsum')
             .ilike('nama_item', searchPattern)
             .limit(15);
-          
+
           if (!error) {
-            combined = (lumsum || []).map(d => ({ 
-              id: d.id, 
-              kode_ahsp: d.kode_item || 'LS.???', 
-              nama_pekerjaan: d.nama_item, 
-              satuan_pekerjaan: d.satuan, 
+            combined = (lumsum || []).map(d => ({
+              id: d.id,
+              kode_ahsp: d.kode_item || 'LS.???',
+              nama_pekerjaan: d.nama_item,
+              satuan_pekerjaan: d.satuan,
               total_subtotal: d.harga_satuan,
               type: 'lumsum'
             }));
@@ -198,25 +198,25 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
 
   return (
     <div className="relative w-full" ref={wrapperRef}>
-      <input 
+      <input
         ref={inputRef}
-        type="text" 
-        value={query} 
-        onChange={(e) => { setQuery(e.target.value); setOpen(true); }} 
-        onFocus={(e) => { 
+        type="text"
+        value={query}
+        onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
+        onFocus={(e) => {
           e.target.select();
-          if(query.length >= 1) setOpen(true); 
-        }} 
-        className={`w-full bg-slate-50 dark:bg-slate-900 bg-opacity-50 border-none px-2 py-1.5 text-[11px] font-mono font-bold placeholder:font-sans placeholder:font-normal focus:ring-1 focus:ring-indigo-500 rounded transition-all ${kode ? 'text-indigo-600 dark:text-orange-400' : 'text-slate-900 dark:text-white'}`} 
-        placeholder={placeholder} 
+          if(query.length >= 1) setOpen(true);
+        }}
+        className={`w-full bg-slate-50 dark:bg-slate-900 bg-opacity-50 border-none px-2 py-1.5 text-[11px] font-mono font-bold placeholder:font-sans placeholder:font-normal focus:ring-1 focus:ring-indigo-500 rounded transition-all ${kode ? 'text-indigo-600 dark:text-orange-400' : 'text-slate-900 dark:text-white'}`}
+        placeholder={placeholder}
         title={value || ''}
       />
       {open && mounted && (query.length >= 1) && createPortal(
-        <div 
+        <div
           ref={resultsRef}
           className="fixed z-[9999] mt-1 overflow-y-auto rounded-xl bg-white dark:bg-slate-800 shadow-2xl border border-slate-200 dark:border-slate-700 divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in zoom-in-95 duration-200"
-          style={{ 
-            top: coords.top, 
+          style={{
+            top: coords.top,
             left: coords.left,
             width: Math.max(coords.width * 2, 400),
             maxHeight: '300px'
@@ -225,9 +225,9 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
           {loading && <div className="p-3 text-xs text-slate-400 animate-pulse">Mencari...</div>}
           {!loading && results.length === 0 && <div className="p-3 text-[10px] text-slate-400 italic">Data tidak ditemukan.</div>}
           {!loading && results.map((item, idx) => (
-            <div 
-              key={idx} 
-              className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors" 
+            <div
+              key={idx}
+              className="p-2.5 hover:bg-slate-50 dark:hover:bg-slate-700 cursor-pointer transition-colors"
               onClick={() => { setOpen(false); onSelect(item); }}
               title={item.nama_pekerjaan}
             >
@@ -253,18 +253,18 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
   );
 }
 
-function RabSectionTable({ 
-  sec, sIdx, identity, member, backupTotals, isPrivileged, 
-  updateRow, updateProfitRow, handleAhspSelect, saveToMasterLumsum, 
-  setSections, dbMaxLsNum, generateNextCode, globalOverhead, 
+function RabSectionTable({
+  sec, sIdx, identity, member, backupTotals, isPrivileged,
+  updateRow, updateProfitRow, handleAhspSelect, saveToMasterLumsum,
+  setSections, dbMaxLsNum, generateNextCode, globalOverhead,
   createEmptyRow, formatIdr, parseNum, toRoman, calculateHargaSatuan
 }) {
   const parentRef = useRef(null);
-  
+
   const virtualizer = useVirtualizer({
     count: sec.lines.length,
     getScrollElement: () => parentRef.current,
-    estimateSize: () => 72, 
+    estimateSize: () => 72,
     overscan: 5,
   });
 
@@ -273,7 +273,7 @@ function RabSectionTable({
 
   return (
     <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
-      <div 
+      <div
         ref={parentRef}
         className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 px-2 pb-4"
       >
@@ -303,30 +303,30 @@ function RabSectionTable({
               const row = sec.lines[virtualRow.index];
               const rIdx = virtualRow.index;
               return (
-                <tr 
-                  key={row.key} 
-                  ref={virtualizer.measureElement} 
+                <tr
+                  key={row.key}
+                  ref={virtualizer.measureElement}
                   data-index={virtualRow.index}
                   className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group h-[72px]"
                 >
                   <td className="px-2 py-4 text-slate-400 font-mono text-[10px] w-8">{rIdx + 1}</td>
                   <td className="px-3 py-4 relative group-code w-52">
-                    <AsyncCombobox 
-                      value={row.uraian} 
-                      kode={row.masterAhspKode} 
+                    <AsyncCombobox
+                      value={row.uraian}
+                      kode={row.masterAhspKode}
                       mode={row.mode}
                       locationId={identity.location_id || member?.selected_location_id}
-                      onSelect={data => handleAhspSelect(sec.id, row.key, data)} 
-                      placeholder={row.mode === 'lumsum' ? "CARI..." : "CARI..."} 
+                      onSelect={data => handleAhspSelect(sec.id, row.key, data)}
+                      placeholder={row.mode === 'lumsum' ? "CARI..." : "CARI..."}
                     />
                   </td>
                   <td className="px-3 py-4 min-w-[150px]">
-                    <input 
-                      value={row.uraianCustom || row.uraian || ''} 
-                      onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })} 
+                    <input
+                      value={row.uraianCustom || row.uraian || ''}
+                      onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })}
                       onFocus={(e) => e.target.select()}
-                      className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400 bg-opacity-50" 
-                      placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."} 
+                      className="w-full bg-transparent border-none px-0 py-0 text-xs text-slate-700 dark:text-slate-300 font-medium focus:ring-0 placeholder:text-slate-400 bg-opacity-50"
+                      placeholder={row.mode === 'lumsum' ? "Nama Item..." : "Deskripsi pekerjaan..."}
                     />
                   </td>
                   <td className="px-1 py-4 text-center w-12">
@@ -334,9 +334,9 @@ function RabSectionTable({
                   </td>
                   <td className="px-2 py-4 text-center w-24">
                     <div className="flex items-center justify-center gap-1">
-                      <input 
-                        type="number" 
-                        value={row.profitPercent ?? ''} 
+                      <input
+                        type="number"
+                        value={row.profitPercent ?? ''}
                         onFocus={e => e.target.select()}
                         onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
                         className="w-12 h-7 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[11px] font-mono font-bold text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
@@ -346,16 +346,16 @@ function RabSectionTable({
                   </td>
                   <td className="px-3 py-4 w-22 text-right">
                     <div className="flex flex-col items-center gap-1.5 relative group-vol">
-                      <input 
-                        type="number" 
-                        value={row.volume ?? ''} 
-                        onFocus={e => e.target.select()} 
-                        onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })} 
-                        className={`w-16 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-2 py-1 text-right font-mono font-bold text-[11px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`} 
-                        placeholder="0" 
+                      <input
+                        type="number"
+                        value={row.volume ?? ''}
+                        onFocus={e => e.target.select()}
+                        onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })}
+                        className={`w-16 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-2 py-1 text-right font-mono font-bold text-[11px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
+                        placeholder="0"
                       />
                       {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
-                        <button 
+                        <button
                           onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
                           className="absolute -left-6 top-1/2 -translate-y-1/2 p-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all hover:scale-110 active:scale-90"
                           title={`Terapkan Volume dari Backup Data: ${backupTotals[row.id || row.key].toLocaleString('id-ID')} ${row.satuan}`}
@@ -368,12 +368,12 @@ function RabSectionTable({
                   <td className="px-3 py-4 w-44">
                     {row.mode === 'lumsum' || !row.masterAhspId ? (
                       <div className="flex flex-col gap-1">
-                        <input 
-                          type="number" 
-                          value={row.hargaSatuan ?? ''} 
-                          onFocus={e => e.target.select()} 
-                          onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })} 
-                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-2 py-1 text-right font-mono font-bold text-indigo-700 dark:text-orange-500 rounded" 
+                        <input
+                          type="number"
+                          value={row.hargaSatuan ?? ''}
+                          onFocus={e => e.target.select()}
+                          onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
+                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-2 py-1 text-right font-mono font-bold text-indigo-700 dark:text-orange-500 rounded"
                         />
                         {row.mode === 'lumsum' && <button onClick={() => saveToMasterLumsum(row)} className="text-[8px] font-bold text-indigo-400 hover:text-indigo-600 uppercase self-end transition-colors">Simpan Katalog</button>}
                       </div>
@@ -416,8 +416,8 @@ function RabSectionTable({
   );
 }
 
-export default function RabEditorTab({ 
-  projectId, 
+export default function RabEditorTab({
+  projectId,
   initialIdentity,
   onRefresh,
   onEditIdentity,
@@ -534,7 +534,7 @@ export default function RabEditorTab({
       .select('*, master_ahsp(kode_ahsp)')
       .eq('project_id', projectId)
       .order('sort_order');
-    
+
     if (!error && data) {
       const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
       let masterPrices = {};
@@ -544,7 +544,7 @@ export default function RabEditorTab({
           supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds),
           supabase.from('master_harga_custom').select('kode_item, harga_satuan')
         ]);
-        
+
         const overrideMap = {};
         (overridesRes.data || []).forEach(o => { if (o.harga_satuan > 0) overrideMap[o.kode_item] = o.harga_satuan; });
 
@@ -577,11 +577,11 @@ export default function RabEditorTab({
       data.forEach(item => {
         const bab = item.bab_pekerjaan || 'UMUM';
         if (!grouped[bab]) grouped[bab] = [];
-        
+
         // 1. Tentukan Harga Dasar Murni
         const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
         let basePrice = parseNum(freshPrice);
-        
+
         if (basePrice === 0 && item.analisa_custom && item.analisa_custom.length > 0) {
            basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
         }
@@ -589,7 +589,7 @@ export default function RabEditorTab({
         // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur (untuk data lama) -> Global -> Default 15%)
         let finalProfit = 15;
         const dbProfit = item.profit_percent;
-        
+
         if (dbProfit !== null && dbProfit !== undefined) {
           // Jika ada di DB, gunakan nilai tersebut secara mutlak
           finalProfit = parseNum(dbProfit);
@@ -625,14 +625,14 @@ export default function RabEditorTab({
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: String(finalProfit) 
+          profitPercent: String(finalProfit)
         });
       });
 
       setSections(
         Object.keys(grouped).length > 0
           ? Object.entries(grouped).map(([bab, lines]) => ({
-              id: bab, 
+              id: bab,
               namaBab: bab,
               lines: lines
             }))
@@ -663,11 +663,11 @@ export default function RabEditorTab({
   useEffect(() => {
     // Only auto-save if project exists and not currently loading or manual saving
     if (!projectId || loading || saving) return;
-    
+
     const timer = setTimeout(() => {
       // Only auto-save if not already auto-saving
       if (autoSaveStatus === 'saving') return;
-      
+
       const performAutoSave = async () => {
         setAutoSaveStatus('saving');
         try {
@@ -681,14 +681,14 @@ export default function RabEditorTab({
           setAutoSaveStatus('error');
         }
       };
-      
+
       performAutoSave();
     }, 5000); // 5 seconds debounce
 
     return () => clearTimeout(timer);
   }, [sections, identity, projectMeta, globalOverhead]);
 
-  useEffect(() => { 
+  useEffect(() => {
     loadRab();
     fetchMaxLs();
   }, [loadRab, fetchMaxLs]);
@@ -709,8 +709,8 @@ export default function RabEditorTab({
   }, [sections, identity.ppn_percent]);
 
   const updateRow = (sId, rowKey, patch) => {
-    setSections(prev => prev.map(s => s.id === sId ? { 
-      ...s, 
+    setSections(prev => prev.map(s => s.id === sId ? {
+      ...s,
       lines: s.lines.map(r => {
         if (r.key === rowKey) {
           const updated = { ...r, ...patch };
@@ -775,14 +775,14 @@ export default function RabEditorTab({
 
   const handleAhspSelect = (sId, rowKey, data) => {
     const hs = calculateHargaSatuan(data.total_subtotal, globalOverhead);
-    updateRow(sId, rowKey, { 
-      masterAhspId: data.ahsp_id || data.id, 
+    updateRow(sId, rowKey, {
+      masterAhspId: data.ahsp_id || data.id,
       masterAhspKode: data.kode_ahsp || 'LUMSUM',
-      uraian: data.nama_pekerjaan || data.uraian, 
+      uraian: data.nama_pekerjaan || data.uraian,
       uraianCustom: data.type === 'lumsum' ? (data.nama_pekerjaan || data.nama_item || data.uraian) : '',
-      satuan: data.satuan_pekerjaan || data.satuan, 
-      baseSubtotal: String(data.total_subtotal), 
-      hargaSatuan: String(hs), 
+      satuan: data.satuan_pekerjaan || data.satuan,
+      baseSubtotal: String(data.total_subtotal),
+      hargaSatuan: String(hs),
       profitPercent: String(globalOverhead),
       mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp',
       analisaDetails: [] // WAJIB KOSONGKAN agar tidak menimpa harga baru dengan breakdown lama
@@ -790,9 +790,9 @@ export default function RabEditorTab({
   };
 
   const saveToMasterLumsum = async (row) => {
-    if (!row.uraian || !row.hargaSatuan) { 
-      setError('Harap isi Nama Pekerjaan & Harga sebelum simpan katalog.'); 
-      return; 
+    if (!row.uraian || !row.hargaSatuan) {
+      setError('Harap isi Nama Pekerjaan & Harga sebelum simpan katalog.');
+      return;
     }
     try {
       const { data: existing } = await supabase.from('master_harga_custom').select('kode_item').ilike('kode_item', 'LS.%');
@@ -814,8 +814,8 @@ export default function RabEditorTab({
 
       if (error) throw error;
       alert(`Berhasil disimpan ke Katalog Harga Dasar dengan kode ${nextCode}!`);
-    } catch (err) { 
-      setError('Gagal simpan katalog: ' + err.message); 
+    } catch (err) {
+      setError('Gagal simpan katalog: ' + err.message);
     }
   };
 
@@ -887,7 +887,7 @@ export default function RabEditorTab({
 
       if (silent && lastSavedSnapshot.current) {
         const snapshot = JSON.parse(lastSavedSnapshot.current);
-        
+
         // Diff Identity
         const isIdentityDirty = JSON.stringify(identityPayload) !== JSON.stringify(snapshot.identity);
         identityToSave = isIdentityDirty ? identityPayload : null;
@@ -905,18 +905,18 @@ export default function RabEditorTab({
         linesToUpsert = allLines.filter(line => {
           const snapshotLine = lastLinesMap.get(line.id || line.key);
           if (!snapshotLine) return true; // New line
-          
+
           // Compare relevant fields
-          const currentCompare = { 
-            uraian: line.uraian, 
-            volume: line.volume, 
-            harga_satuan: line.harga_satuan, 
+          const currentCompare = {
+            uraian: line.uraian,
+            volume: line.volume,
+            harga_satuan: line.harga_satuan,
             profit_percent: line.profit_percent,
             bab_pekerjaan: line.bab_pekerjaan,
             sort_order: line.sort_order,
             analisa_custom: line.analisa_custom
           };
-          
+
           const snapshotCompare = {
             uraian: snapshotLine.uraian,
             volume: parseNum(snapshotLine.volume),
@@ -992,7 +992,7 @@ export default function RabEditorTab({
 
   return (
     <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
-      
+
       {/* ── Mobile Sticky Summary Bar ── */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white bg-opacity-80 dark:bg-slate-900 dark:bg-opacity-90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
           <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
@@ -1003,9 +1003,9 @@ export default function RabEditorTab({
               {formatIdr(recap.rounded)}
             </div>
           </div>
-          <button 
-            onClick={saveRab} 
-            disabled={saving} 
+          <button
+            onClick={saveRab}
+            disabled={saving}
             className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] dark:hover:shadow-[0_10px_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all duration-300 disabled:opacity-50"
           >
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
@@ -1020,7 +1020,7 @@ export default function RabEditorTab({
           <div className="absolute bottom-0 left-0 right-0 bg-white dark:bg-slate-900 rounded-t-[32px] p-6 shadow-2xl animate-in slide-in-from-bottom duration-500">
             <div className="w-12 h-1.5 bg-slate-200 dark:bg-slate-800 rounded-full mx-auto mb-6" onClick={() => setShowMobileDetails(false)} />
             <h3 className="text-xs font-black text-slate-400 uppercase tracking-[0.2em] mb-6">Ringkasan Biaya</h3>
-            
+
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center text-xs font-bold px-1">
                  <span className="text-slate-500">SUBTOTAL</span>
@@ -1074,7 +1074,7 @@ export default function RabEditorTab({
                          </div>
                       )}
                    </h3>
-                   <button 
+                   <button
                      onClick={() => onEditIdentity && onEditIdentity()}
                      className="mt-1 flex items-center gap-1.5 text-[10px] font-bold text-indigo-600 hover:text-indigo-700 dark:text-orange-400 dark:hover:text-orange-300 uppercase tracking-wider transition-colors"
                    >
@@ -1087,7 +1087,7 @@ export default function RabEditorTab({
                    <div className="flex items-center gap-2 px-2">
                       <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-orange-400" />
                       <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Mulai</span>
-                      <input 
+                      <input
                         type="date"
                         value={projectStartDate ? projectStartDate.split('T')[0] : ''}
                         onChange={e => setProjectStartDate && setProjectStartDate(e.target.value)}
@@ -1100,41 +1100,44 @@ export default function RabEditorTab({
                    <div className="flex items-center gap-2 px-2">
                       <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Profit Global</span>
                       <div className="flex items-center gap-1">
-                         <input 
-                           type="number" 
-                           value={globalOverhead} 
+                         <input
+                           type="number"
+                           value={globalOverhead}
                            onChange={e => setGlobalOverhead(e.target.value)}
                            className="w-12 h-8 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-center text-xs font-mono font-bold text-indigo-600 dark:text-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500"
                          />
                          <span className="text-[10px] font-bold text-slate-400">%</span>
                       </div>
                    </div>
-                   <button 
+                   <button
                      onClick={applyGlobalOverheadToAllRows}
                      className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-indigo-700 dark:hover:bg-orange-700 transition-colors shadow-sm"
                    >
                      Terapkan
                    </button>
                 </div>
+              </div>
+           </div>
+
                            {sections.map((sec, sIdx) => (
                  <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
                     <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
                        <div className="flex items-center gap-3 w-full">
                          <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
-                         <input 
-                           value={sec.namaBab} 
-                           onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))} 
+                         <input
+                           value={sec.namaBab}
+                           onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))}
                            onFocus={(e) => e.target.select()}
-                           className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white" 
-                           placeholder="NAMA BAB PEKERJAAN..." 
+                           className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white"
+                           placeholder="NAMA BAB PEKERJAAN..."
                          />
                        </div>
                        <button onClick={() => setSections(prev => prev.filter(s => s.id !== sec.id))} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
                          <Trash2 className="w-3.5 h-3.5" />
                        </button>
                     </div>
-                    
-                    <RabSectionTable 
+
+                    <RabSectionTable
                        sec={sec}
                        sIdx={sIdx}
                        identity={identity}
@@ -1159,8 +1162,8 @@ export default function RabEditorTab({
                ))}
 
               <div className="flex justify-center pt-4">
-                 <button 
-                   onClick={() => setSections(prev => [...prev, createEmptySection('', prev, globalOverhead)])} 
+                 <button
+                   onClick={() => setSections(prev => [...prev, createEmptySection('', prev, globalOverhead)])}
                    className="group flex items-center gap-3 px-8 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-orange-500 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-600 dark:hover:border-orange-500 transition-all shadow-sm"
                  >
                     <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
@@ -1168,7 +1171,7 @@ export default function RabEditorTab({
                  </button>
               </div>
         </div>
-        
+
         {/* Right Sidebar */}
         <div className="lg:sticky lg:top-[120px] space-y-4">
              <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in duration-700">
@@ -1179,7 +1182,7 @@ export default function RabEditorTab({
                      {formatIdr(recap.rounded)}
                    </div>
                 </div>
-                
+
                 <div className="p-5 pt-4 space-y-4">
                    <div className="space-y-3">
                       <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">
@@ -1202,16 +1205,16 @@ export default function RabEditorTab({
                       <div className="flex justify-between items-center">
                          <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">PPN</span>
                          <div className="flex items-center gap-1.5">
-                            <input 
-                              type="number" 
-                              onFocus={(e) => e.target.select()} 
-                              value={identity.ppn_percent} 
+                            <input
+                              type="number"
+                              onFocus={(e) => e.target.select()}
+                              value={identity.ppn_percent}
                               onChange={e => {
                                 const val = parseNum(e.target.value);
                                 setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
                                 setIdentity(prev => ({ ...prev, ppn_percent: val }));
-                              }} 
-                              className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1" 
+                              }}
+                              className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1"
                             />
                             <span className="text-[10px] font-bold text-slate-400">%</span>
                          </div>
@@ -1234,17 +1237,17 @@ export default function RabEditorTab({
                    </div>
                    {isEditingPagu ? (
                       <div className="flex gap-2">
-                         <input 
-                           autoFocus 
-                           type="number" 
-                           onFocus={(e) => e.target.select()} 
-                           value={projectMeta.hsp_value} 
+                         <input
+                           autoFocus
+                           type="number"
+                           onFocus={(e) => e.target.select()}
+                           value={projectMeta.hsp_value}
                            onChange={e => {
                              const val = parseNum(e.target.value);
                              setProjectMeta(prev => ({ ...prev, hsp_value: val }));
                              setIdentity(prev => ({ ...prev, hsp_value: val }));
-                           }} 
-                           className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-xs font-mono p-2 rounded-lg focus:ring-1 text-slate-900 dark:text-white" 
+                           }}
+                           className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-xs font-mono p-2 rounded-lg focus:ring-1 text-slate-900 dark:text-white"
                          />
                          <button onClick={savePagu} className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-sm">Simpan</button>
                       </div>
