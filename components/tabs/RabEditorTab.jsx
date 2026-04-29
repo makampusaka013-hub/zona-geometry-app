@@ -1077,7 +1077,5 @@ export default function RabEditorTab({
       </div>
     </div>
   </div>
-</div>
-</div>
   );
 }
