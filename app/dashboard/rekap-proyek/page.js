@@ -2020,8 +2020,12 @@ function ProyekContent() {
                   <Settings2 className="w-6 h-6" />
                 </div>
                 <div>
-                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">Edit Identitas Proyek</h3>
-                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Perbarui meta-data dan detail administratif</p>
+                  <h3 className="text-xl font-black text-slate-900 dark:text-white tracking-tight">
+                    {tabData.ahsp.length === 0 ? "Buat Identitas Proyek" : "Edit Identitas Proyek"}
+                  </h3>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">
+                    {tabData.ahsp.length === 0 ? "Lengkapi data awal proyek untuk mulai menyusun RAB" : "Perbarui meta-data dan detail administratif"}
+                  </p>
                 </div>
               </div>
               <button
