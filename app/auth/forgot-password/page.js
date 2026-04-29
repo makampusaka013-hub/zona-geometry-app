@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import Link from 'next/link';
-import { supabase } from '@/lib/supabase';
+import { authService } from '@/lib/services/authService';
 import { LogoMark } from '@/components/LogoMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 
@@ -19,11 +19,7 @@ export default function ForgotPasswordPage() {
     setError(null);
 
     try {
-      const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || window.location.origin;
-      const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
-        redirectTo: `${siteUrl}/auth/update-password`,
-      });
-
+      const { error } = await authService.forgotPassword(email);
       if (error) throw error;
       
       setMessage('Link reset password telah dikirim ke email Anda. Silakan cek Inbox atau folder Spam.');

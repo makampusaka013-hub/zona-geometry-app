@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
+import { authService } from '@/lib/services/authService';
 import { supabase } from '@/lib/supabase';
 import { LogoMark } from '@/components/LogoMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
@@ -42,10 +43,7 @@ export default function UpdatePasswordPage() {
     setError(null);
 
     try {
-      const { error } = await supabase.auth.updateUser({
-        password: password
-      });
-
+      const { error } = await authService.updatePassword(password);
       if (error) throw error;
       
       setSuccess(true);
