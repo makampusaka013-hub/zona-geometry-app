@@ -1,16 +1,22 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
-import fs from 'fs';
-import path from 'path';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Transporter Hostinger SMTP
+const transporter = nodemailer.createTransport({
+  host: 'smtp.hostinger.com',
+  port: 465,
+  secure: true, // true for 465, false for other ports
+  auth: {
+    user: process.env.ADMIN_EMAIL,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+});
 
 function logDebug(message) {
-  console.log(`[VERIFICATION-EMAIL] ${message}`);
+  console.log(`[VERIFICATION-EMAIL-SMTP] ${message}`);
 }
-
 
 export async function POST(request) {
   try {
@@ -28,7 +34,7 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Generate Secure Token (Hanya jika belum ada atau kadaluwarsa)
+    // 1. Generate Secure Token
     const { data: currentMember } = await supabaseAdmin
       .from('members')
       .select('verification_token')
@@ -37,14 +43,14 @@ export async function POST(request) {
 
     const verificationToken = currentMember?.verification_token || crypto.randomBytes(32).toString('hex');
 
-    // 2. Save Token (Upsert) - Ini penting agar user baru terdaftar dengan status pending
+    // 2. Save Token (Upsert)
     const { error: updateError } = await supabaseAdmin
       .from('members')
       .upsert({ 
         user_id: userId, 
         verification_token: verificationToken,
         full_name: fullName || (email ? email.split('@')[0] : 'User'),
-        role: 'view', // Diberi role view dulu sampai klik konfirmasi
+        role: 'view',
         approval_status: 'pending'
       }, { onConflict: 'user_id' });
 
@@ -55,11 +61,10 @@ export async function POST(request) {
 
     logDebug(`DATABASE OK. Menyiapkan email...`);
 
-    // 3. Prepare Email Template (Modern Premium Design)
+    // 3. Prepare Email Template
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
     const verifyLink = `${siteUrl}/api/auth/verify?token=${verificationToken}`;
     
-    // Desain Email Premium (Tombol Lebih Tinggi & Warna Lebih Tegas)
     const htmlContent = `
       <!DOCTYPE html>
       <html>
@@ -89,39 +94,19 @@ export async function POST(request) {
       </html>
     `;
 
-    logDebug(`Mengirim ke Resend menggunakan pengirim: ${process.env.EMAIL_FROM || 'Zona Geometry <noreply@zonageometry.id>'}`);
+    logDebug(`Mengirim ke Hostinger SMTP menggunakan: ${process.env.ADMIN_EMAIL}`);
 
-    // 4. Send Email (Ditambah BCC ke Admin agar Anda bisa memantau)
-    const { data, error: emailError } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Zona Geometry <noreply@zonageometry.id>',
+    // 4. Send Email via SMTP
+    await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `"Zona Geometry" <${process.env.ADMIN_EMAIL}>`,
       to: email,
-      bcc: 'makampusaka013@gmail.com', // Salinan untuk Anda (Admin)
+      bcc: 'makampusaka013@gmail.com',
       subject: '✨ Konfirmasi Verifikasi Akun Anda',
       html: htmlContent,
     });
 
-    if (emailError) {
-      logDebug(`RESEND ERROR DETECTED: ${JSON.stringify(emailError)}`);
-      
-      // Cek apakah error karena domain tidak terverifikasi (Common issue)
-      const isDomainIssue = emailError.message?.toLowerCase().includes('domain') || 
-                           emailError.name?.toLowerCase().includes('validation');
-
-      logDebug(isDomainIssue ? 'TERDETEKSI MASALAH DOMAIN/DNS. Memberikan jalur bypass.' : 'ERROR TEKNIS LAINNYA.');
-
-      // Kembalikan success: false agar UI tahu pengiriman gagal
-      return NextResponse.json({ 
-        success: false, 
-        debugLink: verifyLink, 
-        error: isDomainIssue 
-          ? 'Domain @zonageometry.id belum aktif di Resend. Hubungi Admin atau cek DNS.' 
-          : 'Gagal mengirim email verifikasi.',
-        warning: 'Gunakan Link di bawah jika Anda adalah developer.'
-      });
-    }
-
-    logDebug(`RESEND SUCCESS: ${JSON.stringify(data)}`);
-    return NextResponse.json({ success: true, data });
+    logDebug(`SMTP SUCCESS: Email terkirim ke ${email}`);
+    return NextResponse.json({ success: true });
 
   } catch (err) {
     logDebug(`SERVER FATAL ERROR: ${err.message}`);
