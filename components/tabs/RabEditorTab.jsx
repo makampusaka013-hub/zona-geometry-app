@@ -723,7 +723,7 @@ export default function RabEditorTab({
           <button 
             onClick={saveRab} 
             disabled={saving} 
-            className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-[0_10px_20px_rgba(79,70,229,0.2)] dark:shadow-[0_10px_20px_rgba(249,115,22,0.2)] active:scale-95 transition-all disabled:opacity-50"
+            className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] dark:hover:shadow-[0_10px_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all duration-300 disabled:opacity-50"
           >
             {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
             {saving ? 'Simpan...' : 'Simpan'}
@@ -1061,7 +1061,7 @@ export default function RabEditorTab({
                       </div>
                    )}
                    <div className="p-5">
-                    <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-[0_10px_30px_rgba(79,70,229,0.3)] dark:shadow-[0_10px_30px_rgba(249,115,22,0.3)] hover:translate-y-[-1px] transition-all flex items-center justify-center gap-2">
+                    <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md hover:shadow-[0_10px_30px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2">
                        <Save className="w-4 h-4" /> {saving ? 'Menyimpan...' : 'Simpan RAB'}
                     </button>
                  </div>
