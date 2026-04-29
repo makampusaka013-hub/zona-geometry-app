@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import Spinner from '../Spinner';
-import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench } from 'lucide-react';
+import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench, Box } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
 
 export default function DataTerpakaiTab({
@@ -34,6 +34,17 @@ export default function DataTerpakaiTab({
   if (activeTab !== 'terpakai') return null;
   if (tabLoading) return <Spinner />;
 
+  if (ahspRows.length === 0 && hargaRows.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA KOMPONEN TERPAKAI
+        </h3>
+      </div>
+    );
+  }
+
 
   return (
     <div className="w-full h-full">
@@ -52,9 +63,11 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tidak Ada Rincian AHSP</h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA KOMPONEN TERPAKAI
+        </h3>
       </div>
     );
   }
@@ -478,9 +491,11 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
 
   if (rows.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <Package className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Data Harga Satuan Terpakai</h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA KOMPONEN TERPAKAI
+        </h3>
       </div>
     );
   }

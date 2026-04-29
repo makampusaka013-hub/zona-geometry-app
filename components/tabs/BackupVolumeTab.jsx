@@ -151,11 +151,15 @@ export default function BackupVolumeTab({
     }
   };
 
-  if (tabLoading && (!tabData?.ahsp?.length)) {
+  if (tabLoading && (!tabData?.ahsp?.length)) return <Spinner />;
+
+  if (!tabData?.ahsp || tabData.ahsp.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center p-20 gap-4 text-slate-400">
-        <Spinner className="w-8 h-8" />
-        <span className="text-[10px] font-black uppercase tracking-widest">Memuat Struktur RAB...</span>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA STRUKTUR RAB
+        </h3>
       </div>
     );
   }

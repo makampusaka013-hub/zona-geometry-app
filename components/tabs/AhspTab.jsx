@@ -1,6 +1,6 @@
 import React from 'react';
 import Spinner from '../Spinner';
-import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw } from 'lucide-react';
+import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, Box } from 'lucide-react';
 
 export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus }) {
   if (activeTab !== 'ahsp') return null;
@@ -9,9 +9,11 @@ export default function AhspTab({ activeTab, tabLoading, tabData, formatIdr, can
 
   if (!tabData?.ahsp || tabData.ahsp.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <ClipboardList className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Tidak Ada Rincian AHSP</h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          TIDAK ADA RINCIAN AHSP
+        </h3>
       </div>
     );
   }

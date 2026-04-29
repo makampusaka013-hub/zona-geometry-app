@@ -1,14 +1,26 @@
 import React from 'react';
 import Spinner from '../Spinner';
-import { Factory, Info } from 'lucide-react';
+import { Factory, Info, Box } from 'lucide-react';
 
 export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
   if (activeTab !== 'tkdn') return null;
 
   if (tabLoading) return <Spinner />;
 
-  const tkdnData = tabData?.tkdn || { total_nilai: 0, total_nilai_tkdn: 0, total_tkdn_pct: 0, byJenis: {} };
   const items = tabData?.harga || [];
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA RINCIAN KOMPONEN
+        </h3>
+      </div>
+    );
+  }
+
+  const tkdnData = tabData?.tkdn || { total_nilai: 0, total_nilai_tkdn: 0, total_tkdn_pct: 0, byJenis: {} };
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">

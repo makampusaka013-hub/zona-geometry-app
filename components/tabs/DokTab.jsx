@@ -1,7 +1,7 @@
 import React from 'react';
 import Image from 'next/image';
 import Spinner from '../Spinner';
-import { Camera, MapPin } from 'lucide-react';
+import { Camera, MapPin, Box } from 'lucide-react';
 
 export default function DokTab({ activeTab, tabLoading, tabData }) {
   if (activeTab !== 'dok') return null;
@@ -10,9 +10,11 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
 
   if (!tabData?.dok || tabData.dok.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
-        <Camera className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">Belum Ada Dokumentasi Foto</h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA DOKUMENTASI FOTO
+        </h3>
       </div>
     );
   }

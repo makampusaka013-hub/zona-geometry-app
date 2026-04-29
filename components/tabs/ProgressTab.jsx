@@ -15,7 +15,8 @@ import {
   TrendingUp,
   AlertCircle,
   CheckCircle2,
-  ClipboardList
+  ClipboardList,
+  Box
 } from 'lucide-react';
 import Spinner from '../Spinner';
 import ModernConfirmModal from '../ModernConfirmModal';
@@ -246,6 +247,17 @@ export default function ProgressTab({
 
   if (activeTab !== 'progress') return null;
   if (tabLoading || loadingProgress) return <Spinner />;
+
+  if (!items || items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA ITEM PEKERJAAN
+        </h3>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full space-y-4">

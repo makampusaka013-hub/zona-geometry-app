@@ -1,6 +1,6 @@
 import React, { useState, useMemo, useEffect } from 'react';
 import Spinner from '../Spinner';
-import { Activity, Save, AlertCircle, CheckCircle2, Search, Plus, Trash2, LayoutGrid } from 'lucide-react';
+import { Activity, Save, AlertCircle, CheckCircle2, Search, Plus, Trash2, LayoutGrid, Box } from 'lucide-react';
 import { createPortal } from 'react-dom';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
@@ -82,6 +82,17 @@ export default function DataPerubahanTab({
   const items = tabData?.ahsp || [];
   const ccoData = tabData?.cco || [];
   const mcData = tabData?.mc || [];
+
+  if (items.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+          BELUM ADA ITEM PEKERJAAN
+        </h3>
+      </div>
+    );
+  }
 
   return (
     <div className="w-full h-full">
