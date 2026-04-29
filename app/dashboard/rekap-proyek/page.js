@@ -30,6 +30,7 @@ import ScheduleTab from '@/components/ScheduleTab';
 import RabEditorTab from '@/components/tabs/RabEditorTab';
 import BackupVolumeTab from '@/components/tabs/BackupVolumeTab';
 import LocationSelect from '@/components/LocationSelect';
+import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
 
 function formatIdr(n) {
@@ -1406,8 +1407,9 @@ function ProyekContent() {
 
       {/* ── Area Border Kerja ── */}
       <div className="px-4 lg:px-8 pb-20">
-        <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
-          {activeTab === 'daftar' && (
+        <GlobalErrorBoundary>
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
+            {activeTab === 'daftar' && (
             projects.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-4">
                 <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
@@ -1610,6 +1612,7 @@ function ProyekContent() {
             </>
           )}
         </div>
+        </GlobalErrorBoundary>
       </div>
 
       {showCalendar && <CalendarModal isOpen={showCalendar} onClose={() => setShowCalendar(false)} items={sequencedSchedule} scheduleRange={scheduleRange} projectStartDate={projectStartDate} />}
