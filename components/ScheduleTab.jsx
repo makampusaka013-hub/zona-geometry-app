@@ -113,7 +113,7 @@ export default function ScheduleTab({
                 <span className="bg-indigo-500/10 dark:bg-orange-500/10 text-indigo-500 dark:text-orange-500 px-2 py-0.5 rounded text-[8px] font-black tracking-widest animate-pulse">REALTIME</span>
               </h3>
               <p className="text-[9px] text-slate-400 font-bold uppercase tracking-widest mt-1">
-                Proyek Terpilih: {selectedProject && projects.find(p => p.id === selectedProject)?.name}
+                Proyek Terpilih: {selectedProject && projects[selectedProject]?.name}
               </p>
             </div>
           </div>
