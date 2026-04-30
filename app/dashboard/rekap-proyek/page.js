@@ -572,9 +572,9 @@ function ProyekContent() {
     const totalUpah = manpowerItems.reduce((s, r) => s + r.total_upah, 0);
     const totalWorkers = manpowerItems.reduce((s, r) => s + r.pekerja, 0);
     let projectTotalDays = 0;
-    if (sequencedSchedule.length > 0) {
-      const starts = sequencedSchedule.map(r => r.seq_start).filter(Boolean);
-      const ends = sequencedSchedule.map(r => r.seq_end).filter(Boolean);
+    if (sequencedSchedule?.length > 0) {
+      const starts = (sequencedSchedule || []).map(r => r.seq_start).filter(Boolean);
+      const ends = (sequencedSchedule || []).map(r => r.seq_end).filter(Boolean);
       if (starts.length && ends.length) {
         const minStart = new Date(Math.min(...starts.map(s => new Date(s))));
         const maxEnd = new Date(Math.max(...ends.map(e => new Date(e))));
@@ -586,7 +586,7 @@ function ProyekContent() {
 
   const scheduleGanttData = useMemo(() => {
     const base = projectStartDate ? new Date(projectStartDate) : null;
-    return sequencedSchedule.filter(r => r.durasi_hari !== null && r.durasi_hari <= scheduleRange).map((r, idx) => {
+    return (sequencedSchedule || []).filter(r => r.durasi_hari !== null && r.durasi_hari <= scheduleRange).map((r, idx) => {
       const offset = (base && r.seq_start) ? Math.max(0, Math.round((new Date(r.seq_start) - base) / 86400000)) : 0;
       return {
         name: r.uraian?.length > 18 ? r.uraian.slice(0, 18) + '…' : (r.uraian || '—'),
@@ -966,7 +966,7 @@ function ProyekContent() {
         <GlobalErrorBoundary>
           <div className="bg-white dark:bg-slate-900 rounded-[32px] overflow-hidden shadow-sm border border-slate-100 dark:border-slate-800">
             {activeTab === 'daftar' && (
-            projects.length === 0 ? (
+            Object.values(projects || {}).length === 0 ? (
               <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-4">
                 <div className="w-20 h-20 bg-slate-800/50 rounded-full flex items-center justify-center mb-4">
                   <LayoutGrid className="w-10 h-10 text-slate-500" />
@@ -996,7 +996,7 @@ function ProyekContent() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                    {projects.map(p => {
+                    {Object.values(projects || {}).map(p => {
                       if (!p) return null;
                       const slotRole = allRoles[p.id];
                       const myRole = p.created_by === member?.user_id ? 'Owner' : slotRole;
