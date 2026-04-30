@@ -21,12 +21,6 @@ export async function middleware(request) {
           return request.cookies.getAll();
         },
         setAll(cookiesToSet) {
-          cookiesToSet.forEach(({ name, value, options }) => request.cookies.set(name, value));
-          response = NextResponse.next({
-            request: {
-              headers: request.headers,
-            },
-          });
           cookiesToSet.forEach(({ name, value, options }) =>
             response.cookies.set(name, value, options)
           );
@@ -35,12 +29,14 @@ export async function middleware(request) {
     }
   );
 
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
+  // Ganti getUser() -> getSession() untuk stabilitas SSR
+  const { data: { session } } = await supabase.auth.getSession();
+  
+  // Debugging Session
+  console.log('MIDDLEWARE SESSION:', session ? 'ACTIVE' : 'NULL');
 
   // Redirect to login if user is not authenticated and accessing dashboard
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 

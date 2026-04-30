@@ -43,6 +43,7 @@ function LoginContent() {
       return;
     }
 
+    // Success: Go to dashboard with proper router sync
     router.push('/dashboard');
     router.refresh();
   }
