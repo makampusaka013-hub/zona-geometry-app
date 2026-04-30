@@ -55,7 +55,13 @@ CREATE POLICY "Izinkan user membuat proyek" ON public.projects
   FOR INSERT TO authenticated
   WITH CHECK (auth.uid() = created_by);
 
--- 4. Berikan izin eksekusi
+-- 4. Keamanan Fungsi (Addressing Advisor Warnings)
+-- Cabut izin eksekusi publik untuk fungsi SECURITY DEFINER
+REVOKE EXECUTE ON FUNCTION public.is_project_member(uuid) FROM PUBLIC, anon;
+REVOKE EXECUTE ON FUNCTION public.is_app_admin() FROM PUBLIC, anon;
+
+-- Izinkan hanya untuk user terautentikasi (jika memang perlu dipanggil lewat RPC)
+-- Jika hanya untuk RLS, sebenarnya tidak perlu GRANT EXECUTE ke PUBLIC sama sekali.
 GRANT EXECUTE ON FUNCTION public.is_project_member(uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.is_app_admin() TO authenticated;
 
