@@ -33,12 +33,14 @@ export default function SessionGuard({ children }) {
           return;
         }
 
+        /* 
         if (isValidFirst === false) {
           console.error('Session invalidated by heartbeat check');
           await supabase.auth.signOut();
           router.push('/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.');
           return;
         }
+        */
       } catch (err) {
         console.error('Heartbeat fetch failed:', err);
       }
@@ -57,11 +59,13 @@ export default function SessionGuard({ children }) {
           p_client_type: clientType
         });
 
+        /*
         if (isValid === false) {
           clearInterval(interval);
           await supabase.auth.signOut();
           window.location.href = '/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.';
         }
+        */
       }, 60000);
     }
 
