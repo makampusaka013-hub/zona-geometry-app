@@ -29,14 +29,14 @@ export async function middleware(request) {
     }
   );
 
-  // Ganti getUser() -> getSession() untuk stabilitas SSR
-  const { data: { session } } = await supabase.auth.getSession();
+  // Menggunakan getUser() untuk validasi server-side yang lebih aman di produksi
+  const { data: { user } } = await supabase.auth.getUser();
   
-  // Debugging Session
-  console.log('MIDDLEWARE SESSION:', session ? 'ACTIVE' : 'NULL');
+  // Debugging User
+  console.log('MIDDLEWARE USER:', user ? 'VALID' : 'INVALID');
 
   // Redirect to login if user is not authenticated and accessing dashboard
-  if (!session && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
