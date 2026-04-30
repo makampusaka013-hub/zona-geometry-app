@@ -11,13 +11,17 @@ export default function SessionGuard({ children }) {
     let interval;
 
     async function setupHeartbeat() {
+      // Tunggu sebentar agar sesi benar-benar ter-register di DB (mencegah race condition)
+      await new Promise(resolve => setTimeout(resolve, 5000));
+
       const { data: { session } } = await safeGetSession();
-      
       if (!session) return;
 
       const clientType = getClientType();
+      const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
 
-      // 1. Sent heartbeat (RPC update_user_heartbeat)
+      if (isLoginPage) return; // Jangan lakukan apa-apa jika masih di login page
+
       try {
         const { data: isValidFirst, error: hbError } = await supabase.rpc('update_user_heartbeat', { 
           p_session_id: session.access_token,
@@ -29,10 +33,7 @@ export default function SessionGuard({ children }) {
           return;
         }
 
-        // Only invalidate if NOT on the login page to avoid race conditions during sign-in
-        const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
-        
-        if (isValidFirst === false && !isLoginPage) {
+        if (isValidFirst === false) {
           console.error('Session invalidated by heartbeat check');
           await supabase.auth.signOut();
           router.push('/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.');

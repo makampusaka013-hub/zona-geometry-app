@@ -89,8 +89,9 @@ graph TD
 *   **Referential Integrity**: Standardisasi Foreign Keys ke `members.user_id` dengan `ON DELETE CASCADE`.
 *   **Data Governance**: Implementasi `audit_logs` untuk audit trail dan `deleted_at` untuk soft-delete.
 *   **Precision Hardening**: Penggunaan `numeric(18,2)` secara konsisten untuk kolom finansial.
-*   **Auth Resiliency**: Login flow diperkeras dengan **Auto-Displacement** (1-Web/1-Mobile) untuk mencegah lockout sesi menggantung.
+*   **Auth Resiliency**: Login flow diperkeras dengan **Auto-Displacement** (1-Web/1-Mobile) dan perbaikan **SessionGuard race condition** untuk stabilitas login. [STABILIZED]
 *   **Security Hardening**: Perbaikan `search_path` dan pembatasan akses RPC untuk fungsi internal (Linter Fixes). [DONE]
+*   **Database Atomic Integrity**: Implementasi `Nuclear Trigger Reset` dengan Exception Handling untuk sinkronisasi `auth.users` -> `members` yang anti-gagal. [IMPLEMENTED]
 
 ---
 
@@ -98,9 +99,9 @@ graph TD
 *   **Frontend**: Next.js 15 (App Router), React 19.
 *   **State Management**: Zustand (Modular & Normalized).
 *   **Concurrency**: Optimistic Locking (`version`), ClientId Loop Prevention, & Atomic RPC Transactions.
-*   **Audit & Resiliency**: Automatic Audit Triggers, Soft Delete (`deleted_at`), & Namespaced Local Drafts.
+*   **Resiliency**: SessionGuard Heartbeat, Nuclear Trigger Recovery, & Namespaced Local Drafts.
 *   **Security**: Supabase SSR Auth + Hardened RLS + Unified User Identity.
 *   **Reporting**: Server-Side ExcelJS with Concurrency Throttling.
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 15 - Full Security Hardening & Atomic Transactional Integrity)*
+*Main Map Last Updated: 2026-04-30 (Phase 15 - Session Resilience & Robust User Synchronization)*
