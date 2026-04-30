@@ -231,9 +231,11 @@ function ProyekContent() {
     else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects || {}).length > 0 && !isCreating) {
       const firstId = Object.keys(projects)[0];
       setSelectedProject(firstId);
-      router.replace(`${pathname}?tab=${activeTab}&id=${firstId}`, { scroll: false });
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', firstId);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
+  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject, activeTab]);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
@@ -326,9 +328,14 @@ function ProyekContent() {
 
   // Unified data fetch for current tab
   useEffect(() => {
-    if (!selectedProject || activeTab === 'daftar') return;
-    fetchTabData(activeTab, selectedProject, currentProjectObj);
-  }, [activeTab, selectedProject, currentProjectObj, fetchTabData]);
+    if (!selectedProject || storeLoading) return;
+    
+    // Always fetch if we have a valid project selected
+    const proj = projects[selectedProject];
+    if (proj) {
+      fetchTabData(activeTab, selectedProject, proj);
+    }
+  }, [activeTab, selectedProject, storeLoading, fetchTabData, projects]);
 
   // Ambil data personil saat modal share dibuka
   const fetchMembersForProject = useCallback(async (projectId) => {
