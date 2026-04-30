@@ -1,108 +1,41 @@
-# Zona Geometry Application Main Map
+# System Main Map: RAB Dashboard & Persistence
 
-## 🗺️ Architecture Overview
-Zona Geometry adalah aplikasi SaaS untuk penyusunan RAB (Rencana Anggaran Biaya), Manajemen Proyek, dan Pelaporan Konstruksi secara otomatis. Aplikasi ini menggunakan arsitektur **Modular State Management** dengan **Optimistic Concurrency Control** untuk memastikan integritas data multi-user.
+## 🏗️ Architecture Overview
+This module handles the construction, editing, and persistence of the RAB (Rencana Anggaran Biaya). It connects the UI state (Zustand) with Supabase via a stabilized service layer.
 
-```mermaid
-graph TD
-    User((User)) --> Landing[Landing Page /]
-    
-    subgraph Authentication_Guard
-        Landing --> Middleware[middleware.js]
-        Middleware --> Login[/login]
-        Middleware --> Dashboard[/dashboard/*]
-        Login --> AuthHandler[authService.js]
-    end
+## 📁 Key Components & Flow
 
-    subgraph Modular_Stores_SSOT
-        Dashboard --> ProjectStore[useProjectStore.js]
-        Dashboard --> RabStore[useRabStore.js]
-        Dashboard --> ScheduleStore[useScheduleStore.js]
-        Dashboard --> UIStore[useUIStore.js]
-    end
+### 1. UI Layer (`/app/dashboard/rekap-proyek/page.js`)
+- **State Orchestrator**: Manages tab switching (RAB, Progress, Export, CCO).
+- **Deep Sync**: Triggers data fetching from Supabase on every project/tab change to ensure UI consistency.
+- **URL Handling**: Synchronizes `projectId` to the browser URL for direct access.
 
-    subgraph Dashboard_Core_UI
-        ProjectStore <--> RekapProyek[/dashboard/rekap-proyek]
-        RabStore <--> RekapProyek
-        KatAHSP[/dashboard/katalog-ahsp]
-        KatHarga[/dashboard/katalog-harga]
-    end
+### 2. RAB Editor (`/components/tabs/RabEditorTab.jsx`)
+- **Grid System**: Interactive table for editing Volume, Price, and AHSP Analysis.
+- **Header Controls**: Compact UI for Global Profit and Project Start Date.
+- **Persistence Hooks**: Triggers manual save sequences on desktop/mobile sidebars.
 
-    subgraph Project_Editor_Tabs
-        RekapProyek --> Editor[RabEditorTab.jsx]
-        RekapProyek --> Schedule[ScheduleTab.jsx]
-        RekapProyek --> Backup[BackupVolumeTab.jsx]
-        RekapProyek --> Export[ExportImportTab.jsx]
-    end
+### 3. Service Layer (`/lib/services/rabService.js`)
+- **`saveRabData` (Optimized)**: 
+  - Uses **Bulk Upsert** for high-performance saving.
+  - Handles **RLS Compliance** using `updated_by`.
+  - Cleans numerical data via `parseNum` helper.
+- **`fetchRabMasterData`**: Loads AHSP catalogs and regional prices.
 
-    subgraph Service_Layer_Hardened
-        ProjectStore <--> Service[rabService.js]
-        RabStore <--> Service
-        Service -- "Atomic RPC Save" --> Supabase[(Supabase Hardened DB)]
-    end
+## 🛠️ Status & Stability
+| Feature | Status | Note |
+| :--- | :--- | :--- |
+| **Manual Save** | ✅ STABLE | Uses Bulk Upsert & RLS compliance. |
+| **Tab Sync** | ✅ STABLE | Deep data refresh implemented. |
+| **UI Header** | ✅ POLISHED | Compact, non-wrapping layout. |
+| **AHSP Mapping** | ✅ STABLE | Fixed non-existent column errors. |
+| **CCO Module** | ⏳ PLANNED | Next major feature update. |
 
-    subgraph Data_Governance_Layer
-        Supabase --> AuditLogs[Audit Logs Table]
-        Supabase --> SoftDelete[Soft Delete Mechanism]
-        Supabase --> Precision[Numeric 18,2 Precision]
-    end
-
-    subgraph Realtime_Hardened_Sync
-        Supabase <--> Realtime[useRabRealtime.js]
-        Realtime -- "ClientId Filter + Zod" --> RabStore
-        RabStore -- "Anti-Loop" --> Service
-    end
-
-    subgraph Server_Side_Processing
-        Export --> API[/api/export/excel]
-        API -- "Concurrency Limit (Semaphore)" --> ExcelEngine[excel_engine.js]
-    end
-```
+## 🛡️ Security (RLS)
+Persistence is protected by Supabase RLS. All inserts/updates must include:
+- `user_id` (Projects table)
+- `updated_by` (AHSP Lines table)
+- Valid `project_id` association.
 
 ---
-
-## 📂 Directory Structure Detail
-
-### 1. 🌐 Routes & Security (`/app`)
-*   **`middleware.js`**: Auth Guard yang memproteksi rute `/dashboard/*` menggunakan session Supabase.
-*   **`/`**: Halaman utama (Hero, Features, Pricing).
-*   **`/dashboard`**:
-    *   `page.js`: Dashboard utama dengan **Granular Error Boundaries** per-tab.
-    *   **`/api/export/excel`**: Server-side route dengan **Concurrency Control** (max 5 jobs) untuk stabilitas server.
-
-### 2. 🧠 State Management (`/store`)
-*   **`useProjectStore.js`**: Mengelola metadata proyek, keanggotaan (RBAC), dan daftar proyek (Normalized).
-*   **`useRabStore.js`**: Mengelola item RAB. Mendukung **ClientId Source Tagging** (via `window.name`) untuk mencegah feedback loop pada multi-tab sync.
-*   **`useScheduleStore.js`**: Menangani durasi dan urutan pekerjaan dengan **Auto-sync** dari RAB state.
-
-### 3. 🧩 UI Components (`/components`)
-*   **`tabs/`**: Modul fungsional yang reaktif:
-    *   **`RabEditorTab.jsx`**: Engine penyusunan RAB dengan **Namespaced Draft Persistence** (`rab-draft:{userId}:{projectId}:{version}`) untuk keamanan data multi-user.
-*   **`ErrorBoundary.js`**: Komponen isolasi error untuk setiap tab dashboard.
-
-### 4. ⚙️ Service Layer (`/lib/services`)
-*   **`rabService.js`**: Data Access Layer yang kini menggunakan **Atomic Save RPC** (`save_project_atomic`) untuk menjamin transaksi *all-or-nothing*.
-*   **`validations/rabSchema.js`**: Validasi payload menggunakan **Zod** untuk semua data masuk (Realtime & Form).
-
-### 5. 🗄️ Database Layer (`/supabase/migrations`)
-*   **Unified User System**: Integrasi `auth.users` langsung ke `members` tanpa tabel profile redundan.
-*   **Referential Integrity**: Standardisasi Foreign Keys ke `members.user_id` dengan `ON DELETE CASCADE`.
-*   **Data Governance**: Implementasi `audit_logs` untuk audit trail dan `deleted_at` untuk soft-delete.
-*   **Precision Hardening**: Penggunaan `numeric(18,2)` secara konsisten untuk kolom finansial.
-*   **Cookie-Based Auth (SSR)**: Migrasi dari `localStorage` ke `@supabase/ssr` (`createBrowserClient` dan `createServerClient`) untuk menjamin sinkronisasi total sesi antara browser dan Next.js Middleware. [IMPLEMENTED]
-*   **Database Atomic Integrity**: Implementasi `Minimalist User Sync Trigger` dengan `ON CONFLICT` UPSERT untuk menjamin pendaftaran user baru tidak pernah memblokir flow login. [IMPLEMENTED]
-*   **Security Hardening (Advisor Fixes)**: Pengerasan `search_path`, pencabutan `EXECUTE` publik untuk semua fungsi `SECURITY DEFINER`, dan penetapan RLS ketat pada tabel kustom untuk mematuhi standar keamanan tertinggi Supabase. [DONE]
-
----
-
-## 🛠️ Tech Stack
-*   **Frontend**: Next.js 15 (App Router), React 19.
-*   **State Management**: Zustand (Modular & Normalized).
-*   **UI Stability**: Defensive Rendering Guards (mencegah React crash akibat missing state saat navigasi).
-*   **Concurrency**: Optimistic Locking (`version`), ClientId Loop Prevention, & Atomic RPC Transactions.
-*   **Resiliency**: SessionGuard Heartbeat (Non-blocking), Minimalist Trigger Recovery, & Namespaced Local Drafts.
-*   **Security**: Supabase SSR Cookie Auth + Hardened RLS + Unified User Identity.
-*   **Reporting**: Server-Side ExcelJS with Concurrency Throttling.
-
----
-*Main Map Last Updated: 2026-04-30 (Phase 16 - SSR Auth Migration, UI Stability, & Final Security Hardening)*
+*Last Updated: 2026-04-30 by Antigravity AI*
