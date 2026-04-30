@@ -28,7 +28,10 @@ const useProjectStore = create((set, get) => ({
   projects: {},         // Normalized: { [id]: project }
   selectedProject: '',  
   locations: [],        
-  isLoading: true,      
+  isLoading: true,
+  tabData: { schedule: { lines: [] }, ahsp: [], harga: [] },
+  tabLoading: false,
+  ahspCatalog: {},
   
   // --- ACTIONS ---
 
@@ -185,6 +188,31 @@ const useProjectStore = create((set, get) => ({
   },
 
   getProjectsArray: () => Object.values(get().projects),
+
+  setTabData: (data) => set({ tabData: data }),
+
+  fetchTabData: async (activeTab, projectId, currentProjectObj) => {
+    if (!projectId) return;
+    set({ tabLoading: true });
+    try {
+      const { fetchRabData } = await import('@/lib/services/rabService');
+      const res = await fetchRabData(projectId);
+      if (!res.error) {
+        set({ 
+          tabData: {
+            schedule: { lines: res.lines || [] },
+            ahsp: res.lines || [],
+            harga: res.masterPrices || []
+          },
+          ahspCatalog: res.ahspCatalog || {}
+        });
+      }
+    } catch (error) {
+      console.error('fetchTabData error:', error);
+    } finally {
+      set({ tabLoading: false });
+    }
+  },
 }));
 
 export default useProjectStore;

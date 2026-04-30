@@ -315,7 +315,7 @@ function RabSectionTable({
                       value={row.uraian}
                       kode={row.masterAhspKode}
                       mode={row.mode}
-                      locationId={identity.location_id || member?.selected_location_id}
+                      locationId={identity?.location_id || member?.selected_location_id}
                       onSelect={data => handleAhspSelect(sec.id, row.key, data)}
                       placeholder="CARI..."
                     />
@@ -446,13 +446,13 @@ export default function RabEditorTab({
   const lastSavedSnapshot = useRef(null);
 
   useEffect(() => {
-    if (initialIdentity && !projectId) {
+    if (initialIdentity) {
       setIdentity(prev => ({
         ...prev,
         ...initialIdentity
       }));
     }
-  }, [initialIdentity, projectId]);
+  }, [initialIdentity]);
 
   const [isEditingPagu, setIsEditingPagu] = useState(false);
   const [projectMeta, setProjectMeta] = useState({ ppn_percent: 12, hsp_value: 0 });
@@ -661,7 +661,7 @@ export default function RabEditorTab({
         total: sec.lines.reduce((s, r) => s + (parseNum(r.volume) * parseNum(r.hargaSatuan)), 0)
       }));
       const subtotal = Math.round(sectionTotals.reduce((sum, s) => sum + s.total, 0));
-      const ppnPercent = parseNum(identity.ppn_percent);
+      const ppnPercent = parseNum(identity?.ppn_percent ?? 12);
       const ppn = Math.round(subtotal * (ppnPercent / 100));
       const total = subtotal + ppn;
       const rounded = Math.ceil(total / 1000) * 1000;
