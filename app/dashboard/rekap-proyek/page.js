@@ -228,8 +228,10 @@ function ProyekContent() {
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-    else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects).length > 0 && !isCreating) {
-      setSelectedProject(Object.keys(projects)[0]);
+    else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects || {}).length > 0 && !isCreating) {
+      const firstId = Object.keys(projects)[0];
+      setSelectedProject(firstId);
+      router.replace(`${pathname}?tab=${activeTab}&id=${firstId}`, { scroll: false });
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
