@@ -99,7 +99,10 @@ function LoginContent() {
                 type="email"
                 required
                 value={email}
-                onChange={(e) => setEmail(e.target.value)}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                  if (error) setError(null);
+                }}
                 className="w-full rounded-xl border border-slate-200 dark:border-white/10 bg-slate-50 dark:bg-white/5 px-4 py-3 text-slate-900 dark:text-white transition focus:border-orange-500/50 focus:outline-none focus:ring-4 focus:ring-orange-500/10 placeholder:text-slate-400 dark:placeholder:text-slate-600 outline-none"
                 placeholder="email@anda.com"
               />
