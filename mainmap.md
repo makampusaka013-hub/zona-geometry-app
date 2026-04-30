@@ -35,15 +35,21 @@ graph TD
         RekapProyek --> Export[ExportImportTab.jsx]
     end
 
-    subgraph Service_Layer_with_Concurrency
+    subgraph Service_Layer_Hardened
         ProjectStore <--> Service[rabService.js]
         RabStore <--> Service
-        Service <--> Supabase[(Supabase DB + Versioning)]
+        Service -- "Atomic RPC Save" --> Supabase[(Supabase DB + Audit Logs)]
+    end
+
+    subgraph Realtime_Hardened_Sync
+        Supabase <--> Realtime[useRabRealtime.js]
+        Realtime -- "ClientId Filter + Zod" --> RabStore
+        RabStore -- "Anti-Loop" --> Service
     end
 
     subgraph Server_Side_Processing
         Export --> API[/api/export/excel]
-        API --> ExcelEngine[excel_engine.js]
+        API -- "Concurrency Limit (Semaphore)" --> ExcelEngine[excel_engine.js]
     end
 ```
 
@@ -55,36 +61,32 @@ graph TD
 *   **`middleware.js`**: Auth Guard yang memproteksi rute `/dashboard/*` menggunakan session Supabase.
 *   **`/`**: Halaman utama (Hero, Features, Pricing).
 *   **`/dashboard`**:
-    *   `page.js`: Ringkasan statistik (Total Proyek, Anggaran).
-    *   **`/rekap-proyek`**: Modul utama manajemen proyek. Menggunakan **useRabStore** untuk data teknis dan **useProjectStore** untuk metadata.
-    *   **`/api/export/excel`**: Server-side route untuk ekspor laporan besar tanpa membebani memori browser.
+    *   `page.js`: Dashboard utama dengan **Granular Error Boundaries** per-tab.
+    *   **`/api/export/excel`**: Server-side route dengan **Concurrency Control** (max 5 jobs) untuk stabilitas server.
 
 ### 2. 🧠 State Management (`/store`)
 *   **`useProjectStore.js`**: Mengelola metadata proyek, keanggotaan (RBAC), dan daftar proyek (Normalized).
-*   **`useRabStore.js`**: Mengelola item RAB secara mendalam (Normalized). Mendukung draft local state untuk menghindari data overwrite.
-*   **`useScheduleStore.js`**: Khusus menangani durasi dan urutan pekerjaan (Kurva S).
-*   **`useUIStore.js`**: Mengelola state UI global seperti modal, loading, dan notifikasi.
+*   **`useRabStore.js`**: Mengelola item RAB. Mendukung **ClientId Source Tagging** (via `window.name`) untuk mencegah feedback loop pada multi-tab sync.
+*   **`useScheduleStore.js`**: Menangani durasi dan urutan pekerjaan dengan **Auto-sync** dari RAB state.
 
 ### 3. 🧩 UI Components (`/components`)
-*   **`tabs/`**: Berisi modul fungsional yang reaktif terhadap Modular Stores:
-    *   **`RabEditorTab.jsx`**: Engine penyusunan RAB dengan fitur **Conflict Detection** (Optimistic Locking).
-    *   **`ExportImportTab.jsx`**: Interface ekspor yang terhubung ke Server-Side API.
-*   **`ErrorBoundary.js`**: Pelindung runtime error di level Dashboard Layout.
+*   **`tabs/`**: Modul fungsional yang reaktif:
+    *   **`RabEditorTab.jsx`**: Engine penyusunan RAB dengan **Namespaced Draft Persistence** (`rab-draft:{userId}:{projectId}:{version}`) untuk keamanan data multi-user.
+*   **`ErrorBoundary.js`**: Komponen isolasi error untuk setiap tab dashboard.
 
 ### 4. ⚙️ Service Layer (`/lib/services`)
-*   **`rabService.js`**: Data Access Layer dengan validasi **Zod** dan pengecekan **Version Tag** untuk mencegah konflik multi-user.
-
-### 5. 📊 Reporting Engines (`/lib`)
-*   **`excel_engine.js`**: Engine utama pengolah XLSX yang kini dioptimalkan untuk sisi server.
+*   **`rabService.js`**: Data Access Layer yang kini menggunakan **Atomic Save RPC** (`save_project_atomic`) untuk menjamin transaksi *all-or-nothing*.
+*   **`validations/rabSchema.js`**: Validasi payload menggunakan **Zod** untuk semua data masuk (Realtime & Form).
 
 ---
 
 ## 🛠️ Tech Stack
 *   **Frontend**: Next.js 15 (App Router), React 19.
 *   **State Management**: Zustand (Modular & Normalized).
-*   **Concurrency**: Optimistic Locking with `version` tags.
-*   **Security**: Supabase SSR Auth + RLS Hardened.
-*   **Reporting**: Server-Side ExcelJS for Large Scale Reports.
+*   **Concurrency**: Optimistic Locking (`version`), ClientId Loop Prevention, & Atomic RPC Transactions.
+*   **Audit & Resiliency**: Automatic Audit Triggers, Soft Delete (`deleted_at`), & Namespaced Local Drafts.
+*   **Security**: Supabase SSR Auth + Hardened RLS + Service-level RBAC.
+*   **Reporting**: Server-Side ExcelJS with Concurrency Throttling.
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 11 - Modular Store & Concurrency Refactor)*
+*Main Map Last Updated: 2026-04-30 (Phase 13 - Atomic Transactions, ClientId Sync & Audit Infrastructure)*

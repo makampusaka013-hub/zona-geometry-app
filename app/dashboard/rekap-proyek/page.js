@@ -30,6 +30,7 @@ import RabEditorTab from '@/components/tabs/RabEditorTab';
 import BackupVolumeTab from '@/components/tabs/BackupVolumeTab';
 import LocationSelect from '@/components/LocationSelect';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
 import { useProjectPresence } from '@/lib/hooks/useProjectPresence';
 import { useRabRealtime } from '@/lib/hooks/useRabRealtime';
@@ -1091,65 +1092,85 @@ function ProyekContent() {
               {activeTab === 'proyek' && (hasProject || isCreating) && (
                 <div className="space-y-6">
                   {subTabProyek === 'rab' ? (
-                    <RabEditorTab
-                      projectId={selectedProject}
-                      initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
-                      backupData={tabData.backup}
-                      member={member}
-                      onRefresh={(newId) => {
-                        setIsCreating(false);
-                        setLocalTotalKontrak(null);
-                        const targetId = newId || selectedProject;
-                        if (newId) setSelectedProject(newId);
-                        loadData();
-                        fetchTabData(activeTab, targetId, currentProjectObj);
-                      }}
-                      onEditIdentity={handleNewProject}
-                      ownerId={projectOwnerId || member?.user_id}
-                      projectStartDate={projectStartDate}
-                      setProjectStartDate={updateProjectStartDate}
-                    />
+                    <ErrorBoundary>
+                      <RabEditorTab
+                        projectId={selectedProject}
+                        initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
+                        backupData={tabData.backup}
+                        member={member}
+                        onRefresh={(newId) => {
+                          setIsCreating(false);
+                          setLocalTotalKontrak(null);
+                          const targetId = newId || selectedProject;
+                          if (newId) setSelectedProject(newId);
+                          loadData();
+                          fetchTabData(activeTab, targetId, currentProjectObj);
+                        }}
+                        onEditIdentity={handleNewProject}
+                        ownerId={projectOwnerId || member?.user_id}
+                        projectStartDate={projectStartDate}
+                        setProjectStartDate={updateProjectStartDate}
+                      />
+                    </ErrorBoundary>
                   ) : subTabProyek === 'backup' ? (
-                    <BackupVolumeTab {...{
-                      activeTab, tabLoading, tabData, projectId: selectedProject,
-                      onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj),
-                      userSlotRole, isAdmin, isOwner,
-                      memberRole: member?.role,
-                      selectedLineId: selectedBackupLineId,
-                      onSelectLineId: setSelectedBackupLineId
-                    }} />
+                    <ErrorBoundary>
+                      <BackupVolumeTab {...{
+                        activeTab, tabLoading, tabData, projectId: selectedProject,
+                        onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj),
+                        userSlotRole, isAdmin, isOwner,
+                        memberRole: member?.role,
+                        selectedLineId: selectedBackupLineId,
+                        onSelectLineId: setSelectedBackupLineId
+                      }} />
+                    </ErrorBoundary>
                   ) : (
-                    <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
+                    <ErrorBoundary>
+                      <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
+                    </ErrorBoundary>
                   )}
                 </div>
               )}
 
               {activeTab === 'progress' && hasProject && (
-                <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+                <ErrorBoundary>
+                  <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'ahsp' && hasProject && (
-                <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
+                <ErrorBoundary>
+                  <AhspTab {...{ activeTab, tabLoading, tabData, formatIdr, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'terpakai' && hasProject && (
-                <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+                <ErrorBoundary>
+                  <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'perubahan' && hasProject && (
-                <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+                <ErrorBoundary>
+                  <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'tkdn' && hasProject && (
-                <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+                <ErrorBoundary>
+                  <TkdnTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'dok' && hasProject && (
-                <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+                <ErrorBoundary>
+                  <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+                </ErrorBoundary>
               )}
 
               {activeTab === 'export' && hasProject && (
-                <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+                <ErrorBoundary>
+                  <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+                </ErrorBoundary>
               )}
             </>
           )}

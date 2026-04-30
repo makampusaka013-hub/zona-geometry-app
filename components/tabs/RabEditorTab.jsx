@@ -619,8 +619,10 @@ export default function RabEditorTab({
 
   // Persistent Draft Logic
   useEffect(() => {
-    if (!projectId || loading) return;
-    const draftKey = `rab_draft_${projectId}`;
+    if (!projectId || loading || !userMember?.user_id) return;
+    const currentVersion = identity.version || 1;
+    const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
+    
     const saved = localStorage.getItem(draftKey);
     if (saved) {
       try {
@@ -633,13 +635,24 @@ export default function RabEditorTab({
         console.error('Failed to parse draft:', e);
       }
     }
-  }, [projectId, loading]);
+
+    // Cleanup old drafts for this project
+    try {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key?.startsWith(`rab-draft:${userMember.user_id}:${projectId}:`) && key !== draftKey) {
+          localStorage.removeItem(key);
+        }
+      }
+    } catch (e) {}
+  }, [projectId, loading, userMember?.user_id, identity.version]);
 
   useEffect(() => {
-    if (!projectId || sections.length === 0 || loading) return;
-    const draftKey = `rab_draft_${projectId}`;
+    if (!projectId || sections.length === 0 || loading || !userMember?.user_id) return;
+    const currentVersion = identity.version || 1;
+    const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
     localStorage.setItem(draftKey, JSON.stringify(sections));
-  }, [sections, projectId, loading]);
+  }, [sections, projectId, loading, userMember?.user_id, identity.version]);
 
   // Mechanism: Debounced Auto-Save
   useEffect(() => {
@@ -899,7 +912,8 @@ export default function RabEditorTab({
         }))
       };
       lastSavedSnapshot.current = JSON.stringify(newSnapshot);
-      localStorage.removeItem(`rab_draft_${projectId}`);
+      const currentVersion = identity.version || 1;
+      localStorage.removeItem(`rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`);
 
       if (onRefresh && !silent) onRefresh(currentProjectId);
     } catch (err) {

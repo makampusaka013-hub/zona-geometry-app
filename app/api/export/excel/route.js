@@ -6,7 +6,18 @@ import path from 'path';
 import { fetchRabData, fetchProjectResourceSummary, fetchAhspDetailsInBulk } from '@/lib/services/rabService';
 import { fillExcelData } from '@/lib/excel/generator';
 
+// Simple concurrency control for serverless instances
+let activeJobs = 0;
+const MAX_CONCURRENT_JOBS = 5;
+
 export async function POST(request) {
+  if (activeJobs >= MAX_CONCURRENT_JOBS) {
+    return NextResponse.json({ 
+      error: 'Server sedang sibuk memproses banyak dokumen. Silakan coba lagi dalam beberapa saat.' 
+    }, { status: 503 });
+  }
+
+  activeJobs++;
   try {
     const { projectId, selectedSheets, options } = await request.json();
     
@@ -85,5 +96,7 @@ export async function POST(request) {
   } catch (error) {
     console.error('Export Error:', error);
     return NextResponse.json({ error: error.message }, { status: 500 });
+  } finally {
+    activeJobs--;
   }
 }

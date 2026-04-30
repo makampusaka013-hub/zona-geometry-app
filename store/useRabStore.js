@@ -1,5 +1,6 @@
 import { create } from 'zustand';
 import { fetchRabData, saveRabData } from '@/lib/services/rabService';
+import useScheduleStore from './useScheduleStore';
 
 /**
  * useRabStore
@@ -24,6 +25,7 @@ const useRabStore = create((set, get) => ({
         normalizedItems[line.id] = line;
       });
       set({ rabItems: normalizedItems });
+      useScheduleStore.getState().syncFromRab(normalizedItems);
     }
     return { project, lines, masterPrices, error };
   },
@@ -34,46 +36,56 @@ const useRabStore = create((set, get) => ({
       normalized[item.id || item.key] = item;
     });
     set({ rabItems: normalized });
+    useScheduleStore.getState().syncFromRab(normalized);
   },
 
-  updateRabItem: (id, updates) => set((state) => ({
-    rabItems: {
-      ...state.rabItems,
-      [id]: { ...state.rabItems[id], ...updates }
-    }
-  })),
-
-  patchRabItems: (patches, source = 'local') => set((state) => {
-    const nextItems = { ...state.rabItems };
-    let hasChanges = false;
-    
-    patches.forEach(patch => {
-      const existing = nextItems[patch.id];
-      if (existing) {
-        // Optimistic Concurrency & Loop Prevention:
-        // 1. If remote update has older or same version, ignore it (unless it's local)
-        if (source === 'remote' && patch.version && existing.version && patch.version <= existing.version) {
-          return;
-        }
-        
-        // 2. Patch the item
-        nextItems[patch.id] = { ...existing, ...patch };
-        hasChanges = true;
-      } else if (patch.id) {
-        // New item from remote or local
-        nextItems[patch.id] = patch;
-        hasChanges = true;
+  updateRabItem: (id, updates) => {
+    set((state) => ({
+      rabItems: {
+        ...state.rabItems,
+        [id]: { ...state.rabItems[id], ...updates }
       }
+    }));
+    useScheduleStore.getState().syncFromRab(get().rabItems);
+  },
+
+  patchRabItems: (patches, source = 'local', sourceClientId = null) => {
+    set((state) => {
+      const nextItems = { ...state.rabItems };
+      let hasChanges = false;
+      
+      const myClientId = typeof window !== 'undefined' ? require('@/lib/supabase').clientId : 'server';
+
+      patches.forEach(patch => {
+        const existing = nextItems[patch.id];
+        if (existing) {
+          if (source === 'remote' && sourceClientId === myClientId) return;
+          if (source === 'remote' && patch.version && existing.version && patch.version <= existing.version) return;
+          
+          nextItems[patch.id] = { ...existing, ...patch };
+          hasChanges = true;
+        } else if (patch.id) {
+          if (source === 'remote' && sourceClientId === myClientId) return;
+          nextItems[patch.id] = patch;
+          hasChanges = true;
+        }
+      });
+
+      if (!hasChanges) return state;
+      return { rabItems: nextItems };
     });
+    
+    // Sync schedule
+    useScheduleStore.getState().syncFromRab(get().rabItems);
+  },
 
-    if (!hasChanges) return state;
-    return { rabItems: nextItems };
-  }),
-
-  removeRabItem: (id) => set((state) => {
-    const { [id]: _, ...rest } = state.rabItems;
-    return { rabItems: rest };
-  }),
+  removeRabItem: (id) => {
+    set((state) => {
+      const { [id]: _, ...rest } = state.rabItems;
+      return { rabItems: rest };
+    });
+    useScheduleStore.getState().syncFromRab(get().rabItems);
+  },
 
   saveLumpsumToMaster: async (item) => {
     const { saveLumpsumToMaster: serviceSaveLumpsum } = await import('@/lib/services/rabService');
