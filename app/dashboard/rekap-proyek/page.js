@@ -1135,7 +1135,6 @@ function ProyekContent() {
                           setLocalTotalKontrak(null);
                           const targetId = newId || selectedProject;
                           if (newId) setSelectedProject(newId);
-                          loadData();
                           fetchTabData(activeTab, targetId, currentProjectObj);
                         }}
                         onEditIdentity={handleNewProject}
