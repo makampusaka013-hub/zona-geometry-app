@@ -4,9 +4,10 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffe
 import { createPortal } from 'react-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import Spinner from '../Spinner';
-import { supabase } from '@/lib/supabase';
 import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box } from 'lucide-react';
 import LocationSelect from '@/components/LocationSelect';
+import useProjectStore from '@/store/useProjectStore';
+import { searchAhspCatalog, searchLumpsumItems, getMaxLumpsumSuffix } from '@/lib/services/rabService';
 
 // Helper Utilities
 function parseNum(v) {
@@ -150,31 +151,19 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
     const timer = setTimeout(async () => {
       setLoading(true);
       try {
-        const searchPattern = `%${query.trim().replace(/\s+/g, '%')}%`;
         let combined = [];
 
         if (mode === 'ahsp') {
-          const { data, error } = await supabase
-            .from('view_analisa_ahsp')
-            .select('*')
-            .or(`kode_ahsp.ilike.%${query.trim()}%,nama_pekerjaan.ilike.%${query.trim()}%`)
-            .order('kode_ahsp')
-            .limit(20);
-
+          const { data, error } = await searchAhspCatalog(query);
           if (!error) combined = (data || []).map(d => ({
             ...d,
             id: d.id,
             type: 'ahsp'
           }));
         } else {
-          const { data: lumsum, error } = await supabase.from('view_master_harga_gabungan')
-            .select('*')
-            .eq('kategori_item', 'Lumpsum')
-            .ilike('nama_item', searchPattern)
-            .limit(15);
-
+          const { data, error } = await searchLumpsumItems(query);
           if (!error) {
-            combined = (lumsum || []).map(d => ({
+            combined = (data || []).map(d => ({
               id: d.id,
               kode_ahsp: d.kode_item || 'LS.???',
               nama_pekerjaan: d.nama_item,
@@ -484,15 +473,7 @@ export default function RabEditorTab({
 
   const fetchMaxLs = useCallback(async () => {
     try {
-      const { data } = await supabase.from('master_harga_custom').select('kode_item').ilike('kode_item', 'LS.%');
-      let max = 0;
-      (data || []).forEach(item => {
-        const match = item.kode_item.match(/\.(\d+)$/);
-        if (match) {
-          const num = parseInt(match[1], 10);
-          if (num > max) max = num;
-        }
-      });
+      const { max } = await getMaxLumpsumSuffix();
       setDbMaxLsNum(max);
     } catch (e) {
       console.error('Error fetching LS max:', e);
@@ -512,7 +493,9 @@ export default function RabEditorTab({
       return;
     }
     setLoading(true);
-    const { data: proj } = await supabase.from('projects').select('*').eq('id', projectId).maybeSingle();
+    
+    const { project: proj, lines, masterPrices, error } = await useProjectStore.getState().loadRabData(projectId);
+    
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
       setIdentity({
@@ -531,36 +514,8 @@ export default function RabEditorTab({
       });
     }
 
-    const { data, error } = await supabase
-      .from('ahsp_lines')
-      .select('*, master_ahsp(kode_ahsp)')
-      .eq('project_id', projectId)
-      .order('sort_order');
-
-    if (!error && data) {
-      const ahspIds = [...new Set(data.filter(i => i.master_ahsp_id).map(i => i.master_ahsp_id))];
-      let masterPrices = {};
-      if (ahspIds.length > 0) {
-        // PRIORITAS: Ambil detail lengkap & override terbaru untuk perhitungan subtotal di frontend
-        const [mastersRes, overridesRes] = await Promise.all([
-          supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-        ]);
-
-        const overrideMap = {};
-        (overridesRes.data || []).forEach(o => { if (o.harga_satuan > 0) overrideMap[o.kode_item] = o.harga_satuan; });
-
-        (mastersRes.data || []).forEach(m => {
-          let calcSubtotal = 0;
-          const details = Array.isArray(m.details) ? m.details : [];
-          details.forEach(d => {
-            const p = overrideMap[d.kode_item] || d.harga_konversi || 0;
-            calcSubtotal += (Number(d.koefisien || 0) * Number(p));
-          });
-          masterPrices[m.master_ahsp_id] = calcSubtotal;
-        });
-      }
-
+    if (!error && lines) {
+      const data = lines;
       // --- LOGIKA PROFIT GLOBAL CERDAS ---
       let initGlobalProfit = proj?.overhead_percent ?? proj?.profit_percent;
       if (initGlobalProfit === null || initGlobalProfit === undefined) {
@@ -593,25 +548,20 @@ export default function RabEditorTab({
         const dbProfit = item.profit_percent;
 
         if (dbProfit !== null && dbProfit !== undefined) {
-          // Jika ada di DB, gunakan nilai tersebut secara mutlak
           finalProfit = parseNum(dbProfit);
         } else {
-          // Jika tidak ada di DB, coba hitung mundur (backward compatibility)
           if (basePrice > 0 && parseNum(item.harga_satuan) > 0) {
             finalProfit = Math.round(((parseNum(item.harga_satuan) / basePrice) - 1) * 100);
           } else {
-            // Fallback ke profit global proyek
             finalProfit = finalGlobalProfit;
           }
         }
 
         // 3. Kalkulasi Harga Dasar untuk Lumpsum (Reconstruction)
         if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
-           // Untuk Lumpsum, basePrice = Harga Satuan / (1 + Profit)
            basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
         }
 
-        // 4. Sinkronisasi Harga Final
         const activePrice = Math.round(basePrice * (1 + (finalProfit / 100)));
 
         grouped[bab].push({
@@ -622,8 +572,8 @@ export default function RabEditorTab({
           uraianCustom: item.uraian_custom,
           satuan: item.satuan,
           volume: String(item.volume),
-          baseSubtotal: String(basePrice),   // HARGA DASAR TERKUNCI
-          hargaSatuan: String(activePrice),  // HARGA FINAL (+PROFIT)
+          baseSubtotal: String(basePrice),
+          hargaSatuan: String(activePrice),
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
@@ -641,7 +591,6 @@ export default function RabEditorTab({
           : [createEmptySection('PEKERJAAN PERSIAPAN', [], finalGlobalProfit)]
       );
 
-      // Take snapshot after initial load
       const initialSnapshot = {
         identity: { ...proj },
         sections: Object.entries(grouped).map(([bab, lines]) => ({
@@ -722,17 +671,13 @@ export default function RabEditorTab({
             updated.hargaSatuan = String(hs);
             updated.baseSubtotal = String(sum);
           } else if (patch.hargaSatuan !== undefined) {
-            // User mengedit Harga Satuan manual.
-            // KUNCI: Harga Dasar (baseSubtotal) TIDAK BOLEH BERUBAH.
-            // Kita hitung ulang profitPercent agar sinkron.
             const base = parseNum(updated.baseSubtotal);
             const newHarga = parseNum(patch.hargaSatuan);
             if (base > 0) {
               const newProfit = ((newHarga / base) - 1) * 100;
-              updated.profitPercent = String(Math.round(newProfit * 100) / 100); // Simpan 2 desimal agar akurat
+              updated.profitPercent = String(Math.round(newProfit * 100) / 100);
               updated.hargaSatuan = String(newHarga);
             } else {
-              // Jika base masih 0 (lumpsum baru), jadikan harga ini sebagai base
               updated.baseSubtotal = String(newHarga);
               updated.hargaSatuan = String(newHarga);
               updated.profitPercent = "0";
@@ -753,7 +698,6 @@ export default function RabEditorTab({
         ...s,
         lines: s.lines.map(r => {
           if (r.key !== rowKey) return r;
-          // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
           const currentBase = parseNum(r.baseSubtotal);
           const newHarga = Math.round(currentBase * (1 + (val / 100)));
           return { ...r, profitPercent: String(val), hargaSatuan: String(newHarga) };
@@ -767,7 +711,6 @@ export default function RabEditorTab({
     setSections(prev => prev.map(s => ({
       ...s,
       lines: s.lines.map(r => {
-        // Hanya kalikan Harga Dasar (baseSubtotal) yang sudah dikunci
         const currentBase = parseNum(r.baseSubtotal);
         const newHarga = Math.round(currentBase * (1 + (profitPct / 100)));
         return { ...r, profitPercent: String(profitPct), hargaSatuan: String(newHarga) };
@@ -787,7 +730,7 @@ export default function RabEditorTab({
       hargaSatuan: String(hs),
       profitPercent: String(globalOverhead),
       mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp',
-      analisaDetails: [] // WAJIB KOSONGKAN agar tidak menimpa harga baru dengan breakdown lama
+      analisaDetails: []
     });
   };
 
@@ -796,38 +739,30 @@ export default function RabEditorTab({
       setError('Harap isi Nama Pekerjaan & Harga sebelum simpan katalog.');
       return;
     }
-    try {
-      const { data: existing } = await supabase.from('master_harga_custom').select('kode_item').ilike('kode_item', 'LS.%');
-      let max = 0;
-      (existing || []).forEach(e => {
-        const m = e.kode_item.match(/\.(\d+)$/);
-        if (m) { const n = parseInt(m[1]); if (n > max) max = n; }
-      });
-      const nextCode = `LS.${String(max+1).padStart(3, '0')}`;
+    const { nextCode, error } = await useProjectStore.getState().saveLumpsumToMaster({
+      uraian: row.uraian,
+      satuan: row.satuan,
+      hargaSatuan: parseNum(row.hargaSatuan)
+    });
 
-      const { error } = await supabase.from('master_harga_custom').insert({
-        nama_item: row.uraian,
-        satuan: row.satuan,
-        harga_satuan: parseNum(row.hargaSatuan),
-        kategori_item: 'Lumpsum',
-        kode_item: nextCode,
-        tkdn_percent: 0
-      });
-
-      if (error) throw error;
+    if (error) {
+      setError('Gagal simpan katalog: ' + error.message);
+    } else {
       alert(`Berhasil disimpan ke Katalog Harga Dasar dengan kode ${nextCode}!`);
-    } catch (err) {
-      setError('Gagal simpan katalog: ' + err.message);
     }
   };
 
   const savePagu = async () => {
-    try {
-      await supabase.from('projects').update({ hsp_value: projectMeta.hsp_value }).eq('id', projectId);
+    const { error } = await useProjectStore.getState().saveProjectIdentity(projectId, { 
+      hsp_value: projectMeta.hsp_value 
+    });
+    if (error) {
+      setError('Gagal simpan pagu: ' + error.message);
+    } else {
       setIdentity(prev => ({ ...prev, hsp_value: projectMeta.hsp_value }));
       setIsEditingPagu(false);
       if (onRefresh) onRefresh();
-    } catch (err) { setError('Gagal simpan pagu: ' + err.message); }
+    }
   };
 
   const saveRab = async (silent = false) => {
@@ -837,7 +772,6 @@ export default function RabEditorTab({
     }
 
     try {
-      // 1. Prepare Data
       const allLines = [];
       let counter = 0;
       for (const sec of sections) {
@@ -882,23 +816,18 @@ export default function RabEditorTab({
         throw new Error('Nama Pekerjaan wajib diisi untuk membuat proyek baru.');
       }
 
-      // 2. Perform Diffing (Dirty Checking)
       let linesToUpsert = allLines;
       let identityToSave = identityPayload;
       let shouldDelete = !silent;
 
       if (silent && lastSavedSnapshot.current) {
         const snapshot = JSON.parse(lastSavedSnapshot.current);
-
-        // Diff Identity
         const isIdentityDirty = JSON.stringify(identityPayload) !== JSON.stringify(snapshot.identity);
         identityToSave = isIdentityDirty ? identityPayload : null;
 
-        // Diff Lines
         const lastLinesMap = new Map();
         (snapshot.sections || []).forEach(s => {
           s.lines.forEach(l => {
-            // Include bab context for comparison
             const flatLine = { ...l, bab_pekerjaan: s.namaBab };
             lastLinesMap.set(l.id || l.key, flatLine);
           });
@@ -906,71 +835,28 @@ export default function RabEditorTab({
 
         linesToUpsert = allLines.filter(line => {
           const snapshotLine = lastLinesMap.get(line.id || line.key);
-          if (!snapshotLine) return true; // New line
-
-          // Compare relevant fields
+          if (!snapshotLine) return true;
           const currentCompare = {
-            uraian: line.uraian,
-            volume: line.volume,
-            harga_satuan: line.harga_satuan,
-            profit_percent: line.profit_percent,
-            bab_pekerjaan: line.bab_pekerjaan,
-            sort_order: line.sort_order,
-            analisa_custom: line.analisa_custom
+            uraian: line.uraian, volume: line.volume, harga_satuan: line.harga_satuan,
+            profit_percent: line.profit_percent, bab_pekerjaan: line.bab_pekerjaan,
+            sort_order: line.sort_order, analisa_custom: line.analisa_custom
           };
-
           const snapshotCompare = {
-            uraian: snapshotLine.uraian,
-            volume: parseNum(snapshotLine.volume),
-            harga_satuan: parseNum(snapshotLine.hargaSatuan),
-            profit_percent: parseNum(snapshotLine.profitPercent),
-            bab_pekerjaan: snapshotLine.bab_pekerjaan,
-            sort_order: snapshotLine.sort_order,
+            uraian: snapshotLine.uraian, volume: parseNum(snapshotLine.volume),
+            harga_satuan: parseNum(snapshotLine.hargaSatuan), profit_percent: parseNum(snapshotLine.profitPercent),
+            bab_pekerjaan: snapshotLine.bab_pekerjaan, sort_order: snapshotLine.sort_order,
             analisa_custom: snapshotLine.analisaDetails || []
           };
-
           return JSON.stringify(currentCompare) !== JSON.stringify(snapshotCompare);
         });
 
-        // If nothing changed, exit early
-        if (!identityToSave && linesToUpsert.length === 0) {
-          return;
-        }
+        if (!identityToSave && linesToUpsert.length === 0) return;
       }
 
-      // 3. Execution
-      let currentProjectId = projectId;
+      const { projectId: currentProjectId, error: saveErr } = await useProjectStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete);
+      
+      if (saveErr) throw saveErr;
 
-      // Identity Sync
-      if (identityToSave) {
-        if (currentProjectId) {
-          const { error: pErr } = await supabase.from('projects').update(identityToSave).eq('id', currentProjectId);
-          if (pErr) throw pErr;
-        } else {
-          const { data: pData, error: pErr } = await supabase.from('projects').insert(identityToSave).select().single();
-          if (pErr) throw pErr;
-          currentProjectId = pData.id;
-        }
-      }
-
-      // Removal Sync (Only on manual save)
-      if (shouldDelete && currentProjectId) {
-        const keptIds = allLines.map(it => it.id).filter(id => id != null);
-        if (keptIds.length > 0) {
-          await supabase.from('ahsp_lines').delete().eq('project_id', currentProjectId).not('id', 'in', `(${keptIds.join(',')})`);
-        } else {
-          await supabase.from('ahsp_lines').delete().eq('project_id', currentProjectId);
-        }
-      }
-
-      // Line Sync
-      if (linesToUpsert.length > 0 && currentProjectId) {
-        const linesPayload = linesToUpsert.map(it => ({ ...it, project_id: currentProjectId }));
-        const { error: lErr } = await supabase.from('ahsp_lines').upsert(linesPayload);
-        if (lErr) throw lErr;
-      }
-
-      // 4. Update Snapshot for next cycle
       const newSnapshot = {
         identity: identityPayload,
         sections: sections.map(s => ({

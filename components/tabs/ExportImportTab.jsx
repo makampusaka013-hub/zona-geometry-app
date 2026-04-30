@@ -4,12 +4,19 @@ import * as XLSX from 'xlsx';
 import Spinner from '../Spinner';
 import LocationSelect from '../LocationSelect';
 import { toast } from '@/lib/toast';
-import { supabase } from '@/lib/supabase';
-import { exportReportToExcel, romanize } from '@/lib/reporting';
-import * as ProReport from '@/lib/reporting_pro';
+import { generateProjectPDF } from '@/lib/pdf_engine';
 import { generateProjectReport } from '@/lib/excel_engine';
 import { generateLaporanReport } from '@/lib/laporan_excel_static';
-import { generateProjectPDF } from '@/lib/pdf_engine';
+import { exportReportToExcel, romanize } from '@/lib/reporting';
+import * as ProReport from '@/lib/reporting_pro';
+import useProjectStore from '@/store/useProjectStore';
+import { 
+  fetchProjectProgress, 
+  fetchProjectResourceSummary, 
+  fetchAhspDetailsInBulk,
+  fetchAllAhspCatalog,
+  fetchRegionalPrices
+} from '@/lib/services/rabService';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
@@ -27,15 +34,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   const [headerImage, setHeaderImage] = useState(null);
   const [exportLocation, setExportLocation] = useState({ id: '', name: '' });
   const [pendingToolId, setPendingToolId] = useState(null);
-  const [locations, setLocations] = useState([]);
-
-  useEffect(() => {
-    async function fetchLocations() {
-      const { data } = await supabase.from('locations').select('*').order('name');
-      if (data) setLocations(data);
-    }
-    fetchLocations();
-  }, []);
+  const locations = useProjectStore(state => state.locations);
 
   const handleHeaderImageUpload = (e) => {
     const file = e.target.files[0];
@@ -84,23 +83,17 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
     setLoadingReport(true);
     try {
-      const { data: progressData, error } = await supabase
-        .from('project_progress_daily')
-        .select('*')
-        .eq('project_id', project.id);
-
+      const { data: progressData, error } = await fetchProjectProgress(project.id);
       if (error) throw error;
 
       // Ambil harga satuan snapshot/katalog untuk kalkulasi bobot di database
-      const [projectRes, catalogRes, overrideRes] = await Promise.all([
-        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-        supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-      ]);
+      const { projectResources, catalogResources, overrideResources, error: resErr } = await fetchProjectResourceSummary(project.id, project.location_id);
+      if (resErr) throw resErr;
+
       const mergedMap = {};
-      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (catalogResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (projectResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+      (overrideResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
       const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
       const hImg = headerImage || null;
@@ -139,21 +132,19 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const enrichedLines = [...ahspLines];
         const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
         if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+          const { data: detailsData } = await fetchAhspDetailsInBulk(missingDetailIds);
           if (detailsData) {
             const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        const [projectRes, catalogRes, overrideRes] = await Promise.all([
-          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-        ]);
+        const { projectResources, catalogResources, overrideResources, error: resErr } = await fetchProjectResourceSummary(project.id, project.location_id);
+        if (resErr) throw resErr;
+
         const mergedMap = {};
-        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (catalogResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
@@ -176,25 +167,22 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) return;
       setLoadingPro('used_ahsp_hsp');
-      try {
         const enrichedLines = [...ahspLines];
         const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
         if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+          const { data: detailsData } = await fetchAhspDetailsInBulk(missingDetailIds);
           if (detailsData) {
             const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
             enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
           }
         }
-        const [projectRes, catalogRes, overrideRes] = await Promise.all([
-          supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-        ]);
+        const { projectResources, catalogResources, overrideResources, error: resErr } = await fetchProjectResourceSummary(project.id, project.location_id);
+        if (resErr) throw resErr;
+
         const mergedMap = {};
-        (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (catalogResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (projectResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overrideResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], { 
@@ -220,23 +208,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         const locationId = project?.location_id || member?.selected_location_id;
         const locationName = project?.location || 'Wilayah Terpilih';
 
-        // 1. Ambil Seluruh Katalog AHSP dari Database (Filter berdasarkan wilayah proyek)
-        const { data: allAhsp, error: errAhsp } = await supabase
-          .from('view_katalog_ahsp_lengkap')
-          .select('*')
-          .order('kode_ahsp');
-        
+        const { data: allAhsp, error: errAhsp } = await fetchAllAhspCatalog();
         if (errAhsp) throw errAhsp;
 
-        // 2. Ambil Peta Harga Komponen (HSP) Wilayah + Overrides
-        const [pricesRes, overrideRes] = await Promise.all([
-          supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', locationId),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-        ]);
+        const { regionalPrices, overridePrices, error: resErr } = await fetchRegionalPrices(locationId);
+        if (resErr) throw resErr;
 
         const mergedMap = {};
-        (pricesRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (regionalPrices || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
+        (overridePrices || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
         // 3. Ekspor dengan isStandalone: false agar VLOOKUP aktif

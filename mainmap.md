@@ -1,46 +1,39 @@
 # Zona Geometry Application Main Map
 
 ## 🗺️ Architecture Overview
-Zona Geometry adalah aplikasi SaaS untuk penyusunan RAB (Rencana Anggaran Biaya), Manajemen Proyek, dan Pelaporan Konstruksi secara otomatis.
+Zona Geometry adalah aplikasi SaaS untuk penyusunan RAB (Rencana Anggaran Biaya), Manajemen Proyek, dan Pelaporan Konstruksi secara otomatis. Aplikasi ini menggunakan arsitektur **Single Source of Truth (SSOT)** untuk memastikan konsistensi data di seluruh dashboard.
 
 ```mermaid
 graph TD
     User((User)) --> Landing[Landing Page /]
     
-    subgraph Authentication
-        Landing --> Login[/login]
-        Landing --> Register[/register]
+    subgraph Authentication_Guard
+        Landing --> Middleware[middleware.js]
+        Middleware --> Login[/login]
+        Middleware --> Dashboard[/dashboard/*]
         Login --> AuthHandler[authService.js]
-        Register --> AuthHandler
     end
 
-    subgraph Dashboard_Core
-        AuthHandler --> MainDashboard[/dashboard]
-        MainDashboard --> RekapProyek[/dashboard/rekap-proyek]
-        MainDashboard --> KatAHSP[/dashboard/katalog-ahsp]
-        MainDashboard --> KatHarga[/dashboard/katalog-harga]
+    subgraph State_Management_SSOT
+        Dashboard --> Store[useProjectStore.js - Zustand]
+    end
+
+    subgraph Dashboard_Core_UI
+        Store <--> RekapProyek[/dashboard/rekap-proyek]
+        Store <--> KatAHSP[/dashboard/katalog-ahsp]
+        Store <--> KatHarga[/dashboard/katalog-harga]
     end
 
     subgraph Project_Editor_Tabs
         RekapProyek --> Editor[RabEditorTab.jsx]
-        Editor --> Schedule[ScheduleTab.jsx]
-        Editor --> Backup[BackupVolumeTab.jsx]
-        Editor --> Export[ExportImportTab.jsx]
-        Editor --> TKDN[TkdnTab.jsx]
+        RekapProyek --> Schedule[ScheduleTab.jsx]
+        RekapProyek --> Backup[BackupVolumeTab.jsx]
+        RekapProyek --> Export[ExportImportTab.jsx]
     end
 
-    subgraph Database_Supabase
-        Editor <--> db_projects[(projects)]
-        Editor <--> db_ahsp[(ahsp_lines)]
-        KatAHSP <--> db_katalog[(master_ahsp)]
-        KatHarga <--> db_harga[(master_harga)]
-        Presence <--> Realtime[Presence/Realtime]
-    end
-
-    subgraph Service_Layer
-        Editor --> Service[rabService.js]
-        Service --> Validation[rabSchema.js]
-        Validation --> Supabase[(Supabase)]
+    subgraph Service_Layer_Data_Access
+        Store <--> Service[rabService.js]
+        Service <--> Supabase[(Supabase DB)]
     end
 ```
 
@@ -48,49 +41,45 @@ graph TD
 
 ## 📂 Directory Structure Detail
 
-### 1. 🌐 Routes (`/app`)
+### 1. 🌐 Routes & Security (`/app`)
+*   **`middleware.js`**: Auth Guard yang memproteksi rute `/dashboard/*` menggunakan session Supabase.
 *   **`/`**: Halaman utama (Hero, Features, Pricing).
 *   **`/login` & `/register`**: Autentikasi pengguna.
 *   **`/dashboard`**:
     *   `page.js`: Ringkasan statistik (Total Proyek, Anggaran).
-    *   **`/rekap-proyek`**: Modul utama manajemen proyek. Di sinilah **RabEditorTab** aktif.
+    *   **`/rekap-proyek`**: Modul utama manajemen proyek. Mengandalkan state dari **useProjectStore**.
     *   **`/katalog-ahsp`**: Manajemen Analisa Harga Satuan Pekerjaan.
     *   **`/katalog-harga`**: Database harga material, upah, dan alat.
     *   **`/report`**: Generasi laporan otomatis.
-    *   **`/profile`**: Pengaturan akun.
 
-### 2. 🧩 Core Components (`/components`)
-*   **`Sidebar.jsx`**: Navigasi utama aplikasi.
-*   **`tabs/`**: Berisi modul fungsional dalam Editor Proyek:
+### 2. 🧠 State Management (`/store`)
+*   **`useProjectStore.js`**: Centralized Global Store (Zustand). Mengelola state proyek, anggota, dan sinkronisasi data antar tab. Menghilangkan ketergantungan langsung komponen UI ke database.
+
+### 3. 🧩 UI Components (`/components`)
+*   **`tabs/`**: Berisi modul fungsional yang sepenuhnya reaktif terhadap Store:
     *   **`RabEditorTab.jsx`**: Engine penyusunan RAB (Advanced Mode).
     *   **`ScheduleTab.jsx`**: Manajemen jadwal (Kurva S).
     *   **`BackupVolumeTab.jsx`**: Perhitungan volume teknis.
     *   **`ExportImportTab.jsx`**: Ekspor ke Excel (Engine ExcelJS).
-    *   **`IfcVolumeExtractor.jsx`**: Integrasi dengan file BIM/IFC.
 
-### 3. ⚙️ Utilities & Backend (`/lib`, `/supabase`)
-*   **`lib/services/`**: Service Layer (Decoupling UI from DB).
-    *   `rabService.js`: Business logic untuk transaksi RAB.
-    *   `authService.js`: Centralized Auth Handler (Login, Register, OAuth).
-*   **`lib/validations/`**: Schema validation menggunakan Zod.
-    *   `rabSchema.js`: Aturan integritas data proyek dan item.
-*   **`lib/hooks/`**: Custom hooks (e.g., `useProjectPresence.js`).
-*   **`lib/`**: Fungsi pembantu untuk kalkulasi keuangan dan format angka Indonesia.
+### 4. ⚙️ Service Layer (`/lib/services`)
+*   **`rabService.js`**: Exclusive Data Access Layer. Satu-satunya tempat yang diizinkan melakukan query Supabase untuk data proyek dan RAB.
+*   **`authService.js`**: Centralized Auth Handler (Login, Register, OAuth).
 
-### 4. 📊 Reporting Engines (`/lib`)
+### 5. 📊 Reporting Engines (`/lib`)
 *   **`excel_engine_static.js`**: Engine khusus ekspor RAB, AHSP, dan HSP.
-*   **`laporan_excel_static.js`**: Engine khusus laporan progres fisik (Harian, Mingguan, Bulanan) dengan integrasi sheet `database` otomatis.
-*   **`excel_utils.js`**: Library utilitas bersama untuk pemformatan, border, dan setup printer Excel.
+*   **`laporan_excel_static.js`**: Engine laporan progres fisik dengan integrasi sheet `database`.
+*   **`excel_utils.js`**: Library utilitas bersama untuk pemformatan Excel.
 
 ---
 
 ## 🛠️ Tech Stack
 *   **Frontend**: Next.js 15 (App Router), React 19.
+*   **State Management**: Zustand (Single Source of Truth).
+*   **Security**: Supabase SSR Auth + Next.js Middleware.
 *   **Styling**: Tailwind CSS (Vanilla).
-*   **Icons**: Lucide React.
-*   **Backend/DB**: Supabase (PostgreSQL, Realtime Presence, Auth).
-*   **Reporting**: ExcelJS for Custom XLSX Generation (Refactored specialized engines).
-*   **Validation**: Zod (Schema-based).
+*   **Backend/DB**: Supabase (PostgreSQL, Realtime).
+*   **Reporting**: ExcelJS for Custom XLSX Generation.
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 9 - Integrated Weekly/Monthly Data Mapping & UI Viewport Optimization)*
+*Main Map Last Updated: 2026-04-30 (Phase 10 - SSOT Architecture & Zustand Centralization)*

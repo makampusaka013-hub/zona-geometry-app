@@ -1,22 +1,43 @@
 import { create } from 'zustand';
-import { getProjectTabData } from '@/lib/services/rabService';
+import { 
+  getProjectTabData, 
+  fetchMemberInfo, 
+  fetchUserMembershipSlots, 
+  fetchUserProjects,
+  fetchLocations,
+  syncUserLocation,
+  upsertProject,
+  joinProjectByCode,
+  deleteProject,
+  leaveProject,
+  assignProjectSlot,
+  resetProjectSlot,
+  removeProjectMember,
+  updateLineApprovalStatus,
+  updateProjectStartDate as serviceUpdateProjectStartDate,
+  updateLineStartDate as serviceUpdateLineStartDate,
+  updateLineResource as serviceUpdateLineResource,
+  fetchProjectMembers,
+  fetchRabData,
+  saveRabData,
+  saveLumpsumToMaster
+} from '@/lib/services/rabService';
+import { supabase } from '@/lib/supabase';
 
 /**
  * useProjectStore
  * Global state management for Zona Geometry projects using Zustand.
- * Follows the "Strangler Fig" pattern - currently only infrastructure, 
- * not yet integrated into the existing UI to ensure stability.
+ * Enforces Single Source of Truth (SSOT) architecture.
  */
-const useProjectStore = create((set) => ({
+const useProjectStore = create((set, get) => ({
   // --- STATE ---
-  activeProject: null, // Stores current project metadata/identity
-  rabData: [],         // Stores ahsp_lines (RAB items)
-  masterData: {        // Catalog data for AHSP and basic prices
-    ahsp: [],
-    basicPrices: []
-  },
-  isLoading: false,    // Global loading indicator
-  tabData: {           // Data for project tabs (AHSP, Harga, Schedule, etc.)
+  member: null,         
+  projects: [],         
+  selectedProject: '',  
+  locations: [],        
+  isLoading: true,      
+  
+  tabData: {            
     ahsp: [], 
     harga: [], 
     tkdn: null, 
@@ -26,60 +47,212 @@ const useProjectStore = create((set) => ({
     mc: [],
     backup: [],
   },
-  ahspCatalog: {},      // Detailed AHSP details for manpower calculations
-  tabLoading: false,   // Loading indicator for tab data
-  tabVersion: 0,       // Version counter to prevent race conditions during tab switching
+  ahspCatalog: {},      
+  tabLoading: false,    
+  tabVersion: 0,        
 
   // --- ACTIONS ---
+
+  initStore: async () => {
+    set({ isLoading: true });
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const user = session?.user;
+      if (!user) {
+        set({ isLoading: false });
+        return { error: 'No session' };
+      }
+
+      const [memberRes, locationsRes] = await Promise.all([
+        fetchMemberInfo(user.id),
+        fetchLocations()
+      ]);
+
+      if (memberRes.error) throw memberRes.error;
+      set({ member: memberRes.data, locations: locationsRes.data || [] });
+
+      const slotsRes = await fetchUserMembershipSlots(user.id);
+      const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
+      
+      const projectsRes = await fetchUserProjects(user.id, accessibleIds);
+      if (projectsRes.error) throw projectsRes.error;
+
+      set({ projects: projectsRes.data });
+      return { data: projectsRes.data };
+    } catch (error) {
+      console.error('Error initializing store:', error);
+      return { error };
+    } finally {
+      set({ isLoading: false });
+    }
+  },
+
+  setSelectedProject: (projectId) => {
+    set({ selectedProject: projectId });
+    const { projects, member } = get();
+    if (projectId && member?.user_id) {
+      const proj = projects.find(p => p.id === projectId);
+      if (proj?.location_id) {
+        syncUserLocation(member.user_id, proj.location_id);
+      }
+    }
+  },
+
+  refreshProjects: async () => {
+    const { member } = get();
+    if (!member?.user_id) return;
+    const slotsRes = await fetchUserMembershipSlots(member.user_id);
+    const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
+    const projectsRes = await fetchUserProjects(member.user_id, accessibleIds);
+    if (!projectsRes.error) set({ projects: projectsRes.data });
+  },
+
+  setProjects: (projects) => set({ projects }),
+
+  updateProjectInList: (projectId, updates) => set((state) => ({
+    projects: state.projects.map(p => p.id === projectId ? { ...p, ...updates } : p)
+  })),
+
+  saveProjectIdentity: async (projectId, payload) => {
+    set({ tabLoading: true });
+    try {
+      const { data, error } = await upsertProject(projectId, payload);
+      if (error) throw error;
+      if (projectId) {
+        get().updateProjectInList(projectId, data);
+      } else {
+        set((state) => ({ projects: [data, ...state.projects] }));
+      }
+      return { data, error: null };
+    } catch (error) {
+      return { data: null, error };
+    } finally {
+      set({ tabLoading: false });
+    }
+  },
+
+  handleJoinProject: async (joinCode) => {
+    const { member } = get();
+    const { data, error } = await joinProjectByCode(member.user_id, joinCode);
+    if (!error) await get().refreshProjects();
+    return { data, error };
+  },
+
+  handleDeleteProject: async (projectId) => {
+    const { error } = await deleteProject(projectId);
+    if (!error) {
+      set((state) => ({
+        projects: state.projects.filter(p => p.id !== projectId),
+        selectedProject: state.selectedProject === projectId ? '' : state.selectedProject
+      }));
+    }
+    return { error };
+  },
+
+  handleLeaveProject: async (projectId) => {
+    const { error } = await leaveProject(projectId);
+    if (!error) await get().refreshProjects();
+    return { error };
+  },
+
+  handleAssignSlot: async (projectId, userId, slotRole) => {
+    const result = await assignProjectSlot(projectId, userId, slotRole);
+    if (!result.error) await get().refreshProjects();
+    return result;
+  },
+
+  handleResetSlot: async (projectId, slotRole) => {
+    const result = await resetProjectSlot(projectId, slotRole);
+    if (!result.error) await get().refreshProjects();
+    return result;
+  },
+
+  handleRemoveMember: async (projectId, userId) => {
+    const result = await removeProjectMember(projectId, userId);
+    if (!result.error) await get().refreshProjects();
+    return result;
+  },
+
+  handleUpdateLineStatus: async (lineId, status) => {
+    set({ tabLoading: true });
+    const result = await updateLineApprovalStatus(lineId, status);
+    if (!result.error) {
+      set((state) => ({
+        tabData: {
+          ...state.tabData,
+          ahsp: state.tabData.ahsp.map(l => l.id === lineId ? { ...l, status_approval: status } : l),
+          schedule: {
+            ...state.tabData.schedule,
+            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, status_approval: status } : l)
+          }
+        }
+      }));
+    }
+    set({ tabLoading: false });
+    return result;
+  },
+
+  updateProjectStartDate: async (projectId, startDate) => {
+    const { error } = await serviceUpdateProjectStartDate(projectId, startDate);
+    if (!error) {
+      get().updateProjectInList(projectId, { start_date: startDate });
+    }
+    return { error };
+  },
+
+  updateLineStartDate: async (lineId, startDate) => {
+    const { error } = await serviceUpdateLineStartDate(lineId, startDate);
+    if (!error) {
+      set((state) => ({
+        tabData: {
+          ...state.tabData,
+          schedule: {
+            ...state.tabData.schedule,
+            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, start_date: startDate } : l)
+          }
+        }
+      }));
+    }
+    return { error };
+  },
+
+  updateLineResource: async (lineId, field, value) => {
+    const { error } = await serviceUpdateLineResource(lineId, field, value);
+    if (!error) {
+      set((state) => ({
+        tabData: {
+          ...state.tabData,
+          schedule: {
+            ...state.tabData.schedule,
+            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, [field]: value } : l)
+          }
+        }
+      }));
+    }
+    return { error };
+  },
+
+  fetchProjectMembers: async (projectId) => {
+    return await fetchProjectMembers(projectId);
+  },
+
+  // --- RAB EDITOR ACTIONS ---
   
-  // Project Actions
-  setActiveProject: (project) => set({ activeProject: project }),
-  
-  clearProject: () => set({ 
-    activeProject: null, 
-    rabData: [], 
-    isLoading: false 
-  }),
+  loadRabData: async (projectId) => {
+    return await fetchRabData(projectId);
+  },
 
-  // RAB Data Actions
-  setRabData: (data) => set({ rabData: data }),
-  
-  addRabItem: (item) => set((state) => ({ 
-    rabData: [...state.rabData, item] 
-  })),
-  
-  updateRabItem: (id, updates) => set((state) => ({
-    rabData: state.rabData.map((item) => 
-      item.id === id ? { ...item, ...updates } : item
-    )
-  })),
-  
-  removeRabItem: (id) => set((state) => ({
-    rabData: state.rabData.filter((item) => item.id !== id)
-  })),
+  saveRabData: async (projectId, identityPayload, allLines, deleteMissing = true) => {
+    const result = await saveRabData(projectId, identityPayload, allLines, deleteMissing);
+    if (!result.error) {
+       await get().refreshProjects();
+    }
+    return result;
+  },
 
-  // Master Data Actions
-  setMasterData: (data) => set((state) => ({
-    masterData: { ...state.masterData, ...data }
-  })),
-
-  setAhspCatalog: (ahsp) => set((state) => ({
-    masterData: { ...state.masterData, ahsp }
-  })),
-
-  setBasicPrices: (basicPrices) => set((state) => ({
-    masterData: { ...state.masterData, basicPrices }
-  })),
-
-  // Status Actions
-  setIsLoading: (status) => set({ isLoading: status }),
-
-  // Tab Data Actions
-  setTabData: (data) => set((state) => ({ 
-    tabData: typeof data === 'function' ? data(state.tabData) : { ...state.tabData, ...data } 
-  })),
-
-  setTabLoading: (status) => set({ tabLoading: status }),
+  saveLumpsumToMaster: async (item) => {
+    return await saveLumpsumToMaster(item);
+  },
 
   fetchTabData: async (tab, projectId, currentProjectObj = null) => {
     if (!projectId) {
@@ -90,11 +263,10 @@ const useProjectStore = create((set) => ({
       return;
     }
 
-    const { tabVersion, tabData } = useProjectStore.getState();
+    const { tabVersion, tabData } = get();
     const nextVersion = tabVersion + 1;
     set({ tabVersion: nextVersion });
 
-    // SWR-style loading: only show spinner if we have no data yet for this specific tab data
     const hasData = (() => {
       switch (tab) {
         case 'proyek': case 'progress': case 'schedule': case 'export': return tabData.ahsp?.length > 0;
@@ -107,19 +279,13 @@ const useProjectStore = create((set) => ({
       }
     })();
 
-    if (!hasData) {
-      set({ tabLoading: true });
-    }
+    if (!hasData) set({ tabLoading: true });
 
     try {
       const { data, error } = await getProjectTabData(tab, projectId, currentProjectObj);
-      
-      // Ensure we only update if this is still the latest request
-      if (useProjectStore.getState().tabVersion === nextVersion) {
+      if (get().tabVersion === nextVersion) {
         if (error) throw error;
-        
         const { catalog, ...restData } = data || {};
-        
         set((state) => ({
           tabData: { ...state.tabData, ...restData },
           ahspCatalog: catalog ? { ...state.ahspCatalog, ...catalog } : state.ahspCatalog,
@@ -127,12 +293,15 @@ const useProjectStore = create((set) => ({
         }));
       }
     } catch (error) {
-      console.error('Error in fetchTabData store action:', error);
-      if (useProjectStore.getState().tabVersion === nextVersion) {
-        set({ tabLoading: false });
-      }
+      if (get().tabVersion === nextVersion) set({ tabLoading: false });
     }
   },
+
+  setTabData: (data) => set((state) => ({ 
+    tabData: typeof data === 'function' ? data(state.tabData) : { ...state.tabData, ...data } 
+  })),
+
+  setTabLoading: (status) => set({ tabLoading: status }),
 }));
 
 export default useProjectStore;

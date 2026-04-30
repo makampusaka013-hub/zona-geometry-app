@@ -5,7 +5,6 @@ export const dynamic = 'force-dynamic';
 import React, { useCallback, useEffect, useMemo, useState, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useSearchParams, usePathname } from 'next/navigation';
-import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
 import {
   Camera, MapPin, ClipboardList, Activity, Package, Factory,
@@ -87,34 +86,28 @@ const TABS = [
   { id: 'perubahan', label: 'Data Perubahan', icon: Activity, desc: 'Kelola CCO dan Mutual Check (MC)' },
   { id: 'tkdn', label: 'TKDN', icon: Factory, desc: 'Rekapitulasi persentase TKDN dari seluruh material' },
   { id: 'dok', label: 'Dokumentasi', icon: Camera, desc: 'Foto lapangan dan keterangan GPS' },
-  { id: 'export', label: 'Export / Import', icon: FileSpreadsheet, desc: 'Ekspor laporan RAB atau Impor dari format Excel' },
+  { id: 'export', label: 'Export / Import', icon: FileSpreadsheet, desc: 'Ekspor laporan RAB atau Impor dari format Excel' }
 ];
 
 function ProyekContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const pathname = usePathname();
-  const [loading, setLoading] = useState(true);
-  const [member, setMember] = useState(null);
-  const [projects, setProjects] = useState([]);
-  const [selectedProject, setSelectedProject] = useState('');
-  const isCheckingAuth = React.useRef(false);
-  const [activeTab, setActiveTab] = useState('daftar');
-  const [subTabProyek, setSubTabProyek] = useState('rab'); // rab | schedule
   
-  const onlineUsers = useProjectPresence(selectedProject, member);
+  // Connect to Global Store (Single Source of Truth)
   const { 
-    tabData, setTabData, 
-    tabLoading, setTabLoading, 
-    fetchTabData, 
-    ahspCatalog 
+    member, projects, selectedProject, locations, isLoading: storeLoading,
+    tabData, tabLoading, ahspCatalog,
+    initStore, setSelectedProject, setProjects, saveProjectIdentity, fetchTabData, setTabData
   } = useProjectStore();
 
+  const [activeTab, setActiveTab] = useState('daftar');
+  const [subTabProyek, setSubTabProyek] = useState('rab'); // rab | schedule
+  const [isCheckingAuth, setIsCheckingAuth] = useState(false);
+  
+  const onlineUsers = useProjectPresence(selectedProject, member);
+
   const [selectedBab, setSelectedBab] = useState('all');
-  const [laborSettings, setLaborSettings] = useState({});
-  const [mpTargetDurasi, setMpTargetDurasi] = useState(0);
-  const [itemWorkers, setItemWorkers] = useState({});
-  const [itemDurasi, setItemDurasi] = useState({});
   const [savingField, setSavingField] = useState(null);
   const [scheduleRange, setScheduleRange] = useState(60);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -143,11 +136,11 @@ function ProyekContent() {
   const [modalStatus, setModalStatus] = useState(null); // { type: 'success'|'error', msg: string }
 
   const [localTotalKontrak, setLocalTotalKontrak] = useState(null);
-  const [locations, setLocations] = useState([]);
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
+  
   const [identityForm, setIdentityForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
@@ -155,6 +148,7 @@ function ProyekContent() {
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
     start_date: ''
   });
+  
   const [createForm, setCreateForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
@@ -162,10 +156,8 @@ function ProyekContent() {
     start_date: new Date().toISOString().split('T')[0]
   });
 
-  const dataVersionRef = useRef(0);
   const isValidId = (id) => !!id && id !== 'null' && id !== 'undefined' && id !== '';
   const hasProject = isValidId(selectedProject);
-  const abortControllerRef = useRef(null);
   const actionProcessed = useRef(null);
 
   // ── Memos ──
@@ -201,41 +193,33 @@ function ProyekContent() {
     }
   }, [currentProjectObj, tabData.ahsp, activeCcoVersion, localTotalKontrak]);
 
-
+  // ── Initial Load via Store ──
+  useEffect(() => {
+    initStore();
+  }, [initStore]);
 
   // ── Sinkronisasi URL & State ──
   useEffect(() => {
-    if (loading || isCheckingAuth.current) return;
+    if (storeLoading) return;
 
     const urlId = searchParams.get('id');
 
-    // 1. Jika ada ID di URL tapi tidak di state (Load awal)
     if (urlId && urlId !== 'null' && urlId !== 'undefined' && urlId !== selectedProject) {
       setSelectedProject(urlId);
     }
-    // 2. Jika ada ID di state tapi tidak di URL (User memilih proyek)
     else if (selectedProject && urlId !== selectedProject) {
       const params = new URLSearchParams(searchParams.toString());
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-    // 3. Fallback: Jika tidak ada di keduanya, ambil proyek pertama
     else if (!isValidId(urlId) && !isValidId(selectedProject) && projects.length > 0 && !isCreating) {
       setSelectedProject(projects[0].id);
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, loading]);
-
-  // Reset data tab setiap kali proyek berganti agar memicu fetch data baru
-  useEffect(() => {
-    if (selectedProject) {
-      setTabData({ ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] });
-    }
-  }, [selectedProject, setTabData]);
+  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
-    // PROTEKSI: Jangan reset form ke kosong jika data proyek sedang dimuat atau belum ada
-    if (loading) return;
+    if (storeLoading) return;
 
     if (currentProjectObj) {
       setIdentityForm({
@@ -261,7 +245,6 @@ function ProyekContent() {
         start_date: currentProjectObj.start_date || ''
       });
     } else if (!selectedProject) {
-      // Hanya reset jika user memang berniat membuat baru atau sudah tidak memilih apapun
       setIdentityForm({
         name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
         contract_number: '', hsp_value: 0, ppn_percent: 12,
@@ -271,124 +254,74 @@ function ProyekContent() {
         start_date: ''
       });
     }
-  }, [currentProjectObj, loading, selectedProject]);
+  }, [currentProjectObj, storeLoading, selectedProject]);
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
     setIsCreateModalOpen(false);
-    setLoading(true);
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error('Sesi berakhir, silakan login kembali.');
+    
+    const payload = {
+      name: createForm.name || createForm.work_name || 'Proyek Baru',
+      code: createForm.code,
+      location: createForm.location,
+      location_id: createForm.location_id || null,
+      fiscal_year: createForm.fiscal_year,
+      contract_number: createForm.contract_number,
+      hsp_value: parseFloat(createForm.hsp_value) || 0,
+      ppn_percent: parseFloat(createForm.ppn_percent) || 12,
+      program_name: createForm.program_name,
+      activity_name: createForm.activity_name,
+      work_name: createForm.work_name,
+      start_date: createForm.start_date || new Date().toISOString().split('T')[0],
+      created_by: member?.user_id,
+      updated_at: new Date().toISOString()
+    };
 
-      const { data, error } = await supabase
-        .from('projects')
-        .insert({
-          name: createForm.name || createForm.work_name || 'Proyek Baru',
-          code: createForm.code,
-          location: createForm.location,
-          location_id: createForm.location_id || null,
-          fiscal_year: createForm.fiscal_year,
-          contract_number: createForm.contract_number,
-          hsp_value: parseFloat(createForm.hsp_value) || 0,
-          ppn_percent: parseFloat(createForm.ppn_percent) || 12,
-          program_name: createForm.program_name,
-          activity_name: createForm.activity_name,
-          work_name: createForm.work_name,
-          start_date: createForm.start_date || new Date().toISOString().split('T')[0],
-          created_by: session.user.id,
-          updated_at: new Date().toISOString()
-        })
-        .select()
-        .single();
-
-      if (error) throw error;
-
+    const { data, error } = await saveProjectIdentity(null, payload);
+    if (error) {
+      toast.error('Gagal membuat proyek: ' + error.message);
+    } else {
       toast.success('Proyek berhasil dibuat.');
-
-      // Update local state first and pass it to loadData to prevent snapping back
-      const newProject = { ...data, ahsp_lines: [] };
-      setProjects(prev => [newProject, ...prev]);
       setSelectedProject(data.id);
-
-      // Update URL & LocalStorage
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('id', data.id);
-      router.push(`${pathname}?${params.toString()}`);
-      localStorage.setItem('bc_last_project', data.id);
-
       setIsCreating(false);
       setActiveTab('proyek');
       setSubTabProyek('rab');
-
-      // Explicitly pass the new ID to loadData
-      loadData(data.id);
-    } catch (err) {
-      toast.error('Gagal membuat proyek: ' + err.message);
-    } finally {
-      setLoading(false);
     }
   }
 
   async function handleUpdateProjectIdentity(e) {
     if (e) e.preventDefault();
-    setTabLoading(true);
-    try {
-      const { error } = await supabase
-        .from('projects')
-        .update({
-          name: identityForm.name,
-          code: identityForm.code,
-          location: identityForm.location,
-          location_id: identityForm.location_id || null,
-          fiscal_year: identityForm.fiscal_year,
-          contract_number: identityForm.contract_number,
-          hsp_value: parseFloat(identityForm.hsp_value) || 0,
-          ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
-          program_name: identityForm.program_name,
-          activity_name: identityForm.activity_name,
-          work_name: identityForm.work_name,
-          ppk_name: identityForm.ppk_name,
-          ppk_nip: identityForm.ppk_nip,
-          pptk_name: identityForm.pptk_name,
-          pptk_nip: identityForm.pptk_nip,
-          konsultan_name: identityForm.konsultan_name,
-          konsultan_supervisor: identityForm.konsultan_supervisor,
-          kontraktor_director: identityForm.kontraktor_director,
-          start_date: identityForm.start_date || null,
-          updated_at: new Date().toISOString()
-        })
-        .eq('id', selectedProject);
+    const { error } = await saveProjectIdentity(selectedProject, {
+      ...identityForm,
+      hsp_value: parseFloat(identityForm.hsp_value) || 0,
+      ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
+      updated_at: new Date().toISOString()
+    });
 
-      if (error) throw error;
+    if (error) {
+      toast.error('Gagal memperbarui identitas proyek: ' + error.message);
+    } else {
       setIsIdentityModalOpen(false);
       toast.success('Identitas proyek berhasil diperbarui.');
-      loadData();
-    } catch (err) {
-      toast.error('Gagal memperbarui identitas proyek: ' + err.message);
-    } finally {
-      setTabLoading(false);
     }
   }
+
+  // Unified data fetch for current tab
+  useEffect(() => {
+    if (!selectedProject || activeTab === 'daftar') return;
+    fetchTabData(activeTab, selectedProject, currentProjectObj);
+  }, [activeTab, selectedProject, currentProjectObj, fetchTabData]);
 
   // Ambil data personil saat modal share dibuka
   const fetchMembersForProject = useCallback(async (projectId) => {
     if (!projectId) return;
-    try {
-      const { data, error } = await supabase
-        .from('project_members')
-        .select('*, members!project_members_user_id_fkey(full_name, email)')
-        .eq('project_id', projectId);
-
-      if (error) throw error;
-      if (data) {
-        setProjectMembers(data);
-        const myRow = data.find(m => m.user_id === member?.user_id);
-        setUserSlotRole(myRow?.slot_role || null);
-      }
-    } catch (err) {
-      console.error('Error fetching project members:', err);
-      // Don't clear state on refresh error to avoid flickering
+    const { data, error } = await useProjectStore.getState().fetchProjectMembers(projectId);
+    if (error) {
+      console.error('Error fetching project members:', error);
+    } else if (data) {
+      setProjectMembers(data);
+      const myRow = data.find(m => m.user_id === member?.user_id);
+      setUserSlotRole(myRow?.slot_role || null);
     }
   }, [member?.user_id]);
 
@@ -445,86 +378,6 @@ function ProyekContent() {
 
   const [selectedBackupLineId, setSelectedBackupLineId] = useState(null);
 
-  const loadData = useCallback(async (forcedId = null) => {
-    if (isCheckingAuth.current) return;
-    isCheckingAuth.current = true;
-    const version = ++dataVersionRef.current;
-
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) { router.replace('/login'); return; }
-
-      // Parallel fetch for initial user and project list data
-      const [memberRes, slotsRes] = await Promise.all([
-        supabase.from('members').select('user_id, full_name, role, expired_at, is_paid').eq('user_id', user.id).maybeSingle(),
-        supabase.from('project_members').select('project_id, slot_role').eq('user_id', user.id)
-      ]);
-
-      if (version !== dataVersionRef.current) return;
-
-      const row = memberRes.data;
-      let isExp = false;
-      let role = row?.role ?? 'normal';
-      if (row?.expired_at && new Date(row.expired_at) < new Date()) { isExp = true; }
-      setMember(row ? { ...row, role, isExpired: isExp, approval_status: 'approved' } : { user_id: user.id, role: 'normal', isExpired: false, approval_status: 'pending' });
-
-      const userMemberSlots = slotsRes.data;
-      const accessibleProjIds = (userMemberSlots || []).map(m => m.project_id);
-      const roleMap = {};
-      (userMemberSlots || []).forEach(m => {
-        roleMap[m.project_id] = m.slot_role?.startsWith('pembuat') ? 'pembuat' : m.slot_role;
-      });
-      setAllRoles(roleMap);
-
-      const { data: proj } = await supabase.from('projects')
-        .select('*, ahsp_lines(jumlah)')
-        .or(`created_by.eq.${user.id},id.in.(${accessibleProjIds.length > 0 ? accessibleProjIds.join(',') : '00000000-0000-0000-0000-000000000000'})`)
-        .order('updated_at', { ascending: false });
-
-      if (version !== dataVersionRef.current) return;
-
-      const loadedProjects = proj || [];
-
-      // Fetch progress realization days
-      if (loadedProjects.length > 0) {
-        const pIds = loadedProjects.map(p => p.id);
-        try {
-          const { data: progData } = await supabase.from('project_progress_daily')
-            .select('project_id, day_number')
-            .in('project_id', pIds);
-
-          const progMap = {};
-          if (progData) {
-            progData.forEach(p => {
-              const dNum = Number(p.day_number) || 0;
-              if (dNum > (progMap[p.project_id] || 0)) {
-                progMap[p.project_id] = dNum;
-              }
-            });
-          }
-
-          loadedProjects.forEach(p => {
-            p.realization_days = progMap[p.id] || 0;
-          });
-        } catch (err) {
-          console.error("Failed fetching progress days", err);
-        }
-      }
-
-      setProjects(loadedProjects);
-      if (proj && proj.length > 0 && !isCreating) {
-        // Biarkan Unified URL & State Synchronization yang menangani seleksi proyek
-        // loadData hanya bertugas memperbarui list proyek
-      }
-    } finally {
-      isCheckingAuth.current = false;
-      if (version === dataVersionRef.current) {
-        setLoading(false);
-      }
-    }
-  }, [router, isCreating]);
-
   const handleNewProject = useCallback(() => {
     if (ownedLimitReached) {
       const limitInfo = member?.role === 'advance' ? 5 : (member?.role === 'pro' ? 3 : 1);
@@ -551,8 +404,8 @@ function ProyekContent() {
 
   // Initial Load
   useEffect(() => {
-    loadData();
-  }, [loadData]);
+    initStore();
+  }, [initStore]);
 
   // Load available locations
   useEffect(() => {
@@ -603,41 +456,29 @@ function ProyekContent() {
   async function updateProjectStartDate(val) {
     if (!selectedProject) return;
     setProjectStartDate(val);
-    await supabase.from('projects').update({ start_date: val }).eq('id', selectedProject);
+    const { error } = await useProjectStore.getState().updateProjectStartDate(selectedProject, val);
+    if (error) toast.error('Gagal memperbarui tanggal mulai proyek');
   }
 
   async function saveStartDate(lineId, date) {
     setStartDates(prev => ({ ...prev, [lineId]: date }));
-    await supabase.from('ahsp_lines').update({ start_date: date }).eq('id', lineId);
+    const { error } = await useProjectStore.getState().updateLineStartDate(lineId, date);
+    if (error) toast.error('Gagal memperbarui tanggal mulai item');
   }
 
   async function saveItemWorkers(lineId, value) {
     const val = parseInt(value) || null;
     setSavingField(`${lineId}:workers`);
-    setItemWorkers(prev => ({ ...prev, [lineId]: val }));
-    setTabData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        lines: prev.schedule.lines.map(l => l.id === lineId ? { ...l, pekerja_input: val } : l),
-      },
-    }));
-    await supabase.from('ahsp_lines').update({ pekerja_input: val }).eq('id', lineId);
+    const { error } = await useProjectStore.getState().updateLineResource(lineId, 'pekerja_input', val);
+    if (error) toast.error('Gagal memperbarui jumlah tenaga');
     setSavingField(null);
   }
 
   async function saveItemDurasi(lineId, value) {
     const val = parseInt(value) || null;
     setSavingField(`${lineId}:durasi`);
-    setItemDurasi(prev => ({ ...prev, [lineId]: val }));
-    setTabData(prev => ({
-      ...prev,
-      schedule: {
-        ...prev.schedule,
-        lines: prev.schedule.lines.map(l => l.id === lineId ? { ...l, durasi_input: val } : l),
-      },
-    }));
-    await supabase.from('ahsp_lines').update({ durasi_input: val }).eq('id', lineId);
+    const { error } = await useProjectStore.getState().updateLineResource(lineId, 'durasi_input', val);
+    if (error) toast.error('Gagal memperbarui durasi');
     setSavingField(null);
   }
 
@@ -693,60 +534,15 @@ function ProyekContent() {
     if (!joinCode) return;
     setJoining(true);
     setModalStatus(null);
-    try {
-      const { data: p, error: pErr } = await supabase
-        .from('projects')
-        .select('id, name')
-        .eq('unique_code', joinCode.toUpperCase())
-        .maybeSingle();
-
-      if (pErr) throw pErr;
-      if (!p) {
-        setModalStatus({ type: 'error', msg: 'Kode proyek tidak valid.' });
-        return;
-      }
-
-      const { data: existing } = await supabase
-        .from('project_members')
-        .select('*')
-        .eq('project_id', p.id)
-        .eq('user_id', member.user_id)
-        .maybeSingle();
-
-      if (existing) {
-        setModalStatus({ type: 'error', msg: 'Anda sudah tergabung dalam proyek ini.' });
-        return;
-      }
-
-      const { count } = await supabase
-        .from('project_members')
-        .select('id', { count: 'exact', head: true })
-        .eq('project_id', p.id);
-
-      if (count >= 3) {
-        setModalStatus({ type: 'error', msg: 'Proyek ini sudah penuh (Batas 3 User).' });
-        return;
-      }
-
-      const { error: insErr } = await supabase
-        .from('project_members')
-        .insert({
-          project_id: p.id,
-          user_id: member.user_id,
-          role: 'view'
-        });
-
-      if (insErr) throw insErr;
-
-      setModalStatus({ type: 'success', msg: `Berhasil bergabung ke ${p.name}` });
+    const { data, error } = await useProjectStore.getState().handleJoinProject(joinCode);
+    if (error) {
+      setModalStatus({ type: 'error', msg: error.message });
+    } else {
+      setModalStatus({ type: 'success', msg: `Berhasil bergabung ke ${data.name}` });
       setJoinCode('');
       setTimeout(() => setShowJoinModal(false), 2000);
-      loadData();
-    } catch (err) {
-      setModalStatus({ type: 'error', msg: err.message });
-    } finally {
-      setJoining(false);
     }
+    setJoining(false);
   }
 
   const sequencedSchedule = useMemo(() => {
@@ -794,65 +590,46 @@ function ProyekContent() {
     if (!userId) return;
     setAssigning(true);
     setModalStatus(null);
-    try {
-      const { data, error } = await supabase.rpc('assign_project_slot', {
-        p_project_id: projectId,
-        p_user_id: userId,
-        p_slot_role: slotRole
-      });
-      if (error) throw error;
-      if (data.error) {
-        setModalStatus({ type: 'error', msg: data.error });
-      } else {
-        await fetchMembersForProject(projectId);
-        setModalStatus({ type: 'success', msg: 'Peran berhasil ditetapkan.' });
-        setTimeout(() => setModalStatus(null), 2000);
-        loadData();
-      }
-    } catch (err) {
-      setModalStatus({ type: 'error', msg: err.message });
-    } finally {
-      setAssigning(false);
+    const { data, error } = await useProjectStore.getState().handleAssignSlot(projectId, userId, slotRole);
+    if (error) {
+      setModalStatus({ type: 'error', msg: error.message });
+    } else if (data.error) {
+      setModalStatus({ type: 'error', msg: data.error });
+    } else {
+      await fetchMembersForProject(projectId);
+      setModalStatus({ type: 'success', msg: 'Peran berhasil ditetapkan.' });
+      setTimeout(() => setModalStatus(null), 2000);
     }
+    setAssigning(false);
   }
 
   async function handleResetSlot(projectId, slotRole) {
     setModalStatus(null);
-    try {
-      const { data, error } = await supabase.rpc('reset_project_slot', { p_project_id: projectId, p_slot_role: slotRole });
-      if (error) throw error;
-      if (data.error) {
-        setModalStatus({ type: 'error', msg: data.error });
-      } else {
-        await fetchMembersForProject(projectId);
-        setModalStatus({ type: 'success', msg: 'Slot direset.' });
-        setTimeout(() => setModalStatus(null), 2000);
-        loadData();
-      }
-    } catch (err) {
-      setModalStatus({ type: 'error', msg: err.message });
+    const { data, error } = await useProjectStore.getState().handleResetSlot(projectId, slotRole);
+    if (error) {
+      setModalStatus({ type: 'error', msg: error.message });
+    } else if (data.error) {
+      setModalStatus({ type: 'error', msg: data.error });
+    } else {
+      await fetchMembersForProject(projectId);
+      setModalStatus({ type: 'success', msg: 'Slot direset.' });
+      setTimeout(() => setModalStatus(null), 2000);
     }
   }
 
   async function handleRemoveMember(projectId, userId) {
     setModalStatus(null);
-    try {
-      const { data, error } = await supabase.rpc('remove_project_member', { p_project_id: projectId, p_user_id: userId });
-      if (error) throw error;
-      if (data.error) {
-        setModalStatus({ type: 'error', msg: data.error });
-      } else {
-        await fetchMembersForProject(projectId);
-        setModalStatus({ type: 'success', msg: 'Member berhasil dikeluarkan dari proyek.' });
-        setTimeout(() => setModalStatus(null), 2000);
-        loadData();
-      }
-    } catch (err) {
-      setModalStatus({ type: 'error', msg: err.message });
+    const { data, error } = await useProjectStore.getState().handleRemoveMember(projectId, userId);
+    if (error) {
+      setModalStatus({ type: 'error', msg: error.message });
+    } else if (data.error) {
+      setModalStatus({ type: 'error', msg: data.error });
+    } else {
+      await fetchMembersForProject(projectId);
+      setModalStatus({ type: 'success', msg: 'Member berhasil dikeluarkan dari proyek.' });
+      setTimeout(() => setModalStatus(null), 2000);
     }
   }
-
-
 
   const handleDeleteProject = async (id) => {
     setConfirmDeleteId(id);
@@ -860,44 +637,19 @@ function ProyekContent() {
 
   const confirmDelete = async () => {
     if (!confirmDeleteId) return;
-    try {
-      setLoading(true);
-      const { error } = await supabase.from('projects').delete().eq('id', confirmDeleteId);
-      if (error) throw error;
-      setProjects(prev => prev.filter(p => p.id !== confirmDeleteId));
-      if (selectedProject === confirmDeleteId) setSelectedProject(null);
+    const { error } = await useProjectStore.getState().handleDeleteProject(confirmDeleteId);
+    if (error) {
+      setModalStatus({ type: 'error', msg: error.message });
+    } else {
       setModalStatus({ type: 'success', msg: 'Seluruh struktur data Proyek, CCO, MC, dan Dokumentasi telah dihapus permanen dari sistem.' });
-    } catch (err) {
-      setModalStatus({ type: 'error', msg: err.message });
-    } finally {
-      setConfirmDeleteId(null);
-      setLoading(false);
     }
+    setConfirmDeleteId(null);
   };
 
   async function handleUpdateLineStatus(lineId, newStatus) {
-    let rpcName = '';
-    if (newStatus === 'verified') rpcName = 'set_line_verified';
-    else if (newStatus === 'draft') rpcName = 'set_line_draft';
-    else if (newStatus === 'final') rpcName = 'set_line_final';
-    if (!rpcName) return;
-    setTabLoading(true);
-    try {
-      const { data, error } = await supabase.rpc(rpcName, { p_line_id: lineId });
-      if (error) throw error;
-      if (data.error) toast.error(data.error);
-      else {
-        toast.success('Status item berhasil diperbarui.');
-        setTabData(prev => ({
-          ...prev,
-          ahsp: prev.ahsp.map(l => l.id === lineId ? { ...l, status_approval: newStatus } : l),
-          schedule: {
-            ...prev.schedule,
-            lines: prev.schedule.lines.map(l => l.id === lineId ? { ...l, status_approval: newStatus } : l)
-          }
-        }));
-      }
-    } catch (err) { toast.error('Gagal update status: ' + err.message); } finally { setTabLoading(false); }
+    const { error } = await useProjectStore.getState().handleUpdateLineStatus(lineId, newStatus);
+    if (error) toast.error('Gagal update status: ' + error.message);
+    else toast.success('Status item berhasil diperbarui.');
   }
 
   async function handleLeaveProject(projectId) {
@@ -906,17 +658,9 @@ function ProyekContent() {
       'Anda tidak akan bisa mengakses proyek ini sampai diundang kembali.'
     );
     if (!confirmed) return;
-    setTabLoading(true);
-    try {
-      const { data, error } = await supabase.rpc('leave_project', { p_project_id: projectId });
-      if (error) throw error;
-      toast.success('Berhasil keluar dari proyek.');
-      loadData();
-    } catch (err) {
-      toast.error('Gagal keluar: ' + err.message);
-    } finally {
-      setTabLoading(false);
-    }
+    const { error } = await useProjectStore.getState().handleLeaveProject(projectId);
+    if (error) toast.error('Gagal keluar: ' + error.message);
+    else toast.success('Berhasil keluar dari proyek.');
   }
 
   if (loading) return (
