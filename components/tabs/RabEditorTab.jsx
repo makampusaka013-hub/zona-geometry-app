@@ -1196,7 +1196,7 @@ export default function RabEditorTab({
                   </div>
                 )}
                 <div className="p-5">
-                  <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md hover:shadow-[0_10px_30px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2">
+                  <button onClick={() => saveRab(false)} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md hover:shadow-[0_10px_30px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2">
                     {saving ? <Spinner size="sm" /> : <Save className="w-4 h-4" />} {saving ? 'Menyimpan...' : 'Simpan RAB'}
                   </button>
                 </div>
