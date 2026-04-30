@@ -426,7 +426,7 @@ function ProyekContent() {
   // Efek untuk menangani aksi dari URL (contoh: ?action=new)
   useEffect(() => {
     const action = searchParams?.get('action');
-    if (!action || loading || actionProcessed.current === action) return;
+    if (!action || storeLoading || actionProcessed.current === action) return;
 
     if (action === 'new') {
       actionProcessed.current = 'new';
@@ -437,7 +437,7 @@ function ProyekContent() {
       params.delete('action');
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, loading, handleNewProject, router, pathname]);
+  }, [searchParams, storeLoading, handleNewProject, router, pathname]);
 
 
   // Auto-sync location context for regional pricing
@@ -670,7 +670,7 @@ function ProyekContent() {
     else toast.success('Berhasil keluar dari proyek.');
   }
 
-  if (loading) return (
+  if (storeLoading) return (
     <div className="flex min-h-screen items-center justify-center bg-slate-50 dark:bg-[#0f172a]">
       <div className="h-8 w-8 animate-spin rounded-full border-2 border-slate-300 border-t-orange-500" />
     </div>
