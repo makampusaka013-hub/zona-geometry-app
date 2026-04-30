@@ -15,7 +15,8 @@ import {
   fetchProjectResourceSummary, 
   fetchAhspDetailsInBulk,
   fetchAllAhspCatalog,
-  fetchRegionalPrices
+  fetchRegionalPrices,
+  fetchRegionalCatalog
 } from '@/lib/services/rabService';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
@@ -167,6 +168,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
     handleStartExport(async (hImg) => {
       if (!project || !ahspLines || ahspLines.length === 0) return;
       setLoadingPro('used_ahsp_hsp');
+      try {
         const enrichedLines = [...ahspLines];
         const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
         if (missingDetailIds.length > 0) {
@@ -249,14 +251,12 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       }
       setLoadingPro('catalog_region');
       try {
-        const [catalogRes, overrideRes] = await Promise.all([
-          supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', locationId),
-          supabase.from('master_harga_custom').select('kode_item, harga_satuan, tkdn_percent')
-        ]);
+        const { catalogData, overrideData, error: resErr } = await fetchRegionalCatalog(locationId);
+        if (resErr) throw resErr;
         
-        let catPrice = catalogRes.data || [];
-        if (overrideRes.data && overrideRes.data.length > 0) {
-          const overrideMap = Object.fromEntries(overrideRes.data.map(o => [o.kode_item, o]));
+        let catPrice = catalogData || [];
+        if (overrideData && overrideData.length > 0) {
+          const overrideMap = Object.fromEntries(overrideData.map(o => [o.kode_item, o]));
           catPrice = catPrice.map(p => {
             if (overrideMap[p.kode_item]) {
               return { 
