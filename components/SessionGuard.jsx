@@ -26,18 +26,20 @@ export default function SessionGuard({ children }) {
         
         if (hbError) {
           console.warn('Heartbeat RPC error (safe fallback):', hbError);
-          // Don't crash or redirect if RPC fails, just log it as a warning
           return;
         }
 
-        if (isValidFirst === false) {
+        // Only invalidate if NOT on the login page to avoid race conditions during sign-in
+        const isLoginPage = typeof window !== 'undefined' && window.location.pathname === '/login';
+        
+        if (isValidFirst === false && !isLoginPage) {
           console.error('Session invalidated by heartbeat check');
           await supabase.auth.signOut();
           router.push('/login?message=Sesi+Anda+telah+berakhir+karena+login+di+perangkat+lain.');
           return;
         }
       } catch (err) {
-        console.error('Heartbeat fetch failed (network level):', err);
+        console.error('Heartbeat fetch failed:', err);
       }
 
       // 2. Set interval to update every 60 seconds
