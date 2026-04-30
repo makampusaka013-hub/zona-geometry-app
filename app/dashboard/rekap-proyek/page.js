@@ -1182,7 +1182,7 @@ function ProyekContent() {
 
               {activeTab === 'export' && hasProject && (
                 <ErrorBoundary>
-                  <ExportImportTab tabLoading={tabLoading} ahspLines={tabData.ahsp} project={projects.find(p => p.id === selectedProject)} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+                  <ExportImportTab tabLoading={tabLoading} ahspLines={tabData?.ahsp || []} project={projects[selectedProject]} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
                 </ErrorBoundary>
               )}
             </>

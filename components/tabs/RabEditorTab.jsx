@@ -421,6 +421,7 @@ export default function RabEditorTab({
   projectStartDate,
   setProjectStartDate
 }) {
+  const userMember = member;
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState(null);
