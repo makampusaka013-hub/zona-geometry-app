@@ -490,24 +490,60 @@ export default function RabEditorTab({
     }
     setLoading(true);
 
-    const { project: proj, lines, masterPrices, error } = await useRabStore.getState().loadRabData(projectId);
+    const { project: proj, lines, masterPrices, error: loadErr } = await useRabStore.getState().loadRabData(projectId);
+
+    if (loadErr) {
+      setError(loadErr.message);
+      setLoading(false);
+      return;
+    }
 
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
       setIdentity({
+        ...proj,
         name: proj.name || '',
-        code: proj.code || '',
-        program_name: proj.program_name || '',
-        activity_name: proj.activity_name || '',
         ppn_percent: proj.ppn_percent ?? 12,
+        version: proj.version || 1
+      });
+      setGlobalOverhead(proj.overhead_percent ?? 15);
+
+      const data = lines || [];
+      const grouped = {};
+      data.forEach(item => {
+        const bab = item.bab_pekerjaan || 'UMUM';
+        if (!grouped[bab]) grouped[bab] = [];
+
+        const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : 0;
+        let basePrice = parseNum(freshPrice);
+
+        if (basePrice === 0 && item.analisa_custom && item.analisa_custom.length > 0) {
+          basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
+        }
+
+        const finalProfit = parseNum(item.profit_percent ?? proj.overhead_percent ?? 15);
+
+        if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
+          basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
+        }
+
+        const activePrice = Math.round(basePrice * (1 + (finalProfit / 100)));
+
+        grouped[bab].push({
+          id: item.id,
+          key: item.id || Math.random().toString(36).substring(7),
+          masterAhspId: item.master_ahsp_id,
+          masterAhspKode: item.master_ahsp_kode,
+          uraian: item.uraian,
+          satuan: item.satuan,
+          volume: String(item.volume || '0'),
           hargaSatuan: String(activePrice),
+          baseSubtotal: String(Math.round(basePrice)),
+          profitPercent: String(finalProfit),
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: String(finalProfit),
-          pekerja_input: item.pekerja_input,
-          durasi_input: item.durasi_input,
-          start_date: item.start_date
+          version: item.version
         });
       });
 
@@ -518,27 +554,24 @@ export default function RabEditorTab({
             namaBab: bab,
             lines: lines
           }))
-          : [createEmptySection('PEKERJAAN PERSIAPAN', [], finalGlobalProfit)]
+          : [createEmptySection('PEKERJAAN PERSIAPAN', [], proj.overhead_percent ?? 15)]
       );
 
-      const initialSnapshot = {
+      lastSavedSnapshot.current = JSON.stringify({
         identity: { ...proj },
         sections: Object.entries(grouped).map(([bab, lines]) => ({
           namaBab: bab,
           lines: lines.map(l => ({ ...l }))
         }))
-      };
-      lastSavedSnapshot.current = JSON.stringify(initialSnapshot);
+      });
     } else {
       const defaultSections = [createEmptySection('PEKERJAAN PERSIAPAN', [], globalOverhead)];
       setSections(defaultSections);
-      lastSavedSnapshot.current = JSON.stringify({
-        identity: {},
-        sections: defaultSections
-      });
+      lastSavedSnapshot.current = JSON.stringify({ identity: {}, sections: defaultSections });
     }
+
     setLoading(false);
-  }, [projectId, initialIdentity]);
+  }, [projectId, globalOverhead]);
 
   // Persistent Draft Logic
   useEffect(() => {
