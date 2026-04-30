@@ -99,9 +99,17 @@ function ProyekContent() {
   // Connect to Global Store (Single Source of Truth)
   const { 
     member, projects, selectedProject, locations, isLoading: storeLoading,
-    tabData, tabLoading, ahspCatalog,
-    initStore, setSelectedProject, setProjects, saveProjectIdentity, fetchTabData, setTabData
+    initStore, setSelectedProject, setProjects, saveProjectIdentity
   } = useProjectStore();
+
+  // Tab Data & Catalog are technically in useRabStore/useUIStore or local state
+  // If they were intended to be in ProjectStore, we must ensure they are defined.
+  // For now, we add safety guards to all destructured items.
+  const tabData = useProjectStore(s => s.tabData) || { schedule: { lines: [] }, ahsp: [], harga: [] };
+  const tabLoading = useProjectStore(s => s.tabLoading) || false;
+  const ahspCatalog = useProjectStore(s => s.ahspCatalog) || {};
+  const fetchTabData = useProjectStore(s => s.fetchTabData) || (() => {});
+  const setTabData = useProjectStore(s => s.setTabData) || (() => {});
 
   const [activeTab, setActiveTab] = useState('daftar');
   const [subTabProyek, setSubTabProyek] = useState('rab'); // rab | schedule
@@ -165,8 +173,9 @@ function ProyekContent() {
 
   // ── Memos ──
   const currentProjectObj = useMemo(() => {
-    if (!projects || Object.keys(projects).length === 0) return null;
-    return projects[selectedProject] || null;
+    const projectsMap = projects || {};
+    if (Object.keys(projectsMap).length === 0) return null;
+    return projectsMap[selectedProject] || null;
   }, [projects, selectedProject]);
 
   const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
@@ -378,8 +387,8 @@ function ProyekContent() {
     return filterRbac(base);
   }, [isModeNormal, isAdmin, isOwner, isAdvance, isPro, userSlotRole, member?.role]);
 
-  const ownedProjectsCount = useMemo(() => Object.values(projects).filter(p => p.created_by === member?.user_id).length, [projects, member?.user_id]);
-  const joinedProjectsCount = useMemo(() => Object.values(projects).filter(p => p.created_by !== member?.user_id).length, [projects, member?.user_id]);
+  const ownedProjectsCount = useMemo(() => Object.values(projects || {}).filter(p => p.created_by === member?.user_id).length, [projects, member?.user_id]);
+  const joinedProjectsCount = useMemo(() => Object.values(projects || {}).filter(p => p.created_by !== member?.user_id).length, [projects, member?.user_id]);
   const ownedLimitReached = member?.role === 'admin' ? false : (member?.role === 'advance' ? ownedProjectsCount >= 5 : (member?.role === 'pro' ? ownedProjectsCount >= 3 : ownedProjectsCount >= 1));
   const joinedLimitReached = member?.role !== 'admin' && joinedProjectsCount >= 7;
 
@@ -524,8 +533,8 @@ function ProyekContent() {
       );
     };
 
-    Object.values(ahspCatalog).forEach(details => {
-      details.filter(detectLabor).forEach(d => roles.add(d.uraian));
+    Object.values(ahspCatalog || {}).forEach(details => {
+      (details || []).filter(detectLabor).forEach(d => roles.add(d.uraian));
     });
 
     const lines = tabData?.schedule?.lines || [];
@@ -725,7 +734,7 @@ function ProyekContent() {
                     </option>
                   )}
                   <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
-                  {Object.values(projects).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
+                  {Object.values(projects || {}).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
                 </select>
               </div>
 
