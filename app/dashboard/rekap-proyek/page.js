@@ -35,6 +35,7 @@ import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
 import { useProjectPresence } from '@/lib/hooks/useProjectPresence';
 import { useRabRealtime } from '@/lib/hooks/useRabRealtime';
 import useProjectStore from '@/store/useProjectStore';
+import { supabase } from '@/lib/supabase';
 
 function formatIdr(n) {
   return new Intl.NumberFormat('id-ID', {
@@ -145,6 +146,7 @@ function ProyekContent() {
   const [assigning, setAssigning] = useState(false);
   const [allRoles, setAllRoles] = useState({}); // { [projectId]: slot_role }
   const [modalStatus, setModalStatus] = useState(null); // { type: 'success'|'error', msg: string }
+  const [laborSettings, setLaborSettings] = useState({});
 
   const [localTotalKontrak, setLocalTotalKontrak] = useState(null);
   const [isIdentityModalOpen, setIsIdentityModalOpen] = useState(false);
@@ -285,6 +287,30 @@ function ProyekContent() {
       });
     }
   }, [currentProjectObj, storeLoading, selectedProject]);
+
+  // ── Sync Labor Settings State ──
+  useEffect(() => {
+    if (currentProjectObj?.labor_settings) {
+      setLaborSettings(currentProjectObj.labor_settings);
+    } else {
+      setLaborSettings({});
+    }
+  }, [currentProjectObj?.id]);
+
+  // ── Persist Labor Settings (Debounced) ──
+  useEffect(() => {
+    if (!selectedProject || !laborSettings || Object.keys(laborSettings).length === 0) return;
+    
+    const timer = setTimeout(async () => {
+      // Compare with current store object to avoid redundant saves
+      const current = projects[selectedProject]?.labor_settings;
+      if (JSON.stringify(current) === JSON.stringify(laborSettings)) return;
+
+      await saveProjectIdentity(selectedProject, { labor_settings: laborSettings });
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, [laborSettings, selectedProject]);
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
@@ -521,7 +547,6 @@ function ProyekContent() {
     try {
       const lines = tabData?.schedule?.lines || [];
       if (!lines?.length || !ahspCatalog) return [];
-      const laborSettings = currentProjectObj?.labor_settings || {};
       const itemWorkers = currentProjectObj?.item_workers || {};
       const itemDurasi = currentProjectObj?.item_durasi || {};
       return computeManpower(lines, ahspCatalog, laborSettings, itemWorkers, itemDurasi) || [];
@@ -529,7 +554,7 @@ function ProyekContent() {
       console.error('Manpower compute error:', e);
       return [];
     }
-  }, [tabData?.schedule, ahspCatalog, currentProjectObj]);
+  }, [tabData?.schedule, ahspCatalog, currentProjectObj, laborSettings]);
 
   const globalLaborRoles = useMemo(() => {
     const roles = new Set();
@@ -1156,7 +1181,15 @@ function ProyekContent() {
                     </ErrorBoundary>
                   ) : (
                     <ErrorBoundary>
-                      <ScheduleTab {...{ tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData, projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange, manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles, laborSettings, setLaborSettings, selectedProject, projects, supabase, saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro }} />
+                    {activeTab === 'proyek' && subTabProyek === 'schedule' && (
+                      <ScheduleTab {...{
+                        tabLoading, tabData, manpowerItems, sequencedSchedule, scheduleGanttData,
+                        projectStartDate, setProjectStartDate: updateProjectStartDate, scheduleRange, setScheduleRange,
+                        manpowerSummary, setShowCalendar, startDates, saveStartDate, selectedBab, globalLaborRoles,
+                        laborSettings, setLaborSettings, selectedProject, projects: Object.values(projects), supabase,
+                        saveItemWorkers, saveItemDurasi, savingField, userSlotRole, isAdmin, isAdvance, isPro
+                      }} />
+                    )}
                     </ErrorBoundary>
                   )}
                 </div>

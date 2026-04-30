@@ -71,21 +71,25 @@ function generateNextCode(type, sections, dbMax = 0) {
   return `${prefix}${String(max + 1).padStart(3, '0')}`;
 }
 
-const createEmptyRow = (type = 'ahsp', sections = [], defaultProfit = '15') => ({
-  key: Math.random().toString(36).substring(7),
-  masterAhspId: null,
-  masterAhspKode: '',
-  uraian: '',
-  uraianCustom: '',
-  satuan: '',
-  volume: '0',
-  hargaSatuan: '0',
-  baseSubtotal: '0',
-  mode: type, // 'ahsp' or 'lumsum'
-  isExpanded: false,
-  analisaDetails: [],
-  profitPercent: String(defaultProfit)
-});
+const createEmptyRow = (type = 'ahsp', sections = [], defaultProfit = '15') => {
+  const newId = (typeof crypto !== 'undefined' && crypto.randomUUID) ? crypto.randomUUID() : 'temp-' + Math.random().toString(36).substring(7);
+  return {
+    id: newId,
+    key: newId,
+    masterAhspId: null,
+    masterAhspKode: '',
+    uraian: '',
+    uraianCustom: '',
+    satuan: '',
+    volume: '0',
+    hargaSatuan: '0',
+    baseSubtotal: '0',
+    mode: type, // 'ahsp' or 'lumsum'
+    isExpanded: false,
+    analisaDetails: [],
+    profitPercent: String(defaultProfit)
+  };
+};
 
 function createEmptySection(name, currentSections = [], defaultProfit = '15') {
   return {
@@ -294,6 +298,7 @@ function RabSectionTable({
 
             {virtualItems.map((virtualRow) => {
               const row = sec.lines[virtualRow.index];
+              if (!row) return null; // Safety check to prevent crash on deletion
               const rIdx = virtualRow.index;
               return (
                 <tr
@@ -318,7 +323,7 @@ function RabSectionTable({
                   <td className="px-1 py-2">
                     <input
                       value={row.uraianCustom || row.uraian || ''}
-                      onChange={e => updateRow(sec.id, row.key, { uraianCustom: e.target.value })}
+                      onChange={e => updateRow(sec.id, row.key, { uraian: e.target.value, uraianCustom: e.target.value })}
                       onFocus={(e) => e.target.select()}
                       className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
                       placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
@@ -677,11 +682,11 @@ export default function RabEditorTab({
             updated.hargaSatuan = String(hs);
             updated.baseSubtotal = String(sum);
           } else if (patch.hargaSatuan !== undefined) {
-            const base = parseNum(updated.baseSubtotal);
             const newHarga = parseNum(patch.hargaSatuan);
-            if (base > 0) {
+            const base = parseNum(updated.baseSubtotal);
+            if (base > 100) { // Only calc profit backwards if base is significant
               const newProfit = ((newHarga / base) - 1) * 100;
-              updated.profitPercent = String(Math.round(newProfit * 100) / 100);
+              updated.profitPercent = String(Math.max(-100, Math.min(1000, Math.round(newProfit * 100) / 100)));
               updated.hargaSatuan = String(newHarga);
             } else {
               updated.baseSubtotal = String(newHarga);
@@ -782,25 +787,38 @@ export default function RabEditorTab({
       let counter = 0;
       for (const sec of sections) {
         for (const r of sec.lines) {
-          if (!r.uraian) throw new Error(`Kolom Pekerjaan pada Bab ${sec.namaBab} wajib diisi!`);
-          const lineId = (r.key && r.key.length === 36) ? r.key : null;
+          const uraianFinal = (r.uraian || r.uraianCustom || '').trim();
+          const hasVolume = parseNum(r.volume) > 0;
+          const hasHarga = parseNum(r.hargaSatuan) > 0;
+          const hasMaster = !!(r.master_ahsp_id || r.masterAhspId);
+
+          // Jika baris benar-benar kosong (uraian kosong DAN (volume 0 atau harga 0)), abaikan saja
+          if (!uraianFinal && (parseNum(r.volume) === 0 || parseNum(r.hargaSatuan) === 0) && !hasMaster) {
+            continue;
+          }
+
+          // Jika ada isinya (misal volume diisi) tapi uraian kosong, baru lempar error (hanya jika tidak silent/auto-save)
+          if (!uraianFinal) {
+            if (silent) continue; // Skip in auto-save to avoid annoying toasts
+            throw new Error(`Kolom Pekerjaan pada Bab ${sec.namaBab} wajib diisi!`);
+          }
+          
           const lineItem = {
+            id: (r.id && r.id.length === 36) ? r.id : (r.key && r.key.length === 36 ? r.key : null),
             master_ahsp_id: r.master_ahsp_id || r.masterAhspId || null,
             bab_pekerjaan: sec.namaBab,
             sort_order: counter++,
-            uraian: r.uraian,
+            uraian: uraianFinal,
             uraian_custom: r.uraianCustom || null,
             satuan: r.satuan,
             volume: parseNum(r.volume),
             harga_satuan: parseNum(r.hargaSatuan),
-            jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
             profit_percent: parseNum(r.profitPercent),
             analisa_custom: r.analisaDetails || [],
             pekerja_input: r.pekerja_input || null,
             durasi_input: r.durasi_input || null,
             start_date: r.start_date || null
           };
-          if (lineId) lineItem.id = lineId;
           allLines.push(lineItem);
         }
       }
@@ -867,12 +885,30 @@ export default function RabEditorTab({
         setTimeout(() => reject(new Error('Timeout: Database tidak merespon dalam 30 detik.')), 30000);
       });
 
-      const { projectId: currentProjectId, error: saveErr } = await Promise.race([
+      const { projectId: currentProjectId, lines: savedLines, error: saveErr } = await Promise.race([
         useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete),
         timeoutPromise
       ]);
 
       if (saveErr) throw saveErr;
+
+      // Update local state with real IDs from DB if they were new
+      if (savedLines && savedLines.length > 0) {
+        const idMap = new Map();
+        savedLines.forEach(sl => {
+          // If we had a temporary key, map it to the new DB ID
+          // But since we use UUIDs now, they should match
+          idMap.set(sl.uraian + sl.sort_order, sl.id);
+        });
+
+        setSections(prev => prev.map(s => ({
+          ...s,
+          lines: s.lines.map(l => {
+            const match = savedLines.find(sl => sl.uraian === l.uraian && sl.sort_order === l.sort_order);
+            return match ? { ...l, id: match.id, key: match.id } : l;
+          })
+        })));
+      }
 
       const newSnapshot = {
         identity: identityPayload,
@@ -886,6 +922,7 @@ export default function RabEditorTab({
       localStorage.removeItem(`rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`);
 
       if (onRefresh && !silent) onRefresh(currentProjectId);
+      if (!silent) toast.success('RAB Berhasil Disimpan');
     } catch (err) {
       console.error('Save Error:', err);
       if (err.name === 'AbortError') {
