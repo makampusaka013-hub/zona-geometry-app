@@ -220,22 +220,32 @@ function ProyekContent() {
 
     const urlId = searchParams.get('id');
 
-    if (urlId && urlId !== 'null' && urlId !== 'undefined' && urlId !== selectedProject) {
+    // Kasus 1: URL punya ID tapi state kosong (Direct Link / Refresh)
+    if (urlId && isValidId(urlId) && urlId !== selectedProject) {
       setSelectedProject(urlId);
     }
-    else if (selectedProject && urlId !== selectedProject) {
+    // Kasus 2: State punya ID tapi URL beda (UI Click)
+    else if (isValidId(selectedProject) && urlId !== selectedProject) {
       const params = new URLSearchParams(searchParams.toString());
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
+    // Kasus 3: Tidak ada pilihan, pilih yang pertama jika tersedia
     else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects || {}).length > 0 && !isCreating) {
       const firstId = Object.keys(projects)[0];
       setSelectedProject(firstId);
-      const params = new URLSearchParams(searchParams.toString());
-      params.set('id', firstId);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject, activeTab]);
+  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
+
+  // ── Deep Data Sync: Pemicu Fetch Tab saat Proyek/Tab berubah ──
+  useEffect(() => {
+    if (!selectedProject || storeLoading || activeTab === 'daftar') return;
+    
+    const proj = projects[selectedProject];
+    if (proj) {
+      fetchTabData(activeTab, selectedProject, proj);
+    }
+  }, [selectedProject, activeTab, storeLoading]);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
