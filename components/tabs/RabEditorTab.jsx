@@ -901,7 +901,15 @@ export default function RabEditorTab({
         if (!identityToSave && linesToUpsert.length === 0) return;
       }
 
-      const { projectId: currentProjectId, error: saveErr } = await useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete);
+      // Add a safety timeout of 30s
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('Timeout: Database tidak merespon dalam 30 detik.')), 30000);
+      });
+
+      const { projectId: currentProjectId, error: saveErr } = await Promise.race([
+        useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete),
+        timeoutPromise
+      ]);
       
       if (saveErr) throw saveErr;
 
@@ -919,15 +927,13 @@ export default function RabEditorTab({
       if (onRefresh && !silent) onRefresh(currentProjectId);
     } catch (err) {
       console.error('Save Error:', err);
-      // Conflict Detection (Optimistic Concurrency)
-      if (err.code === 'PGRST116' || (err.message && err.message.includes('Konflik'))) {
-        setConflictData({
-          message: 'Data telah diupdate oleh user lain saat Anda sedang mengedit.',
-          details: err.message
-        });
+      if (err.name === 'AbortError') {
+        if (!silent) setError('Proses simpan terlalu lama (Timeout). Silakan coba lagi.');
+      } else {
+        if (!silent) setError(err.message);
       }
-      if (!silent) setError(err.message);
-      else throw err;
+      if (!silent) setSaving(false);
+      if (silent) throw err;
     } finally {
       if (!silent) setSaving(false);
     }
