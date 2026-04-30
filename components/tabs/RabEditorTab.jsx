@@ -453,15 +453,6 @@ export default function RabEditorTab({
   const [projectMeta, setProjectMeta] = useState({ ppn_percent: 12, hsp_value: 0 });
   const [globalOverhead, setGlobalOverhead] = useState(15);
   const [dbMaxLsNum, setDbMaxLsNum] = useState(0);
-  const [locations, setLocations] = useState([]);
-
-  useEffect(() => {
-    async function fetchLocations() {
-      const { data } = await supabase.from('locations').select('*').order('name');
-      if (data) setLocations(data);
-    }
-    fetchLocations();
-  }, []);
 
   const isAdmin = member?.role === 'admin';
   const isPro = member?.role === 'pro';
@@ -986,7 +977,7 @@ export default function RabEditorTab({
             </div>
           </div>
           <button
-            onClick={saveRab}
+            onClick={() => saveRab(false)}
             disabled={saving}
             className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] dark:hover:shadow-[0_10px_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all duration-300 disabled:opacity-50"
           >
