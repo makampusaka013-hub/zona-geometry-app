@@ -1155,7 +1155,30 @@ function ProyekContent() {
 
               {activeTab === 'progress' && hasProject && (
                 <ErrorBoundary>
-                  <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData?.schedule?.lines || [], resources: tabData?.harga || [], projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+                  <ProgressTab {...{ 
+                    projectId: selectedProject, 
+                    activeTab, 
+                    tabLoading, 
+                    items: tabData?.rab || tabData?.schedule?.lines || [], 
+                    resources: tabData?.harga || [], 
+                    projectStartDate, 
+                    userSlotRole, 
+                    isAdmin, 
+                    isAdvance, 
+                    isPro, 
+                    canVerify, 
+                    canApproveFinal, 
+                    onUpdateStatus: handleUpdateLineStatus, 
+                    viewMode: progressViewMode, 
+                    setViewMode: setProgressViewMode, 
+                    timeRange: progressTimeRange, 
+                    setTimeRange: setProgressTimeRange, 
+                    savingStatus: statusSimpan, 
+                    setSavingStatus: setStatusSimpan, 
+                    isOwner, 
+                    isModeNormal, 
+                    currentUserId: member?.user_id 
+                  }} />
                 </ErrorBoundary>
               )}
 
@@ -1167,13 +1190,36 @@ function ProyekContent() {
 
               {activeTab === 'terpakai' && hasProject && (
                 <ErrorBoundary>
-                  <DataTerpakaiTab {...{ activeTab, tabLoading, tabData, formatIdr, ahspCatalog, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), subTab: terpakaiSubTab, setSubTab: setTerpakaiSubTab, resFilter: terpakaiResFilter, setResFilter: setTerpakaiResFilter, readOnly: false }} />
+                  <DataTerpakaiTab {...{ 
+                    activeTab, 
+                    tabLoading, 
+                    tabData: { ...tabData, ahsp: tabData?.rab || [] }, 
+                    formatIdr, 
+                    ahspCatalog, 
+                    onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), 
+                    subTab: terpakaiSubTab, 
+                    setSubTab: setTerpakaiSubTab, 
+                    resFilter: terpakaiResFilter, 
+                    setResFilter: setTerpakaiResFilter, 
+                    readOnly: false 
+                  }} />
                 </ErrorBoundary>
               )}
 
               {activeTab === 'perubahan' && hasProject && (
                 <ErrorBoundary>
-                  <DataPerubahanTab {...{ activeTab, tabLoading, tabData, projectId: selectedProject, onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), userSlotRole, isAdmin: isAdmin || isAdvance || member?.role === 'pro', subTab: perubahanSubTab, setSubTab: setPerubahanSubTab, currentUserId: member?.user_id }} />
+                  <DataPerubahanTab {...{ 
+                    activeTab, 
+                    tabLoading, 
+                    tabData: { ...tabData, changes: tabData?.changes || [] }, 
+                    projectId: selectedProject, 
+                    onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj), 
+                    userSlotRole, 
+                    isAdmin: isAdmin || isAdvance || member?.role === 'pro', 
+                    subTab: perubahanSubTab, 
+                    setSubTab: setPerubahanSubTab, 
+                    currentUserId: member?.user_id 
+                  }} />
                 </ErrorBoundary>
               )}
 
