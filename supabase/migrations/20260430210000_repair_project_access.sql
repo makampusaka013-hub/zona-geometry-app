@@ -5,6 +5,7 @@
 -- =============================================================================
 
 -- 1. Definisikan ulang fungsi is_project_member (Safe Version)
+DROP FUNCTION IF EXISTS public.is_project_member(uuid) CASCADE;
 CREATE OR REPLACE FUNCTION public.is_project_member(p_project_id uuid)
 RETURNS boolean
 LANGUAGE plpgsql
@@ -21,6 +22,7 @@ END;
 $$;
 
 -- 2. Definisikan ulang fungsi is_app_admin (Safe Version)
+DROP FUNCTION IF EXISTS public.is_app_admin() CASCADE;
 CREATE OR REPLACE FUNCTION public.is_app_admin()
 RETURNS boolean
 LANGUAGE plpgsql
