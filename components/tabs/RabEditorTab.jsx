@@ -1007,11 +1007,11 @@ export default function RabEditorTab({
                 </div>
                 <div className="flex flex-col">
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight">
+                    <h3 className="text-sm font-bold text-slate-900 dark:text-white uppercase tracking-tight whitespace-nowrap">
                       Builder RAB — Mode Advanced
                     </h3>
                     {autoSaveStatus !== 'idle' && (
-                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700">
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 flex-shrink-0">
                         <div className={`w-1 h-1 rounded-full ${autoSaveStatus === 'saving' ? 'bg-amber-500 animate-pulse' : autoSaveStatus === 'saved' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
                         <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
                           {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Synced' : 'Error'}
