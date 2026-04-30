@@ -43,9 +43,10 @@ function LoginContent() {
       return;
     }
 
-    // Success: Go to dashboard with proper router sync
-    router.push('/dashboard');
-    router.refresh();
+    // Success: Allow a tiny bit of time for cookies to sync then redirect
+    setTimeout(() => {
+      window.location.href = '/dashboard';
+    }, 500);
   }
 
   return (
