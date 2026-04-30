@@ -38,7 +38,13 @@ graph TD
     subgraph Service_Layer_Hardened
         ProjectStore <--> Service[rabService.js]
         RabStore <--> Service
-        Service -- "Atomic RPC Save" --> Supabase[(Supabase DB + Audit Logs)]
+        Service -- "Atomic RPC Save" --> Supabase[(Supabase Hardened DB)]
+    end
+
+    subgraph Data_Governance_Layer
+        Supabase --> AuditLogs[Audit Logs Table]
+        Supabase --> SoftDelete[Soft Delete Mechanism]
+        Supabase --> Precision[Numeric 18,2 Precision]
     end
 
     subgraph Realtime_Hardened_Sync
@@ -78,6 +84,12 @@ graph TD
 *   **`rabService.js`**: Data Access Layer yang kini menggunakan **Atomic Save RPC** (`save_project_atomic`) untuk menjamin transaksi *all-or-nothing*.
 *   **`validations/rabSchema.js`**: Validasi payload menggunakan **Zod** untuk semua data masuk (Realtime & Form).
 
+### 5. 🗄️ Database Layer (`/supabase/migrations`)
+*   **Unified User System**: Integrasi `auth.users` langsung ke `members` tanpa tabel profile redundan.
+*   **Referential Integrity**: Standardisasi Foreign Keys ke `members.user_id` dengan `ON DELETE CASCADE`.
+*   **Data Governance**: Implementasi `audit_logs` untuk audit trail dan `deleted_at` untuk soft-delete.
+*   **Precision Hardening**: Penggunaan `numeric(18,2)` secara konsisten untuk kolom finansial.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -85,8 +97,8 @@ graph TD
 *   **State Management**: Zustand (Modular & Normalized).
 *   **Concurrency**: Optimistic Locking (`version`), ClientId Loop Prevention, & Atomic RPC Transactions.
 *   **Audit & Resiliency**: Automatic Audit Triggers, Soft Delete (`deleted_at`), & Namespaced Local Drafts.
-*   **Security**: Supabase SSR Auth + Hardened RLS + Service-level RBAC.
+*   **Security**: Supabase SSR Auth + Hardened RLS + Unified User Identity.
 *   **Reporting**: Server-Side ExcelJS with Concurrency Throttling.
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 13 - Atomic Transactions, ClientId Sync & Audit Infrastructure)*
+*Main Map Last Updated: 2026-04-30 (Phase 14 - Hardened Schema Architecture & Data Governance)*
