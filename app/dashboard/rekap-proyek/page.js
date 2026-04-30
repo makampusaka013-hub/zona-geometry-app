@@ -184,27 +184,27 @@ function ProyekContent() {
 
   const projectMetrics = useMemo(() => {
     if (!currentProjectObj) return { total: 0, duration: 0 };
-    if (localTotalKontrak !== null) return { total: localTotalKontrak, duration: currentProjectObj.manual_duration || 0, isCco: false };
+    if (localTotalKontrak !== null) return { total: localTotalKontrak, duration: currentProjectObj?.manual_duration || 0, isCco: false };
     try {
       if (activeCcoVersion?.total > 0) {
         const subtotalCco = activeCcoVersion.total;
-        const ppnPct = currentProjectObj.ppn_percent ?? 12;
+        const ppnPct = currentProjectObj?.ppn_percent ?? 12;
         const ppn = subtotalCco * (ppnPct / 100);
         const totalExact = Math.round(subtotalCco + ppn);
         const totalRounded = Math.ceil(totalExact / 1000) * 1000;
-        return { total: totalRounded, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
+        return { total: totalRounded, duration: currentProjectObj?.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
       
       // Defensive access for tabData and ahsp
       const ahspItems = tabData?.ahsp || [];
       const subtotalRab = ahspItems.reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
       
-      const ppnPct = currentProjectObj.ppn_percent ?? 12;
+      const ppnPct = currentProjectObj?.ppn_percent ?? 12;
       const ppn = subtotalRab * (ppnPct / 100);
       const totalExact = Math.round(subtotalRab + ppn);
       let totalRounded = Math.ceil(totalExact / 1000) * 1000;
-      if (totalRounded === 0 && currentProjectObj.total_kontrak) totalRounded = currentProjectObj.total_kontrak;
-      return { total: totalRounded, duration: currentProjectObj.manual_duration || 0, isCco: false };
+      if (totalRounded === 0 && currentProjectObj?.total_kontrak) totalRounded = currentProjectObj?.total_kontrak;
+      return { total: totalRounded, duration: currentProjectObj?.manual_duration || 0, isCco: false };
     } catch (e) {
       console.error('Metrics calc error:', e);
       return { total: 0, duration: 0 };
@@ -255,26 +255,26 @@ function ProyekContent() {
 
     if (currentProjectObj) {
       setIdentityForm({
-        name: currentProjectObj.name || '',
-        code: currentProjectObj.code || '',
-        location: currentProjectObj.location || '',
-        location_id: currentProjectObj.location_id || '',
-        fiscal_year: currentProjectObj.fiscal_year || '',
-        contract_number: currentProjectObj.contract_number || '',
-        hsp_value: currentProjectObj.hsp_value || 0,
-        manual_duration: currentProjectObj.manual_duration || 0,
-        ppn_percent: currentProjectObj.ppn_percent ?? 12,
-        program_name: currentProjectObj.program_name || '',
-        activity_name: currentProjectObj.activity_name || '',
-        work_name: currentProjectObj.work_name || '',
-        ppk_name: currentProjectObj.ppk_name || '',
-        ppk_nip: currentProjectObj.ppk_nip || '',
-        pptk_name: currentProjectObj.pptk_name || '',
-        pptk_nip: currentProjectObj.pptk_nip || '',
-        konsultan_name: currentProjectObj.konsultan_name || '',
-        konsultan_supervisor: currentProjectObj.konsultan_supervisor || '',
-        kontraktor_director: currentProjectObj.kontraktor_director || '',
-        start_date: currentProjectObj.start_date || ''
+        name: currentProjectObj?.name || '',
+        code: currentProjectObj?.code || '',
+        location: currentProjectObj?.location || '',
+        location_id: currentProjectObj?.location_id || '',
+        fiscal_year: currentProjectObj?.fiscal_year || '',
+        contract_number: currentProjectObj?.contract_number || '',
+        hsp_value: currentProjectObj?.hsp_value || 0,
+        manual_duration: currentProjectObj?.manual_duration || 0,
+        ppn_percent: currentProjectObj?.ppn_percent ?? 12,
+        program_name: currentProjectObj?.program_name || '',
+        activity_name: currentProjectObj?.activity_name || '',
+        work_name: currentProjectObj?.work_name || '',
+        ppk_name: currentProjectObj?.ppk_name || '',
+        ppk_nip: currentProjectObj?.ppk_nip || '',
+        pptk_name: currentProjectObj?.pptk_name || '',
+        pptk_nip: currentProjectObj?.pptk_nip || '',
+        konsultan_name: currentProjectObj?.konsultan_name || '',
+        konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
+        kontraktor_director: currentProjectObj?.kontraktor_director || '',
+        start_date: currentProjectObj?.start_date || ''
       });
     } else if (!selectedProject) {
       setIdentityForm({
@@ -291,7 +291,7 @@ function ProyekContent() {
   // ── Sync Labor Settings State ──
   useEffect(() => {
     if (currentProjectObj?.labor_settings) {
-      setLaborSettings(currentProjectObj.labor_settings);
+      setLaborSettings(currentProjectObj?.labor_settings);
     } else {
       setLaborSettings({});
     }
@@ -950,16 +950,16 @@ function ProyekContent() {
               <div className="hidden sm:flex items-center gap-4 pr-4 border-r border-slate-200 dark:border-slate-800">
                 <div className="flex flex-col items-end">
                   <span className="text-[7px] font-black text-indigo-500 uppercase tracking-widest leading-none mb-1">Nama Proyek</span>
-                  <span className="text-[10px] font-black text-slate-800 dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{currentProjectObj.name}</span>
+                  <span className="text-[10px] font-black text-slate-800 dark:text-white truncate max-w-[80px] sm:max-w-[120px]">{currentProjectObj?.name}</span>
                 </div>
                 <div className="hidden lg:flex flex-col items-end">
                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Pagu Proyek</span>
-                  <span className="text-[10px] font-mono font-black text-slate-700 dark:text-slate-300">{formatIdr(currentProjectObj.hsp_value)}</span>
+                  <span className="text-[10px] font-mono font-black text-slate-700 dark:text-slate-300">{formatIdr(currentProjectObj?.hsp_value)}</span>
                 </div>
                 <div className="hidden lg:flex flex-col items-end">
                   <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Selisih</span>
-                  <span className={`text-[10px] font-mono font-black ${currentProjectObj.hsp_value >= projectMetrics.total ? 'text-emerald-500' : 'text-red-500'}`}>
-                    {formatIdr(currentProjectObj.hsp_value - projectMetrics.total)}
+                  <span className={`text-[10px] font-mono font-black ${currentProjectObj?.hsp_value >= projectMetrics.total ? 'text-emerald-500' : 'text-red-500'}`}>
+                    {formatIdr(currentProjectObj?.hsp_value - projectMetrics.total)}
                   </span>
                 </div>
               </div>

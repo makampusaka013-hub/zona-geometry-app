@@ -366,7 +366,11 @@ function RabSectionTable({
                     </div>
                   </td>
                   <td className="px-1 py-2">
-                    {row.mode === 'lumsum' || !row.masterAhspId ? (
+                    {row.mode === 'ahsp' && row.masterAhspId ? (
+                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-black text-[9px] truncate bg-slate-50 dark:bg-slate-800/50 px-1 py-1 rounded border border-slate-100 dark:border-slate-700 select-none cursor-not-allowed opacity-80" title="Harga dari Analisa (Fix)">
+                        {formatIdr(parseNum(row.hargaSatuan))}
+                      </div>
+                    ) : (
                       <div className="flex flex-col gap-1">
                         <input
                           type="number"
@@ -374,10 +378,9 @@ function RabSectionTable({
                           onFocus={e => e.target.select()}
                           onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
                           className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
+                          placeholder="0"
                         />
                       </div>
-                    ) : (
-                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-black text-[9px] truncate">{formatIdr(parseNum(row.hargaSatuan))}</div>
                     )}
                   </td>
                   <td className="px-1 py-2 text-right font-mono font-black text-slate-900 dark:text-white text-[10px] truncate">
@@ -581,7 +584,7 @@ export default function RabEditorTab({
   // Persistent Draft Logic
   useEffect(() => {
     if (!projectId || loading || !userMember?.user_id) return;
-    const currentVersion = identity.version || 1;
+    const currentVersion = identity?.version || 1;
     const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
 
     const saved = localStorage.getItem(draftKey);
@@ -611,14 +614,14 @@ export default function RabEditorTab({
         }
       }
     } catch (e) { }
-  }, [projectId, loading, userMember?.user_id, identity.version]);
+  }, [projectId, loading, userMember?.user_id, identity?.version]);
 
   useEffect(() => {
     if (!projectId || sections.length === 0 || loading || !userMember?.user_id) return;
-    const currentVersion = identity.version || 1;
+    const currentVersion = identity?.version || 1;
     const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
     localStorage.setItem(draftKey, JSON.stringify(sections));
-  }, [sections, projectId, loading, userMember?.user_id, identity.version]);
+  }, [sections, projectId, loading, userMember?.user_id, identity?.version]);
 
   // Mechanism: Debounced Auto-Save
   useEffect(() => {
@@ -667,7 +670,7 @@ export default function RabEditorTab({
       const rounded = Math.ceil(total / 1000) * 1000;
       setRecap({ subtotal, ppn, total, rounded, sectionTotals });
     });
-  }, [sections, identity.ppn_percent]);
+  }, [sections, identity?.ppn_percent]);
 
   const updateRow = (sId, rowKey, patch) => {
     setSections(prev => prev.map(s => s.id === sId ? {
@@ -823,23 +826,23 @@ export default function RabEditorTab({
         }
       }
 
-      const projName = identity.name || identity.work_name || identity.activity_name || identity.program_name || "Proyek Tanpa Nama";
+      const projName = identity?.name || identity?.work_name || identity?.activity_name || identity?.program_name || "Proyek Tanpa Nama";
       const identityPayload = {
         name: projName,
-        program_name: identity.program_name || null,
-        activity_name: identity.activity_name || null,
-        work_name: identity.work_name || null,
-        location: identity.location || null,
-        location_id: identity.location_id || null,
-        fiscal_year: identity.fiscal_year || null,
-        contract_number: identity.contract_number || null,
-        hsp_value: parseNum(projectMeta.hsp_value || identity.hsp_value),
+        program_name: identity?.program_name || null,
+        activity_name: identity?.activity_name || null,
+        work_name: identity?.work_name || null,
+        location: identity?.location || null,
+        location_id: identity?.location_id || null,
+        fiscal_year: identity?.fiscal_year || null,
+        contract_number: identity?.contract_number || null,
+        hsp_value: parseNum(projectMeta.hsp_value || identity?.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
         overhead_percent: parseNum(globalOverhead),
-        start_date: identity.start_date || new Date().toISOString().split('T')[0]
+        start_date: identity?.start_date || new Date().toISOString().split('T')[0]
       };
 
-      if (!projectId && !identity.work_name && !identity.name) {
+      if (!projectId && !identity?.work_name && !identity?.name) {
         throw new Error('Nama Pekerjaan wajib diisi untuk membuat proyek baru.');
       }
 
@@ -918,7 +921,7 @@ export default function RabEditorTab({
         }))
       };
       lastSavedSnapshot.current = JSON.stringify(newSnapshot);
-      const currentVersion = identity.version || 1;
+      const currentVersion = identity?.version || 1;
       localStorage.removeItem(`rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`);
 
       if (onRefresh && !silent) onRefresh(currentProjectId);
@@ -1007,7 +1010,7 @@ export default function RabEditorTab({
                 <span className="font-mono text-slate-900 dark:text-white uppercase">{formatIdr(recap.subtotal)}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold px-1 border-t border-slate-100 dark:border-slate-800 pt-4">
-                <span className="text-slate-500">PPN ({identity.ppn_percent}%)</span>
+                <span className="text-slate-500">PPN ({identity?.ppn_percent}%)</span>
                 <span className="font-mono text-slate-900 dark:text-white uppercase">+{formatIdr(recap.ppn)}</span>
               </div>
               <div className="flex justify-between items-center bg-indigo-50 dark:bg-orange-900 bg-opacity-20 p-4 rounded-2xl border border-indigo-100 dark:border-orange-500 bg-opacity-20">
@@ -1186,7 +1189,7 @@ export default function RabEditorTab({
                       <input
                         type="number"
                         onFocus={(e) => e.target.select()}
-                        value={identity.ppn_percent}
+                        value={identity?.ppn_percent}
                         onChange={e => {
                           const val = parseNum(e.target.value);
                           setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
