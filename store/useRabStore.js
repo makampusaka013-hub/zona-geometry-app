@@ -43,18 +43,30 @@ const useRabStore = create((set, get) => ({
     }
   })),
 
-  patchRabItems: (patches) => set((state) => {
+  patchRabItems: (patches, source = 'local') => set((state) => {
     const nextItems = { ...state.rabItems };
+    let hasChanges = false;
+    
     patches.forEach(patch => {
-      if (patch.id && nextItems[patch.id]) {
-        // Only patch if version is newer or equal (simple conflict check)
-        if (!patch.version || !nextItems[patch.id].version || patch.version >= nextItems[patch.id].version) {
-          nextItems[patch.id] = { ...nextItems[patch.id], ...patch };
+      const existing = nextItems[patch.id];
+      if (existing) {
+        // Optimistic Concurrency & Loop Prevention:
+        // 1. If remote update has older or same version, ignore it (unless it's local)
+        if (source === 'remote' && patch.version && existing.version && patch.version <= existing.version) {
+          return;
         }
+        
+        // 2. Patch the item
+        nextItems[patch.id] = { ...existing, ...patch };
+        hasChanges = true;
       } else if (patch.id) {
+        // New item from remote or local
         nextItems[patch.id] = patch;
+        hasChanges = true;
       }
     });
+
+    if (!hasChanges) return state;
     return { rabItems: nextItems };
   }),
 

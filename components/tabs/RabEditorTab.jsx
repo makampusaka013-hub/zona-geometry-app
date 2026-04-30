@@ -429,6 +429,7 @@ export default function RabEditorTab({
   const [isPending, startTransition] = useTransition();
   const [showMobileDetails, setShowMobileDetails] = useState(false);
   const [autoSaveStatus, setAutoSaveStatus] = useState('idle'); // idle | saving | saved | error
+  const [conflictData, setConflictData] = useState(null);
   const [lastSaved, setLastSaved] = useState(null);
   const [identity, setIdentity] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
@@ -580,7 +581,10 @@ export default function RabEditorTab({
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
           isExpanded: false,
-          profitPercent: String(finalProfit)
+          profitPercent: String(finalProfit),
+          pekerja_input: item.pekerja_input,
+          durasi_input: item.durasi_input,
+          start_date: item.start_date
         });
       });
 
@@ -612,6 +616,30 @@ export default function RabEditorTab({
     }
     setLoading(false);
   }, [projectId, initialIdentity]);
+
+  // Persistent Draft Logic
+  useEffect(() => {
+    if (!projectId || loading) return;
+    const draftKey = `rab_draft_${projectId}`;
+    const saved = localStorage.getItem(draftKey);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only load if current sections are empty or default
+        if (sections.length === 0 || (sections.length === 1 && sections[0].lines.length <= 1 && !sections[0].lines[0].uraian)) {
+           setSections(parsed);
+        }
+      } catch (e) {
+        console.error('Failed to parse draft:', e);
+      }
+    }
+  }, [projectId, loading]);
+
+  useEffect(() => {
+    if (!projectId || sections.length === 0 || loading) return;
+    const draftKey = `rab_draft_${projectId}`;
+    localStorage.setItem(draftKey, JSON.stringify(sections));
+  }, [sections, projectId, loading]);
 
   // Mechanism: Debounced Auto-Save
   useEffect(() => {
@@ -792,7 +820,10 @@ export default function RabEditorTab({
             harga_satuan: parseNum(r.hargaSatuan),
             jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
             profit_percent: parseNum(r.profitPercent),
-            analisa_custom: r.analisaDetails || []
+            analisa_custom: r.analisaDetails || [],
+            pekerja_input: r.pekerja_input || null,
+            durasi_input: r.durasi_input || null,
+            start_date: r.start_date || null
           };
           if (lineId) lineItem.id = lineId;
           allLines.push(lineItem);
@@ -868,9 +899,18 @@ export default function RabEditorTab({
         }))
       };
       lastSavedSnapshot.current = JSON.stringify(newSnapshot);
+      localStorage.removeItem(`rab_draft_${projectId}`);
 
       if (onRefresh && !silent) onRefresh(currentProjectId);
     } catch (err) {
+      console.error('Save Error:', err);
+      // Conflict Detection (Optimistic Concurrency)
+      if (err.code === 'PGRST116' || (err.message && err.message.includes('Konflik'))) {
+        setConflictData({
+          message: 'Data telah diupdate oleh user lain saat Anda sedang mengedit.',
+          details: err.message
+        });
+      }
       if (!silent) setError(err.message);
       else throw err;
     } finally {
@@ -883,6 +923,36 @@ export default function RabEditorTab({
 
   return (
     <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
+      
+      {/* ── Conflict Resolution Modal ── */}
+      {conflictData && (
+        <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
+          <div className="bg-white dark:bg-slate-900 rounded-[32px] w-full max-w-lg shadow-2xl border border-slate-100 dark:border-slate-800 p-8 flex flex-col items-center text-center gap-6">
+            <div className="w-16 h-16 rounded-full bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center">
+              <ShieldAlert className="w-8 h-8 text-rose-600" />
+            </div>
+            <div>
+              <h3 className="text-xl font-black text-slate-900 dark:text-white mb-2 uppercase tracking-tight">Konflik Data Terdeteksi</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 font-bold leading-relaxed">{conflictData.message}</p>
+              <p className="text-[10px] text-slate-400 mt-4 italic">Versi di database lebih baru daripada versi yang Anda edit. Pilih langkah untuk melanjutkan:</p>
+            </div>
+            <div className="grid grid-cols-1 w-full gap-3">
+              <button 
+                onClick={() => { setConflictData(null); loadRab(); }}
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-95"
+              >
+                <RotateCcw className="w-4 h-4" /> Timpa Draft Saya (Gunakan Data Terbaru)
+              </button>
+              <button 
+                onClick={() => setConflictData(null)}
+                className="flex items-center justify-center gap-3 px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all"
+              >
+                Tutup & Simpan Manual Nanti
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* ── Mobile Sticky Summary Bar ── */}
         <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white bg-opacity-80 dark:bg-slate-900 dark:bg-opacity-90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">

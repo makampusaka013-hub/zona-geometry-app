@@ -25,6 +25,14 @@ export async function POST(request) {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
 
+    // 1.5 Rate Limiting Check
+    const { data: canExport, error: rateError } = await supabase.rpc('check_and_increment_export_limit');
+    if (rateError || !canExport) {
+      return NextResponse.json({ 
+        error: 'Limit ekspor harian tercapai atau permintaan terlalu cepat. Silakan coba lagi nanti.' 
+      }, { status: 429 });
+    }
+
     // 2. Fetch Data
     const { project, lines, masterPrices, error } = await fetchRabData(projectId);
     if (error) throw error;

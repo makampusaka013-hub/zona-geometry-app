@@ -32,6 +32,7 @@ import LocationSelect from '@/components/LocationSelect';
 import GlobalErrorBoundary from '@/components/GlobalErrorBoundary';
 import { addDays, computeManpower, getSequencedSchedule } from '@/lib/manpower';
 import { useProjectPresence } from '@/lib/hooks/useProjectPresence';
+import { useRabRealtime } from '@/lib/hooks/useRabRealtime';
 import useProjectStore from '@/store/useProjectStore';
 
 function formatIdr(n) {
@@ -106,6 +107,7 @@ function ProyekContent() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   
   const onlineUsers = useProjectPresence(selectedProject, member);
+  useRabRealtime(selectedProject, member?.user_id);
 
   const [selectedBab, setSelectedBab] = useState('all');
   const [savingField, setSavingField] = useState(null);
