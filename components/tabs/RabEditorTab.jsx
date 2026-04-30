@@ -668,7 +668,8 @@ export default function RabEditorTab({
     setSections(prev => prev.map(s => s.id === sId ? {
       ...s,
       lines: s.lines.map(r => {
-        if (r.key === rowKey) {
+        // Robust identification check
+        if (r.key === rowKey || (r.id && r.id === rowKey)) {
           const updated = { ...r, ...patch };
           if (updated.analisaDetails && updated.analisaDetails.length > 0) {
             const sum = updated.analisaDetails.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga)), 0);
