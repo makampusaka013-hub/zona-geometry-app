@@ -491,7 +491,7 @@ function ProyekContent() {
 
   const manpowerItems = useMemo(() => {
     try {
-      const { lines } = tabData.schedule;
+      const lines = tabData?.schedule?.lines || [];
       if (!lines?.length || !ahspCatalog) return [];
       const laborSettings = currentProjectObj?.labor_settings || {};
       const itemWorkers = currentProjectObj?.item_workers || {};
@@ -501,7 +501,7 @@ function ProyekContent() {
       console.error('Manpower compute error:', e);
       return [];
     }
-  }, [tabData.schedule, ahspCatalog, currentProjectObj]);
+  }, [tabData?.schedule, ahspCatalog, currentProjectObj]);
 
   const globalLaborRoles = useMemo(() => {
     const roles = new Set();
@@ -528,14 +528,14 @@ function ProyekContent() {
       details.filter(detectLabor).forEach(d => roles.add(d.uraian));
     });
 
-    const lines = tabData.schedule.lines || [];
+    const lines = tabData?.schedule?.lines || [];
     lines.forEach(line => {
       const details = line.analisa_custom || [];
       details.filter(detectLabor).forEach(d => roles.add(d.uraian));
     });
 
     return Array.from(roles).sort();
-  }, [tabData.schedule.lines, ahspCatalog]);
+  }, [tabData?.schedule?.lines, ahspCatalog]);
 
   async function handleJoinProject() {
     if (!joinCode) return;
@@ -588,9 +588,9 @@ function ProyekContent() {
   }, [sequencedSchedule, scheduleRange, projectStartDate]);
 
   const babOptions = useMemo(() => {
-    const babs = tabData.schedule.lines.map(l => l.bab_pekerjaan).filter(Boolean);
+    const babs = (tabData?.schedule?.lines || []).map(l => l.bab_pekerjaan).filter(Boolean);
     return [...new Set(babs)];
-  }, [tabData.schedule.lines]);
+  }, [tabData?.schedule?.lines]);
 
 
   async function handleAssignSlot(projectId, userId, slotRole) {
@@ -1137,7 +1137,7 @@ function ProyekContent() {
 
               {activeTab === 'progress' && hasProject && (
                 <ErrorBoundary>
-                  <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData.schedule.lines, resources: tabData.harga, projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
+                  <ProgressTab {...{ projectId: selectedProject, activeTab, tabLoading, items: tabData?.schedule?.lines || [], resources: tabData?.harga || [], projectStartDate, userSlotRole, isAdmin, isAdvance, isPro, canVerify, canApproveFinal, onUpdateStatus: handleUpdateLineStatus, viewMode: progressViewMode, setViewMode: setProgressViewMode, timeRange: progressTimeRange, setTimeRange: setProgressTimeRange, savingStatus: statusSimpan, setSavingStatus: setStatusSimpan, isOwner, isModeNormal, currentUserId: member?.user_id }} />
                 </ErrorBoundary>
               )}
 
