@@ -183,7 +183,11 @@ function ProyekContent() {
         const totalRounded = Math.ceil(totalExact / 1000) * 1000;
         return { total: totalRounded, duration: currentProjectObj.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
-      const subtotalRab = (tabData.ahsp || []).reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
+      
+      // Defensive access for tabData and ahsp
+      const ahspItems = tabData?.ahsp || [];
+      const subtotalRab = ahspItems.reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
+      
       const ppnPct = currentProjectObj.ppn_percent ?? 12;
       const ppn = subtotalRab * (ppnPct / 100);
       const totalExact = Math.round(subtotalRab + ppn);
@@ -194,7 +198,7 @@ function ProyekContent() {
       console.error('Metrics calc error:', e);
       return { total: 0, duration: 0 };
     }
-  }, [currentProjectObj, tabData.ahsp, activeCcoVersion, localTotalKontrak]);
+  }, [currentProjectObj, tabData, activeCcoVersion, localTotalKontrak]);
 
   // ── Initial Load via Store ──
   useEffect(() => {
