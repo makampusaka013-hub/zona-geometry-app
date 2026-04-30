@@ -198,7 +198,7 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
         onChange={(e) => { setQuery(e.target.value); setOpen(true); }}
         onFocus={(e) => {
           e.target.select();
-          if(query.length >= 1) setOpen(true);
+          if (query.length >= 1) setOpen(true);
         }}
         className={`w-full bg-slate-50 dark:bg-slate-900 bg-opacity-50 border-none px-2 py-1.5 text-[11px] font-mono font-bold placeholder:font-sans placeholder:font-normal focus:ring-1 focus:ring-indigo-500 rounded transition-all ${kode ? 'text-indigo-600 dark:text-orange-400' : 'text-slate-900 dark:text-white'}`}
         placeholder={placeholder}
@@ -233,8 +233,8 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
                   <div className="text-[11px] font-bold text-slate-800 dark:text-slate-200 leading-tight truncate">{item.nama_pekerjaan}</div>
                 </div>
                 <div className="text-right flex-shrink-0 ml-2">
-                   <div className="text-[10px] font-mono font-bold text-slate-900 dark:text-white">{formatIdr(parseFloat(item.total_subtotal || 0))}</div>
-                   <div className="text-[9px] text-slate-400">{item.satuan_pekerjaan || item.satuan}</div>
+                  <div className="text-[10px] font-mono font-bold text-slate-900 dark:text-white">{formatIdr(parseFloat(item.total_subtotal || 0))}</div>
+                  <div className="text-[9px] text-slate-400">{item.satuan_pekerjaan || item.satuan}</div>
                 </div>
               </div>
             </div>
@@ -489,9 +489,9 @@ export default function RabEditorTab({
       return;
     }
     setLoading(true);
-    
+
     const { project: proj, lines, masterPrices, error } = await useRabStore.getState().loadRabData(projectId);
-    
+
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
       setIdentity({
@@ -515,13 +515,13 @@ export default function RabEditorTab({
       // --- LOGIKA PROFIT GLOBAL CERDAS ---
       let initGlobalProfit = proj?.overhead_percent ?? proj?.profit_percent;
       if (initGlobalProfit === null || initGlobalProfit === undefined) {
-         if (data.length > 0) {
-             const first = data[0];
-             const bPrice = parseNum(first.master_ahsp_id ? masterPrices[first.master_ahsp_id] : 0);
-             if (bPrice > 0 && parseNum(first.harga_satuan) > 0) {
-                 initGlobalProfit = Math.round(((parseNum(first.harga_satuan) / bPrice) - 1) * 100);
-             }
-         }
+        if (data.length > 0) {
+          const first = data[0];
+          const bPrice = parseNum(first.master_ahsp_id ? masterPrices[first.master_ahsp_id] : 0);
+          if (bPrice > 0 && parseNum(first.harga_satuan) > 0) {
+            initGlobalProfit = Math.round(((parseNum(first.harga_satuan) / bPrice) - 1) * 100);
+          }
+        }
       }
       const finalGlobalProfit = initGlobalProfit ?? 15;
       setGlobalOverhead(finalGlobalProfit);
@@ -536,7 +536,7 @@ export default function RabEditorTab({
         let basePrice = parseNum(freshPrice);
 
         if (basePrice === 0 && item.analisa_custom && item.analisa_custom.length > 0) {
-           basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
+          basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
         }
 
         // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur (untuk data lama) -> Global -> Default 15%)
@@ -555,7 +555,7 @@ export default function RabEditorTab({
 
         // 3. Kalkulasi Harga Dasar untuk Lumpsum (Reconstruction)
         if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
-           basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
+          basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
         }
 
         const activePrice = Math.round(basePrice * (1 + (finalProfit / 100)));
@@ -583,10 +583,10 @@ export default function RabEditorTab({
       setSections(
         Object.keys(grouped).length > 0
           ? Object.entries(grouped).map(([bab, lines]) => ({
-              id: bab,
-              namaBab: bab,
-              lines: lines
-            }))
+            id: bab,
+            namaBab: bab,
+            lines: lines
+          }))
           : [createEmptySection('PEKERJAAN PERSIAPAN', [], finalGlobalProfit)]
       );
 
@@ -614,23 +614,18 @@ export default function RabEditorTab({
     if (!projectId || loading || !userMember?.user_id) return;
     const currentVersion = identity.version || 1;
     const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
-    
+
     const saved = localStorage.getItem(draftKey);
-    // Load from local storage if exists
-    try {
-      const savedDraft = localStorage.getItem(draftKey);
-      if (savedDraft) {
-        const parsed = JSON.parse(savedDraft);
-        if (parsed && Array.isArray(parsed.sections)) {
-          setSections(parsed.sections);
-          if (parsed.recap) setRecap(parsed.recap);
-          // Only clear error if we successfully loaded a valid draft
-          setError(null);
+    if (saved) {
+      try {
+        const parsed = JSON.parse(saved);
+        // Only load if current sections are empty or default
+        if (sections.length === 0 || (sections.length === 1 && sections[0].lines.length <= 1 && !sections[0].lines[0].uraian)) {
+          setSections(parsed);
         }
+      } catch (e) {
+        console.error('Failed to parse draft:', e);
       }
-    } catch (e) {
-      console.warn('Failed to load draft:', e);
-      localStorage.removeItem(draftKey);
     }
 
     // Cleanup old drafts for this project
@@ -641,7 +636,7 @@ export default function RabEditorTab({
           localStorage.removeItem(key);
         }
       }
-    } catch (e) {}
+    } catch (e) { }
   }, [projectId, loading, userMember?.user_id, identity.version]);
 
   useEffect(() => {
@@ -794,8 +789,8 @@ export default function RabEditorTab({
   };
 
   const savePagu = async () => {
-    const { error } = await useProjectStore.getState().saveProjectIdentity(projectId, { 
-      hsp_value: projectMeta.hsp_value 
+    const { error } = await useProjectStore.getState().saveProjectIdentity(projectId, {
+      hsp_value: projectMeta.hsp_value
     });
     if (error) {
       setError('Gagal simpan pagu: ' + error.message);
@@ -906,7 +901,7 @@ export default function RabEditorTab({
         useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete),
         timeoutPromise
       ]);
-      
+
       if (saveErr) throw saveErr;
 
       const newSnapshot = {
@@ -940,7 +935,7 @@ export default function RabEditorTab({
 
   return (
     <div className={`space-y-6 ${showMobileDetails ? 'overflow-hidden max-h-screen' : ''}`}>
-      
+
       {/* ── Conflict Resolution Modal ── */}
       {conflictData && (
         <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-4">
@@ -954,13 +949,13 @@ export default function RabEditorTab({
               <p className="text-[10px] text-slate-400 mt-4 italic">Versi di database lebih baru daripada versi yang Anda edit. Pilih langkah untuk melanjutkan:</p>
             </div>
             <div className="grid grid-cols-1 w-full gap-3">
-              <button 
+              <button
                 onClick={() => { setConflictData(null); loadRab(); }}
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[11px] uppercase tracking-widest shadow-lg shadow-indigo-600/20 transition-all hover:scale-[1.02] active:scale-95"
               >
                 <RotateCcw className="w-4 h-4" /> Timpa Draft Saya (Gunakan Data Terbaru)
               </button>
-              <button 
+              <button
                 onClick={() => setConflictData(null)}
                 className="flex items-center justify-center gap-3 px-6 py-4 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-2xl font-black text-[11px] uppercase tracking-widest transition-all"
               >
@@ -972,24 +967,24 @@ export default function RabEditorTab({
       )}
 
       {/* ── Mobile Sticky Summary Bar ── */}
-        <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white bg-opacity-80 dark:bg-slate-900 dark:bg-opacity-90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
-          <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
-            <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
-               Grand Total <ChevronDown className={`w-2 h-2 transition-transform ${showMobileDetails ? 'rotate-180' : ''}`} />
-            </div>
-            <div className="text-sm font-mono font-black text-indigo-600 dark:text-orange-500 leading-none">
-              {formatIdr(recap.rounded)}
-            </div>
+      <div className="lg:hidden fixed bottom-0 left-0 right-0 z-[100] bg-white bg-opacity-80 dark:bg-slate-900 dark:bg-opacity-90 backdrop-blur-xl border-t border-slate-200 dark:border-slate-800 p-4 shadow-[0_-10px_40px_rgba(0,0,0,0.1)] flex items-center justify-between gap-4 animate-in slide-in-from-bottom duration-500">
+        <div className="flex flex-col" onClick={() => setShowMobileDetails(!showMobileDetails)}>
+          <div className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1 flex items-center gap-1">
+            Grand Total <ChevronDown className={`w-2 h-2 transition-transform ${showMobileDetails ? 'rotate-180' : ''}`} />
           </div>
-          <button
-            onClick={() => saveRab(false)}
-            disabled={saving}
-            className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] dark:hover:shadow-[0_10px_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all duration-300 disabled:opacity-50"
-          >
-            {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
-            {saving ? 'Simpan...' : 'Simpan'}
-          </button>
+          <div className="text-sm font-mono font-black text-indigo-600 dark:text-orange-500 leading-none">
+            {formatIdr(recap.rounded)}
+          </div>
         </div>
+        <button
+          onClick={() => saveRab(false)}
+          disabled={saving}
+          className="flex-1 max-w-[160px] h-12 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 shadow-sm hover:shadow-[0_10px_20px_rgba(79,70,229,0.3)] dark:hover:shadow-[0_10px_20px_rgba(249,115,22,0.3)] active:scale-95 transition-all duration-300 disabled:opacity-50"
+        >
+          {saving ? <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-opacity-20 border-t-white" /> : <Save className="w-4 h-4" />}
+          {saving ? 'Simpan...' : 'Simpan'}
+        </button>
+      </div>
 
       {/* ── Mobile Details Bottom Sheet ── */}
       {showMobileDetails && (
@@ -1001,20 +996,20 @@ export default function RabEditorTab({
 
             <div className="space-y-4 mb-8">
               <div className="flex justify-between items-center text-xs font-bold px-1">
-                 <span className="text-slate-500">SUBTOTAL</span>
-                 <span className="font-mono text-slate-900 dark:text-white uppercase">{formatIdr(recap.subtotal)}</span>
+                <span className="text-slate-500">SUBTOTAL</span>
+                <span className="font-mono text-slate-900 dark:text-white uppercase">{formatIdr(recap.subtotal)}</span>
               </div>
               <div className="flex justify-between items-center text-xs font-bold px-1 border-t border-slate-100 dark:border-slate-800 pt-4">
-                 <span className="text-slate-500">PPN ({identity.ppn_percent}%)</span>
-                 <span className="font-mono text-slate-900 dark:text-white uppercase">+{formatIdr(recap.ppn)}</span>
+                <span className="text-slate-500">PPN ({identity.ppn_percent}%)</span>
+                <span className="font-mono text-slate-900 dark:text-white uppercase">+{formatIdr(recap.ppn)}</span>
               </div>
               <div className="flex justify-between items-center bg-indigo-50 dark:bg-orange-900 bg-opacity-20 p-4 rounded-2xl border border-indigo-100 dark:border-orange-500 bg-opacity-20">
-                 <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest">Grand Total</span>
-                 <span className="text-lg font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
+                <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest">Grand Total</span>
+                <span className="text-lg font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
               </div>
               <div className={`p-4 rounded-2xl border flex justify-between items-center font-mono text-xs font-bold ${projectMeta.hsp_value >= recap.rounded ? 'bg-emerald-50 text-emerald-600 border-emerald-100' : 'bg-red-50 text-red-500 border-red-100'}`}>
-                 <span className="text-[10px] font-black opacity-60 uppercase">Selisih Pagu:</span>
-                 <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
+                <span className="text-[10px] font-black opacity-60 uppercase">Selisih Pagu:</span>
+                <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
               </div>
             </div>
 
@@ -1026,225 +1021,225 @@ export default function RabEditorTab({
       {/* ── Main Layout ── (Added space at bottom for mobile bar) */}
       <div className="pb-24 lg:pb-0">
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
-        <div className="lg:col-span-3 space-y-6">
-          {error && (
-            <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top duration-300">
-             <AlertCircle className="w-5 h-5 flex-shrink-0" />
-             <div className="text-xs font-bold uppercase tracking-tight">{error}</div>
-            </div>
-          )}
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
+          <div className="lg:col-span-3 space-y-6">
+            {error && (
+              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top duration-300">
+                <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                <div className="text-xs font-bold uppercase tracking-tight">{error}</div>
+              </div>
+            )}
 
-          <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
-             <div className="flex items-center gap-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 p-4 shadow-sm flex flex-col sm:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-4">
                 <div className="w-12 h-12 bg-indigo-50 dark:bg-indigo-900 dark:bg-opacity-30 rounded-2xl flex items-center justify-center text-indigo-600">
-                   <Settings className="w-6 h-6" />
+                  <Settings className="w-6 h-6" />
                 </div>
                 <div>
-                   <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
-                      Builder RAB — Mode Advanced
-                      {autoSaveStatus !== 'idle' && (
-                         <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 ml-2">
-                            <div className={`w-1 h-1 rounded-full ${autoSaveStatus === 'saving' ? 'bg-amber-500 animate-pulse' : autoSaveStatus === 'saved' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
-                            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
-                               {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Synced' : 'Error'}
-                            </span>
-                         </div>
-                      )}
-                   </h3>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
+                    Builder RAB — Mode Advanced
+                    {autoSaveStatus !== 'idle' && (
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg border border-slate-100 dark:border-slate-700 ml-2">
+                        <div className={`w-1 h-1 rounded-full ${autoSaveStatus === 'saving' ? 'bg-amber-500 animate-pulse' : autoSaveStatus === 'saved' ? 'bg-emerald-500' : 'bg-rose-500'}`} />
+                        <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                          {autoSaveStatus === 'saving' ? 'Saving...' : autoSaveStatus === 'saved' ? 'Synced' : 'Error'}
+                        </span>
+                      </div>
+                    )}
+                  </h3>
 
                 </div>
-             </div>
-             <div className="flex flex-wrap items-center gap-3">
+              </div>
+              <div className="flex flex-wrap items-center gap-3">
                 <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900 bg-opacity-50 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                   <div className="flex items-center gap-2 px-2">
-                      <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-orange-400" />
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Mulai</span>
-                      <input
-                        type="date"
-                        value={projectStartDate ? projectStartDate.split('T')[0] : ''}
-                        onChange={e => setProjectStartDate && setProjectStartDate(e.target.value)}
-                        className="bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-indigo-500"
-                      />
-                   </div>
+                  <div className="flex items-center gap-2 px-2">
+                    <Calendar className="w-3.5 h-3.5 text-indigo-500 dark:text-orange-400" />
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Mulai</span>
+                    <input
+                      type="date"
+                      value={projectStartDate ? projectStartDate.split('T')[0] : ''}
+                      onChange={e => setProjectStartDate && setProjectStartDate(e.target.value)}
+                      className="bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg px-2 py-1 text-[11px] font-mono font-bold text-slate-700 dark:text-slate-200 focus:ring-1 focus:ring-indigo-500"
+                    />
+                  </div>
                 </div>
 
                 <div className="flex items-center gap-3 bg-slate-50 dark:bg-slate-900 bg-opacity-50 p-1.5 rounded-xl border border-slate-200 dark:border-slate-700">
-                   <div className="flex items-center gap-2 px-2">
-                      <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Profit Global</span>
-                      <div className="flex items-center gap-1">
-                         <input
-                           type="number"
-                           value={globalOverhead}
-                           onChange={e => setGlobalOverhead(e.target.value)}
-                           className="w-12 h-8 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-center text-xs font-mono font-bold text-indigo-600 dark:text-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500"
-                         />
-                         <span className="text-[10px] font-bold text-slate-400">%</span>
-                      </div>
-                   </div>
-                   <button
-                     onClick={applyGlobalOverheadToAllRows}
-                     className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-indigo-700 dark:hover:bg-orange-700 transition-colors shadow-sm"
-                   >
-                     Terapkan
-                   </button>
-                </div>
-              </div>
-           </div>
-
-                           {sections.map((sec, sIdx) => (
-                 <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
-                    <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
-                       <div className="flex items-center gap-3 w-full">
-                         <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
-                         <input
-                           value={sec.namaBab}
-                           onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))}
-                           onFocus={(e) => e.target.select()}
-                           className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white"
-                           placeholder="NAMA BAB PEKERJAAN..."
-                         />
-                       </div>
-                       <button onClick={() => setSections(prev => prev.filter(s => s.id !== sec.id))} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
-                         <Trash2 className="w-3.5 h-3.5" />
-                       </button>
+                  <div className="flex items-center gap-2 px-2">
+                    <span className="text-[10px] font-semibold text-slate-500 uppercase tracking-wider">Profit Global</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        value={globalOverhead}
+                        onChange={e => setGlobalOverhead(e.target.value)}
+                        className="w-12 h-8 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded-lg text-center text-xs font-mono font-bold text-indigo-600 dark:text-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500"
+                      />
+                      <span className="text-[10px] font-bold text-slate-400">%</span>
                     </div>
+                  </div>
+                  <button
+                    onClick={applyGlobalOverheadToAllRows}
+                    className="px-4 py-2 bg-indigo-600 dark:bg-orange-600 text-white text-[10px] font-bold uppercase tracking-wider rounded-lg hover:bg-indigo-700 dark:hover:bg-orange-700 transition-colors shadow-sm"
+                  >
+                    Terapkan
+                  </button>
+                </div>
+              </div>
+            </div>
 
-                    <RabSectionTable
-                       sec={sec}
-                       sIdx={sIdx}
-                       identity={identity}
-                       member={member}
-                       backupTotals={backupTotals}
-                       isPrivileged={isPrivileged}
-                       updateRow={updateRow}
-                       updateProfitRow={updateProfitRow}
-                       handleAhspSelect={handleAhspSelect}
-                       saveToMasterLumsum={saveToMasterLumsum}
-                       setSections={setSections}
-                       dbMaxLsNum={dbMaxLsNum}
-                       generateNextCode={generateNextCode}
-                       globalOverhead={globalOverhead}
-                       createEmptyRow={createEmptyRow}
-                       formatIdr={formatIdr}
-                       parseNum={parseNum}
-                       toRoman={toRoman}
-                       calculateHargaSatuan={calculateHargaSatuan}
+            {sections.map((sec, sIdx) => (
+              <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
+                <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
+                  <div className="flex items-center gap-3 w-full">
+                    <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
+                    <input
+                      value={sec.namaBab}
+                      onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))}
+                      onFocus={(e) => e.target.select()}
+                      className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white"
+                      placeholder="NAMA BAB PEKERJAAN..."
                     />
-                 </div>
-               ))}
-
-              <div className="flex justify-center pt-4">
-                 <button
-                   onClick={() => setSections(prev => [...prev, createEmptySection('', prev, globalOverhead)])}
-                   className="group flex items-center gap-3 px-8 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-orange-500 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-600 dark:hover:border-orange-500 transition-all shadow-sm"
-                 >
-                    <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                    <span className="text-xs font-black uppercase tracking-[0.2em]">+ Tambah Bab Pekerjaan Baru</span>
-                 </button>
-              </div>
-        </div>
-
-        {/* Right Sidebar */}
-        <div className="lg:sticky lg:top-[120px] space-y-4">
-             <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in duration-700">
-                {/* ... (recap content) ... */}
-                <div className="bg-slate-700 dark:bg-slate-950 pt-6 pb-5 px-6 text-white text-center">
-                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Harga Kontrak</div>
-                   <div className="text-2xl font-mono font-black text-indigo-400 dark:text-orange-400 tracking-tighter drop-shadow-[0_0_10px_rgba(129,140,248,0.2)] dark:drop-shadow-[0_0_10px_rgba(249,115,22,0.2)]">
-                     {formatIdr(recap.rounded)}
-                   </div>
+                  </div>
+                  <button onClick={() => setSections(prev => prev.filter(s => s.id !== sec.id))} className="p-1.5 text-slate-400 hover:text-red-500 transition-colors">
+                    <Trash2 className="w-3.5 h-3.5" />
+                  </button>
                 </div>
 
-                <div className="p-5 pt-4 space-y-4">
-                   <div className="space-y-3">
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">
-                         <span>Subtotal RAB</span>
-                         <span className="font-mono text-slate-900 dark:text-slate-100">{formatIdr(recap.subtotal)}</span>
-                      </div>
-                      {recap.sectionTotals.length > 0 && (
-                        <div className="bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 rounded-xl p-3 space-y-2 border border-slate-100 dark:border-slate-800">
-                           {recap.sectionTotals.map((s, i) => (
-                             <div key={i} className="flex justify-between items-start gap-3 text-[10px]">
-                                <span className="text-slate-500 dark:text-slate-400 font-medium leading-tight flex-1">{toRoman(i+1)}. {s.name}</span>
-                                <span className="font-mono text-slate-900 dark:text-slate-200">{formatIdr(s.total)}</span>
-                             </div>
-                           ))}
+                <RabSectionTable
+                  sec={sec}
+                  sIdx={sIdx}
+                  identity={identity}
+                  member={member}
+                  backupTotals={backupTotals}
+                  isPrivileged={isPrivileged}
+                  updateRow={updateRow}
+                  updateProfitRow={updateProfitRow}
+                  handleAhspSelect={handleAhspSelect}
+                  saveToMasterLumsum={saveToMasterLumsum}
+                  setSections={setSections}
+                  dbMaxLsNum={dbMaxLsNum}
+                  generateNextCode={generateNextCode}
+                  globalOverhead={globalOverhead}
+                  createEmptyRow={createEmptyRow}
+                  formatIdr={formatIdr}
+                  parseNum={parseNum}
+                  toRoman={toRoman}
+                  calculateHargaSatuan={calculateHargaSatuan}
+                />
+              </div>
+            ))}
+
+            <div className="flex justify-center pt-4">
+              <button
+                onClick={() => setSections(prev => [...prev, createEmptySection('', prev, globalOverhead)])}
+                className="group flex items-center gap-3 px-8 py-3 bg-slate-100 dark:bg-slate-800 text-slate-500 hover:text-indigo-600 dark:hover:text-orange-500 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-600 dark:hover:border-orange-500 transition-all shadow-sm"
+              >
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                <span className="text-xs font-black uppercase tracking-[0.2em]">+ Tambah Bab Pekerjaan Baru</span>
+              </button>
+            </div>
+          </div>
+
+          {/* Right Sidebar */}
+          <div className="lg:sticky lg:top-[120px] space-y-4">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-xl overflow-hidden divide-y divide-slate-100 dark:divide-slate-700 animate-in fade-in duration-700">
+              {/* ... (recap content) ... */}
+              <div className="bg-slate-700 dark:bg-slate-950 pt-6 pb-5 px-6 text-white text-center">
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] mb-2">Total Harga Kontrak</div>
+                <div className="text-2xl font-mono font-black text-indigo-400 dark:text-orange-400 tracking-tighter drop-shadow-[0_0_10px_rgba(129,140,248,0.2)] dark:drop-shadow-[0_0_10px_rgba(249,115,22,0.2)]">
+                  {formatIdr(recap.rounded)}
+                </div>
+              </div>
+
+              <div className="p-5 pt-4 space-y-4">
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">
+                    <span>Subtotal RAB</span>
+                    <span className="font-mono text-slate-900 dark:text-slate-100">{formatIdr(recap.subtotal)}</span>
+                  </div>
+                  {recap.sectionTotals.length > 0 && (
+                    <div className="bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 rounded-xl p-3 space-y-2 border border-slate-100 dark:border-slate-800">
+                      {recap.sectionTotals.map((s, i) => (
+                        <div key={i} className="flex justify-between items-start gap-3 text-[10px]">
+                          <span className="text-slate-500 dark:text-slate-400 font-medium leading-tight flex-1">{toRoman(i + 1)}. {s.name}</span>
+                          <span className="font-mono text-slate-900 dark:text-slate-200">{formatIdr(s.total)}</span>
                         </div>
-                      )}
-                   </div>
-
-                   <div className="space-y-3 pt-2">
-                      <div className="flex justify-between items-center">
-                         <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">PPN</span>
-                         <div className="flex items-center gap-1.5">
-                            <input
-                              type="number"
-                              onFocus={(e) => e.target.select()}
-                              value={identity.ppn_percent}
-                              onChange={e => {
-                                const val = parseNum(e.target.value);
-                                setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
-                                setIdentity(prev => ({ ...prev, ppn_percent: val }));
-                              }}
-                              className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1"
-                            />
-                            <span className="text-[10px] font-bold text-slate-400">%</span>
-                         </div>
-                      </div>
-                      <div className="text-right text-[11px] font-mono font-bold text-slate-400 italic">+{formatIdr(recap.ppn)}</div>
-                   </div>
-
-                   <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
-                      <div className="flex justify-between items-center bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 p-2 rounded-lg">
-                         <span className="text-[10px] font-bold text-slate-600 dark:text-orange-400 uppercase">Grand Total</span>
-                         <span className="text-sm font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
-                      </div>
-                   </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
-                <div className="p-5 bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 space-y-3">
-                   <div className="flex justify-between items-center px-1">
-                      <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pagu Anggaran</span>
-                      <button onClick={() => setIsEditingPagu(!isEditingPagu)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><Edit3 className="w-3 h-3" /></button>
-                   </div>
-                   {isEditingPagu ? (
-                      <div className="flex gap-2">
-                         <input
-                           autoFocus
-                           type="number"
-                           onFocus={(e) => e.target.select()}
-                           value={projectMeta.hsp_value}
-                           onChange={e => {
-                             const val = parseNum(e.target.value);
-                             setProjectMeta(prev => ({ ...prev, hsp_value: val }));
-                             setIdentity(prev => ({ ...prev, hsp_value: val }));
-                           }}
-                           className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-xs font-mono p-2 rounded-lg focus:ring-1 text-slate-900 dark:text-white"
-                         />
-                         <button onClick={savePagu} className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-sm">Simpan</button>
-                      </div>
-                   ) : (
-                      <div className={`text-xs font-mono font-bold px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border flex justify-between items-center ${projectMeta.hsp_value >= recap.rounded ? 'text-emerald-600 border-emerald-100 dark:border-emerald-900 dark:border-opacity-30' : 'text-red-500 border-red-100 dark:border-red-900 dark:border-opacity-30'}`}>
-                         <span>Selisih:</span>
-                         <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
-                      </div>
-                   )}
-                   <div className="p-5">
-                      <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md hover:shadow-[0_10px_30px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2">
-                         {saving ? <Spinner size="sm" /> : <Save className="w-4 h-4" />} {saving ? 'Menyimpan...' : 'Simpan RAB'}
-                      </button>
-                   </div>
+                <div className="space-y-3 pt-2">
+                  <div className="flex justify-between items-center">
+                    <span className="text-[10px] font-bold text-slate-500 uppercase tracking-wider px-1">PPN</span>
+                    <div className="flex items-center gap-1.5">
+                      <input
+                        type="number"
+                        onFocus={(e) => e.target.select()}
+                        value={identity.ppn_percent}
+                        onChange={e => {
+                          const val = parseNum(e.target.value);
+                          setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
+                          setIdentity(prev => ({ ...prev, ppn_percent: val }));
+                        }}
+                        className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1"
+                      />
+                      <span className="text-[10px] font-bold text-slate-400">%</span>
+                    </div>
+                  </div>
+                  <div className="text-right text-[11px] font-mono font-bold text-slate-400 italic">+{formatIdr(recap.ppn)}</div>
                 </div>
-             </div>
 
-              <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
-                <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900 dark:bg-opacity-30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
-                <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
+                <div className="pt-2 border-t border-slate-100 dark:border-slate-700">
+                  <div className="flex justify-between items-center bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 p-2 rounded-lg">
+                    <span className="text-[10px] font-bold text-slate-600 dark:text-orange-400 uppercase">Grand Total</span>
+                    <span className="text-sm font-mono font-black text-indigo-700 dark:text-orange-500">{formatIdr(recap.total)}</span>
+                  </div>
+                </div>
               </div>
+
+              <div className="p-5 bg-slate-50 dark:bg-slate-900 dark:bg-opacity-50 space-y-3">
+                <div className="flex justify-between items-center px-1">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Pagu Anggaran</span>
+                  <button onClick={() => setIsEditingPagu(!isEditingPagu)} className="p-1 text-slate-400 hover:text-indigo-600 transition-colors"><Edit3 className="w-3 h-3" /></button>
+                </div>
+                {isEditingPagu ? (
+                  <div className="flex gap-2">
+                    <input
+                      autoFocus
+                      type="number"
+                      onFocus={(e) => e.target.select()}
+                      value={projectMeta.hsp_value}
+                      onChange={e => {
+                        const val = parseNum(e.target.value);
+                        setProjectMeta(prev => ({ ...prev, hsp_value: val }));
+                        setIdentity(prev => ({ ...prev, hsp_value: val }));
+                      }}
+                      className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-xs font-mono p-2 rounded-lg focus:ring-1 text-slate-900 dark:text-white"
+                    />
+                    <button onClick={savePagu} className="px-3 py-1 bg-indigo-600 text-white rounded-lg text-xs font-bold shadow-sm">Simpan</button>
+                  </div>
+                ) : (
+                  <div className={`text-xs font-mono font-bold px-4 py-3 rounded-xl bg-white dark:bg-slate-800 border flex justify-between items-center ${projectMeta.hsp_value >= recap.rounded ? 'text-emerald-600 border-emerald-100 dark:border-emerald-900 dark:border-opacity-30' : 'text-red-500 border-red-100 dark:border-red-900 dark:border-opacity-30'}`}>
+                    <span>Selisih:</span>
+                    <span>{formatIdr(projectMeta.hsp_value - recap.rounded)}</span>
+                  </div>
+                )}
+                <div className="p-5">
+                  <button onClick={saveRab} disabled={saving} className="w-full py-3.5 bg-indigo-600 dark:bg-orange-600 text-white rounded-xl text-[10px] font-bold uppercase tracking-widest shadow-md hover:shadow-[0_10px_30px_rgba(79,70,229,0.4)] dark:hover:shadow-[0_10px_30px_rgba(249,115,22,0.4)] hover:translate-y-[-2px] transition-all duration-300 flex items-center justify-center gap-2">
+                    {saving ? <Spinner size="sm" /> : <Save className="w-4 h-4" />} {saving ? 'Menyimpan...' : 'Simpan RAB'}
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div className="bg-white dark:bg-[#1e293b] p-6 rounded-3xl border border-dashed border-slate-200 dark:border-slate-800 flex items-center gap-4">
+              <div className="w-10 h-10 bg-indigo-50 dark:bg-indigo-900 dark:bg-opacity-30 rounded-2xl flex items-center justify-center text-indigo-600"><Info className="w-5 h-5" /></div>
+              <div className="text-[11px] font-medium text-slate-600 dark:text-slate-400 leading-tight">Gunakan item &quot;Lumpsum&quot; untuk pekerjaan manual yang tidak ada di katalog.</div>
+            </div>
+          </div>
         </div>
       </div>
     </div>
-  </div>
   );
 }
