@@ -89,19 +89,20 @@ graph TD
 *   **Referential Integrity**: Standardisasi Foreign Keys ke `members.user_id` dengan `ON DELETE CASCADE`.
 *   **Data Governance**: Implementasi `audit_logs` untuk audit trail dan `deleted_at` untuk soft-delete.
 *   **Precision Hardening**: Penggunaan `numeric(18,2)` secara konsisten untuk kolom finansial.
-*   **Auth Resiliency**: Login flow diperkeras dengan **Auto-Displacement** (1-Web/1-Mobile) dan perbaikan **SessionGuard race condition** untuk stabilitas login. [STABILIZED]
-*   **Security Hardening**: Perbaikan `search_path` dan pembatasan akses RPC untuk fungsi internal (Linter Fixes). [DONE]
-*   **Database Atomic Integrity**: Implementasi `Nuclear Trigger Reset` dengan Exception Handling untuk sinkronisasi `auth.users` -> `members` yang anti-gagal. [IMPLEMENTED]
+*   **Cookie-Based Auth (SSR)**: Migrasi dari `localStorage` ke `@supabase/ssr` (`createBrowserClient` dan `createServerClient`) untuk menjamin sinkronisasi total sesi antara browser dan Next.js Middleware. [IMPLEMENTED]
+*   **Database Atomic Integrity**: Implementasi `Minimalist User Sync Trigger` dengan `ON CONFLICT` UPSERT untuk menjamin pendaftaran user baru tidak pernah memblokir flow login. [IMPLEMENTED]
+*   **Security Hardening (Advisor Fixes)**: Pengerasan `search_path`, pencabutan `EXECUTE` publik untuk semua fungsi `SECURITY DEFINER`, dan penetapan RLS ketat pada tabel kustom untuk mematuhi standar keamanan tertinggi Supabase. [DONE]
 
 ---
 
 ## 🛠️ Tech Stack
 *   **Frontend**: Next.js 15 (App Router), React 19.
 *   **State Management**: Zustand (Modular & Normalized).
+*   **UI Stability**: Defensive Rendering Guards (mencegah React crash akibat missing state saat navigasi).
 *   **Concurrency**: Optimistic Locking (`version`), ClientId Loop Prevention, & Atomic RPC Transactions.
-*   **Resiliency**: SessionGuard Heartbeat, Nuclear Trigger Recovery, & Namespaced Local Drafts.
-*   **Security**: Supabase SSR Auth + Hardened RLS + Unified User Identity.
+*   **Resiliency**: SessionGuard Heartbeat (Non-blocking), Minimalist Trigger Recovery, & Namespaced Local Drafts.
+*   **Security**: Supabase SSR Cookie Auth + Hardened RLS + Unified User Identity.
 *   **Reporting**: Server-Side ExcelJS with Concurrency Throttling.
 
 ---
-*Main Map Last Updated: 2026-04-30 (Phase 15 - Session Resilience & Robust User Synchronization)*
+*Main Map Last Updated: 2026-04-30 (Phase 16 - SSR Auth Migration, UI Stability, & Final Security Hardening)*
