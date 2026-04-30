@@ -499,76 +499,7 @@ export default function RabEditorTab({
         code: proj.code || '',
         program_name: proj.program_name || '',
         activity_name: proj.activity_name || '',
-        work_name: proj.work_name || '',
-        location: proj.location || '',
-        location_id: proj.location_id || '',
-        fiscal_year: proj.fiscal_year || '',
-        contract_number: proj.contract_number || '',
-        hsp_value: proj.hsp_value || 0,
         ppn_percent: proj.ppn_percent ?? 12,
-        start_date: proj.start_date || ''
-      });
-    }
-
-    if (!error && lines) {
-      const data = lines;
-      // --- LOGIKA PROFIT GLOBAL CERDAS ---
-      let initGlobalProfit = proj?.overhead_percent ?? proj?.profit_percent;
-      if (initGlobalProfit === null || initGlobalProfit === undefined) {
-        if (data.length > 0) {
-          const first = data[0];
-          const bPrice = parseNum(first.master_ahsp_id ? masterPrices[first.master_ahsp_id] : 0);
-          if (bPrice > 0 && parseNum(first.harga_satuan) > 0) {
-            initGlobalProfit = Math.round(((parseNum(first.harga_satuan) / bPrice) - 1) * 100);
-          }
-        }
-      }
-      const finalGlobalProfit = initGlobalProfit ?? 15;
-      setGlobalOverhead(finalGlobalProfit);
-
-      const grouped = {};
-      data.forEach(item => {
-        const bab = item.bab_pekerjaan || 'UMUM';
-        if (!grouped[bab]) grouped[bab] = [];
-
-        // 1. Tentukan Harga Dasar Murni
-        const freshPrice = item.master_ahsp_id ? masterPrices[item.master_ahsp_id] : null;
-        let basePrice = parseNum(freshPrice);
-
-        if (basePrice === 0 && item.analisa_custom && item.analisa_custom.length > 0) {
-          basePrice = item.analisa_custom.reduce((s, d) => s + (parseNum(d.koefisien) * parseNum(d.harga_satuan_snapshot || d.harga || 0)), 0);
-        }
-
-        // 2. Tentukan Profit (Prioritas: DB -> Hitung Mundur (untuk data lama) -> Global -> Default 15%)
-        let finalProfit = 15;
-        const dbProfit = item.profit_percent;
-
-        if (dbProfit !== null && dbProfit !== undefined) {
-          finalProfit = parseNum(dbProfit);
-        } else {
-          if (basePrice > 0 && parseNum(item.harga_satuan) > 0) {
-            finalProfit = Math.round(((parseNum(item.harga_satuan) / basePrice) - 1) * 100);
-          } else {
-            finalProfit = finalGlobalProfit;
-          }
-        }
-
-        // 3. Kalkulasi Harga Dasar untuk Lumpsum (Reconstruction)
-        if (basePrice === 0 && parseNum(item.harga_satuan) > 0) {
-          basePrice = parseNum(item.harga_satuan) / (1 + (finalProfit / 100));
-        }
-
-        const activePrice = Math.round(basePrice * (1 + (finalProfit / 100)));
-
-        grouped[bab].push({
-          key: item.id,
-          masterAhspId: item.master_ahsp_id,
-          masterAhspKode: item.master_ahsp?.kode_ahsp || (item.uraian === 'LUMSUM' ? 'LUMSUM' : (item.uraian.startsWith('AN.') ? item.uraian : 'LUMSUM')),
-          uraian: item.uraian,
-          uraianCustom: item.uraian_custom,
-          satuan: item.satuan,
-          volume: String(item.volume),
-          baseSubtotal: String(basePrice),
           hargaSatuan: String(activePrice),
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
           analisaDetails: item.analisa_custom || [],
