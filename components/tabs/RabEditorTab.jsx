@@ -7,7 +7,10 @@ import Spinner from '../Spinner';
 import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box } from 'lucide-react';
 import LocationSelect from '@/components/LocationSelect';
 import useProjectStore from '@/store/useProjectStore';
+import useRabStore from '@/store/useRabStore';
+import useUIStore from '@/store/useUIStore';
 import { searchAhspCatalog, searchLumpsumItems, getMaxLumpsumSuffix } from '@/lib/services/rabService';
+import { toast } from '@/lib/toast';
 
 // Helper Utilities
 function parseNum(v) {
@@ -494,7 +497,7 @@ export default function RabEditorTab({
     }
     setLoading(true);
     
-    const { project: proj, lines, masterPrices, error } = await useProjectStore.getState().loadRabData(projectId);
+    const { project: proj, lines, masterPrices, error } = await useRabStore.getState().loadRabData(projectId);
     
     if (proj) {
       setProjectMeta({ ppn_percent: proj.ppn_percent ?? 12, hsp_value: proj.hsp_value ?? 0 });
@@ -739,7 +742,7 @@ export default function RabEditorTab({
       setError('Harap isi Nama Pekerjaan & Harga sebelum simpan katalog.');
       return;
     }
-    const { nextCode, error } = await useProjectStore.getState().saveLumpsumToMaster({
+    const { nextCode, error } = await useRabStore.getState().saveLumpsumToMaster({
       uraian: row.uraian,
       satuan: row.satuan,
       hargaSatuan: parseNum(row.hargaSatuan)
@@ -853,7 +856,7 @@ export default function RabEditorTab({
         if (!identityToSave && linesToUpsert.length === 0) return;
       }
 
-      const { projectId: currentProjectId, error: saveErr } = await useProjectStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete);
+      const { projectId: currentProjectId, error: saveErr } = await useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete);
       
       if (saveErr) throw saveErr;
 

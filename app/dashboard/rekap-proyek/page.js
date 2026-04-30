@@ -162,8 +162,8 @@ function ProyekContent() {
 
   // ── Memos ──
   const currentProjectObj = useMemo(() => {
-    if (!projects || projects.length === 0) return null;
-    return projects.find(p => p.id === selectedProject) || null;
+    if (!projects || Object.keys(projects).length === 0) return null;
+    return projects[selectedProject] || null;
   }, [projects, selectedProject]);
 
   const activeTabObj = useMemo(() => TABS.find(t => t.id === activeTab), [activeTab]);
@@ -212,8 +212,8 @@ function ProyekContent() {
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-    else if (!isValidId(urlId) && !isValidId(selectedProject) && projects.length > 0 && !isCreating) {
-      setSelectedProject(projects[0].id);
+    else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects).length > 0 && !isCreating) {
+      setSelectedProject(Object.keys(projects)[0]);
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
@@ -371,8 +371,8 @@ function ProyekContent() {
     return filterRbac(base);
   }, [isModeNormal, isAdmin, isOwner, isAdvance, isPro, userSlotRole, member?.role]);
 
-  const ownedProjectsCount = useMemo(() => projects.filter(p => p.created_by === member?.user_id).length, [projects, member?.user_id]);
-  const joinedProjectsCount = useMemo(() => projects.filter(p => p.created_by !== member?.user_id).length, [projects, member?.user_id]);
+  const ownedProjectsCount = useMemo(() => Object.values(projects).filter(p => p.created_by === member?.user_id).length, [projects, member?.user_id]);
+  const joinedProjectsCount = useMemo(() => Object.values(projects).filter(p => p.created_by !== member?.user_id).length, [projects, member?.user_id]);
   const ownedLimitReached = member?.role === 'admin' ? false : (member?.role === 'advance' ? ownedProjectsCount >= 5 : (member?.role === 'pro' ? ownedProjectsCount >= 3 : ownedProjectsCount >= 1));
   const joinedLimitReached = member?.role !== 'admin' && joinedProjectsCount >= 7;
 
@@ -436,7 +436,7 @@ function ProyekContent() {
   // Auto-sync location context for regional pricing
   useEffect(() => {
     if (selectedProject && member?.user_id) {
-      const proj = projects.find(p => p.id === selectedProject);
+      const proj = projects[selectedProject];
       if (proj?.location_id) {
         supabase.from('members')
           .update({ selected_location_id: proj.location_id })
@@ -718,7 +718,7 @@ function ProyekContent() {
                     </option>
                   )}
                   <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
-                  {projects.map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
+                  {Object.values(projects).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
                 </select>
               </div>
 

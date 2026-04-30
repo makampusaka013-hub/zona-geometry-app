@@ -7,10 +7,11 @@ import { LockedOverlay } from '@/components/LockedOverlay';
 import { supabase } from '@/lib/supabase';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { LogoMark } from '@/components/LogoMark';
+import ErrorBoundary from '@/components/ErrorBoundary';
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
-  const router = useRouter(); // Pastikan useRouter diimport
+  const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isExpired, setIsExpired] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
@@ -34,19 +35,16 @@ export default function DashboardLayout({ children }) {
         if (data) {
           const admin = data.role === 'admin';
           
-          // CRITICAL: Jika belum verifikasi email premium, langsung buang keluar
           if (!data.is_verified_manual && !admin) {
             router.replace('/verify-notice');
-            return; // JANGAN matikan loading agar DashboardPage tidak sempat dirender sama sekali
+            return;
           }
 
-          // Grace period: Aplikasi terkunci 1 hari (24 jam) SETELAH expired_at
           const gracePeriodEnd = data.expired_at ? new Date(new Date(data.expired_at).getTime() + (24 * 60 * 60 * 1000)) : null;
           const expired = gracePeriodEnd && gracePeriodEnd < new Date();
           setIsExpired(expired);
           setIsAdmin(admin);
         } else {
-          // Jika member belum ada sama sekali di tabel members, lempar ke verifikasi dulu
           router.replace('/verify-notice');
           return;
         }
@@ -59,7 +57,6 @@ export default function DashboardLayout({ children }) {
     checkStatus();
   }, [pathname, router]);
 
-  // Tutup sidebar otomatis saat berpindah halaman (di mobile)
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [pathname]);
@@ -75,9 +72,7 @@ export default function DashboardLayout({ children }) {
   const isLocked = isExpired && !isAdmin;
   const isOnUpgradePage = pathname === '/dashboard/upgrade';
 
-  // JIKA TERKUNCI
   if (isLocked) {
-    // Hanya perbolehkan halaman upgrade tanpa sidebar
     if (isOnUpgradePage) {
       return (
         <main className="flex-1 overflow-y-auto">
@@ -85,17 +80,14 @@ export default function DashboardLayout({ children }) {
         </main>
       );
     }
-    // Lainnya tampilkan full lock screen (tanpa sidebar)
     return <LockedOverlay />;
   }
 
-  // NORMAL (AKKTIF ATAU ADMIN)
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-[#0f172a] transition-colors duration-200">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
       
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        {/* Mobile Header (Sembunyi di Desktop) */}
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-[#020617] border-b border-slate-100 dark:border-slate-800 shrink-0 z-20">
           <div className="flex items-center gap-3">
             <button 
@@ -115,7 +107,9 @@ export default function DashboardLayout({ children }) {
         </header>
 
         <main className="flex-1 overflow-y-auto relative">
-          {children}
+          <ErrorBoundary>
+            {children}
+          </ErrorBoundary>
         </main>
       </div>
     </div>

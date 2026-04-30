@@ -1,6 +1,5 @@
 import { create } from 'zustand';
 import { 
-  getProjectTabData, 
   fetchMemberInfo, 
   fetchUserMembershipSlots, 
   fetchUserProjects,
@@ -13,44 +12,24 @@ import {
   assignProjectSlot,
   resetProjectSlot,
   removeProjectMember,
-  updateLineApprovalStatus,
   updateProjectStartDate as serviceUpdateProjectStartDate,
-  updateLineStartDate as serviceUpdateLineStartDate,
-  updateLineResource as serviceUpdateLineResource,
   fetchProjectMembers,
-  fetchRabData,
-  saveRabData,
-  saveLumpsumToMaster
 } from '@/lib/services/rabService';
 import { supabase } from '@/lib/supabase';
 
 /**
  * useProjectStore
- * Global state management for Zona Geometry projects using Zustand.
+ * Focused on core project metadata and user membership.
  * Enforces Single Source of Truth (SSOT) architecture.
  */
 const useProjectStore = create((set, get) => ({
   // --- STATE ---
   member: null,         
-  projects: [],         
+  projects: {},         // Normalized: { [id]: project }
   selectedProject: '',  
   locations: [],        
   isLoading: true,      
   
-  tabData: {            
-    ahsp: [], 
-    harga: [], 
-    tkdn: null, 
-    dok: [],
-    schedule: { lines: [], resources: [] },
-    cco: [], 
-    mc: [],
-    backup: [],
-  },
-  ahspCatalog: {},      
-  tabLoading: false,    
-  tabVersion: 0,        
-
   // --- ACTIONS ---
 
   initStore: async () => {
@@ -77,7 +56,12 @@ const useProjectStore = create((set, get) => ({
       const projectsRes = await fetchUserProjects(user.id, accessibleIds);
       if (projectsRes.error) throw projectsRes.error;
 
-      set({ projects: projectsRes.data });
+      const normalizedProjects = {};
+      (projectsRes.data || []).forEach(p => {
+        normalizedProjects[p.id] = p;
+      });
+
+      set({ projects: normalizedProjects });
       return { data: projectsRes.data };
     } catch (error) {
       console.error('Error initializing store:', error);
@@ -91,7 +75,7 @@ const useProjectStore = create((set, get) => ({
     set({ selectedProject: projectId });
     const { projects, member } = get();
     if (projectId && member?.user_id) {
-      const proj = projects.find(p => p.id === projectId);
+      const proj = projects[projectId];
       if (proj?.location_id) {
         syncUserLocation(member.user_id, proj.location_id);
       }
@@ -104,30 +88,42 @@ const useProjectStore = create((set, get) => ({
     const slotsRes = await fetchUserMembershipSlots(member.user_id);
     const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
     const projectsRes = await fetchUserProjects(member.user_id, accessibleIds);
-    if (!projectsRes.error) set({ projects: projectsRes.data });
+    if (!projectsRes.error) {
+      const normalizedProjects = {};
+      (projectsRes.data || []).forEach(p => {
+        normalizedProjects[p.id] = p;
+      });
+      set({ projects: normalizedProjects });
+    }
   },
 
-  setProjects: (projects) => set({ projects }),
+  setProjects: (projectsArray) => {
+    const normalized = {};
+    projectsArray.forEach(p => { normalized[p.id] = p; });
+    set({ projects: normalized });
+  },
 
   updateProjectInList: (projectId, updates) => set((state) => ({
-    projects: state.projects.map(p => p.id === projectId ? { ...p, ...updates } : p)
+    projects: {
+      ...state.projects,
+      [projectId]: { ...state.projects[projectId], ...updates }
+    }
   })),
 
   saveProjectIdentity: async (projectId, payload) => {
-    set({ tabLoading: true });
     try {
       const { data, error } = await upsertProject(projectId, payload);
       if (error) throw error;
       if (projectId) {
         get().updateProjectInList(projectId, data);
       } else {
-        set((state) => ({ projects: [data, ...state.projects] }));
+        set((state) => ({ 
+          projects: { ...state.projects, [data.id]: data } 
+        }));
       }
       return { data, error: null };
     } catch (error) {
       return { data: null, error };
-    } finally {
-      set({ tabLoading: false });
     }
   },
 
@@ -141,10 +137,13 @@ const useProjectStore = create((set, get) => ({
   handleDeleteProject: async (projectId) => {
     const { error } = await deleteProject(projectId);
     if (!error) {
-      set((state) => ({
-        projects: state.projects.filter(p => p.id !== projectId),
-        selectedProject: state.selectedProject === projectId ? '' : state.selectedProject
-      }));
+      set((state) => {
+        const { [projectId]: _, ...rest } = state.projects;
+        return {
+          projects: rest,
+          selectedProject: state.selectedProject === projectId ? '' : state.selectedProject
+        };
+      });
     }
     return { error };
   },
@@ -173,25 +172,6 @@ const useProjectStore = create((set, get) => ({
     return result;
   },
 
-  handleUpdateLineStatus: async (lineId, status) => {
-    set({ tabLoading: true });
-    const result = await updateLineApprovalStatus(lineId, status);
-    if (!result.error) {
-      set((state) => ({
-        tabData: {
-          ...state.tabData,
-          ahsp: state.tabData.ahsp.map(l => l.id === lineId ? { ...l, status_approval: status } : l),
-          schedule: {
-            ...state.tabData.schedule,
-            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, status_approval: status } : l)
-          }
-        }
-      }));
-    }
-    set({ tabLoading: false });
-    return result;
-  },
-
   updateProjectStartDate: async (projectId, startDate) => {
     const { error } = await serviceUpdateProjectStartDate(projectId, startDate);
     if (!error) {
@@ -200,108 +180,11 @@ const useProjectStore = create((set, get) => ({
     return { error };
   },
 
-  updateLineStartDate: async (lineId, startDate) => {
-    const { error } = await serviceUpdateLineStartDate(lineId, startDate);
-    if (!error) {
-      set((state) => ({
-        tabData: {
-          ...state.tabData,
-          schedule: {
-            ...state.tabData.schedule,
-            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, start_date: startDate } : l)
-          }
-        }
-      }));
-    }
-    return { error };
-  },
-
-  updateLineResource: async (lineId, field, value) => {
-    const { error } = await serviceUpdateLineResource(lineId, field, value);
-    if (!error) {
-      set((state) => ({
-        tabData: {
-          ...state.tabData,
-          schedule: {
-            ...state.tabData.schedule,
-            lines: state.tabData.schedule.lines.map(l => l.id === lineId ? { ...l, [field]: value } : l)
-          }
-        }
-      }));
-    }
-    return { error };
-  },
-
   fetchProjectMembers: async (projectId) => {
     return await fetchProjectMembers(projectId);
   },
 
-  // --- RAB EDITOR ACTIONS ---
-  
-  loadRabData: async (projectId) => {
-    return await fetchRabData(projectId);
-  },
-
-  saveRabData: async (projectId, identityPayload, allLines, deleteMissing = true) => {
-    const result = await saveRabData(projectId, identityPayload, allLines, deleteMissing);
-    if (!result.error) {
-       await get().refreshProjects();
-    }
-    return result;
-  },
-
-  saveLumpsumToMaster: async (item) => {
-    return await saveLumpsumToMaster(item);
-  },
-
-  fetchTabData: async (tab, projectId, currentProjectObj = null) => {
-    if (!projectId) {
-      set({ 
-        tabData: { ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] },
-        tabLoading: false 
-      });
-      return;
-    }
-
-    const { tabVersion, tabData } = get();
-    const nextVersion = tabVersion + 1;
-    set({ tabVersion: nextVersion });
-
-    const hasData = (() => {
-      switch (tab) {
-        case 'proyek': case 'progress': case 'schedule': case 'export': return tabData.ahsp?.length > 0;
-        case 'terpakai': return tabData.harga?.length > 0;
-        case 'perubahan': return tabData.cco?.length > 0 || tabData.mc?.length > 0;
-        case 'tkdn': return tabData.tkdn !== null;
-        case 'dok': return tabData.dok?.length > 0;
-        case 'backup': return tabData.backup?.length > 0 || tabData.ahsp?.length > 0;
-        default: return false;
-      }
-    })();
-
-    if (!hasData) set({ tabLoading: true });
-
-    try {
-      const { data, error } = await getProjectTabData(tab, projectId, currentProjectObj);
-      if (get().tabVersion === nextVersion) {
-        if (error) throw error;
-        const { catalog, ...restData } = data || {};
-        set((state) => ({
-          tabData: { ...state.tabData, ...restData },
-          ahspCatalog: catalog ? { ...state.ahspCatalog, ...catalog } : state.ahspCatalog,
-          tabLoading: false
-        }));
-      }
-    } catch (error) {
-      if (get().tabVersion === nextVersion) set({ tabLoading: false });
-    }
-  },
-
-  setTabData: (data) => set((state) => ({ 
-    tabData: typeof data === 'function' ? data(state.tabData) : { ...state.tabData, ...data } 
-  })),
-
-  setTabLoading: (status) => set({ tabLoading: status }),
+  getProjectsArray: () => Object.values(get().projects),
 }));
 
 export default useProjectStore;

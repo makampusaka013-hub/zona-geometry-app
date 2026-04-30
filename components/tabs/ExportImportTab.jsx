@@ -130,31 +130,34 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       }
       setLoadingPro('rab');
       try {
-        const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await fetchAhspDetailsInBulk(missingDetailIds);
-          if (detailsData) {
-            const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
-          }
-        }
-        const { projectResources, catalogResources, overrideResources, error: resErr } = await fetchProjectResourceSummary(project.id, project.location_id);
-        if (resErr) throw resErr;
-
-        const mergedMap = {};
-        (catalogResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (projectResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        (overrideResources || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-        const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
-
-        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], { 
-          projectPrices, 
-          headerImage: hImg, 
-          paperSize, 
-          isStandalone: true,
-          fileName: `RAB ${project.name || ''}`
+        const response = await fetch('/api/export/excel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            projectId: project.id,
+            selectedSheets: ['cover', 'RAB', 'REKAP'],
+            options: {
+              paperSize,
+              headerImage: hImg,
+            }
+          })
         });
+
+        if (!response.ok) {
+          const errData = await response.json();
+          throw new Error(errData.error || 'Gagal mengekspor RAB');
+        }
+
+        const blob = await response.blob();
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `RAB_${project.name || 'Export'}.xlsx`;
+        document.body.appendChild(a);
+        a.click();
+        window.URL.revokeObjectURL(url);
+        document.body.removeChild(a);
+
         toast.success('RAB Berhasil diunduh.');
       } catch (err) {
         toast.error('Gagal mengekspor RAB: ' + err.message);
