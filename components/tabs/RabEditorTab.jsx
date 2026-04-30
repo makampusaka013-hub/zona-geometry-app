@@ -616,16 +616,21 @@ export default function RabEditorTab({
     const draftKey = `rab-draft:${userMember.user_id}:${projectId}:${currentVersion}`;
 
     const saved = localStorage.getItem(draftKey);
-    if (saved) {
-      try {
-        const parsed = JSON.parse(saved);
-        // Only load if current sections are empty or default
-        if (sections.length === 0 || (sections.length === 1 && sections[0].lines.length <= 1 && !sections[0].lines[0].uraian)) {
-          setSections(parsed);
+    // Load from local storage if exists
+    try {
+      const savedDraft = localStorage.getItem(draftKey);
+      if (savedDraft) {
+        const parsed = JSON.parse(savedDraft);
+        if (parsed && Array.isArray(parsed.sections)) {
+          setSections(parsed.sections);
+          if (parsed.recap) setRecap(parsed.recap);
+          // Only clear error if we successfully loaded a valid draft
+          setError(null);
         }
-      } catch (e) {
-        console.error('Failed to parse draft:', e);
       }
+    } catch (e) {
+      console.warn('Failed to load draft:', e);
+      localStorage.removeItem(draftKey);
     }
 
     // Cleanup old drafts for this project
