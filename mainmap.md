@@ -90,6 +90,7 @@ graph TD
 *   **Data Governance**: Implementasi `audit_logs` untuk audit trail dan `deleted_at` untuk soft-delete.
 *   **Precision Hardening**: Penggunaan `numeric(18,2)` secara konsisten untuk kolom finansial.
 *   **Auth Resiliency**: Login flow diperkeras dengan **Auto-Displacement** (1-Web/1-Mobile) untuk mencegah lockout sesi menggantung.
+*   **Security Hardening**: Perbaikan `search_path` dan pembatasan akses RPC untuk fungsi internal (Linter Fixes). [DONE]
 
 ---
 
