@@ -144,7 +144,6 @@ function ProyekContent() {
   const [joining, setJoining] = useState(false);
   const [copied, setCopied] = useState(false);
   const [assigning, setAssigning] = useState(false);
-  const [allRoles, setAllRoles] = useState({}); // { [projectId]: slot_role }
   const [modalStatus, setModalStatus] = useState(null); // { type: 'success'|'error', msg: string }
   const [laborSettings, setLaborSettings] = useState({});
 
