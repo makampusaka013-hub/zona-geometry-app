@@ -90,16 +90,17 @@ export async function POST(request) {
     }
 
     const buffer = await workbook.xlsx.writeBuffer();
+    const binaryData = new Uint8Array(buffer); // Explicit binary conversion
     
     // Sanitasi Nama File untuk Header
     const safeName = (project.name || 'Export').replace(/[^a-zA-Z0-9 \-_]/g, '').trim();
 
-    return new NextResponse(buffer, {
+    return new NextResponse(binaryData, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
         'Content-Disposition': `attachment; filename="Export_${safeName}.xlsx"`,
-        'Cache-Control': 'no-cache',
+        'Cache-Control': 'no-store, max-age=0',
       },
     });
 
