@@ -13,7 +13,7 @@ import { generateProjectPDF } from '@/lib/pdf_engine';
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
   const [exportMode, setExportMode] = useState('project'); // 'project' | 'catalog'
-  const [selectedSheets, setSelectedSheets] = useState(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule']);
+  const [selectedSheets, setSelectedSheets] = useState(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule']);
   const [reportType, setReportType] = useState('harian');
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().split('T')[0],
@@ -738,7 +738,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                       Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
                     </p>
                     <div className="flex flex-wrap gap-2">
-                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'HARGA SATUAN TERPAKAI', 'schedule'].map(sheet => (
+                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule'].map(sheet => (
                         <button
                           key={sheet}
                           onClick={() => toggleSheet(sheet)}
