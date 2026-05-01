@@ -136,7 +136,6 @@ function ProyekContent() {
   const [exportSubTab, setExportSubTab] = useState('export'); // export | import
 
   const [projectMembers, setProjectMembers] = useState([]);
-  const [userSlotRole, setUserSlotRole] = useState(null);
   const [projectOwnerId, setProjectOwnerId] = useState(null);
   const [showJoinModal, setShowJoinModal] = useState(false);
   const [showShareModal, setShowShareModal] = useState(null);
@@ -394,8 +393,7 @@ function ProyekContent() {
       console.error('Error fetching project members:', error);
     } else if (data) {
       setProjectMembers(data);
-      const myRow = data.find(m => m.user_id === member?.user_id);
-      setUserSlotRole(myRow?.slot_role || null);
+      // Removed manual setUserSlotRole since we use the central store
     }
   }, [member?.user_id]);
 
