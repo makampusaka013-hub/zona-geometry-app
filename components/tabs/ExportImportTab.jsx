@@ -373,7 +373,8 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           }
         }
         let scheduleData = [];
-        if (selectedSheets.some(s => s.toLowerCase() === 'schedule')) {
+        const sheetsToProcess = selectedSheets || [];
+        if (sheetsToProcess.some(s => s && s.toLowerCase() === 'schedule')) {
           const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
           const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds);
           const catMap = {};
@@ -386,7 +387,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         if (exportMode === 'catalog') {
           const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
           const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+          await generateProjectReport(project, userMember, enrichedLines, sheetsToProcess, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
         } else {
           const [projectRes, catalogRes, overrideRes] = await Promise.all([
             supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
@@ -400,10 +401,10 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
           
           // Tentukan engine mana yang digunakan
-          const isLaporan = selectedSheets.some(s => ['harian', 'mingguan', 'bulanan', 'schedule'].includes(s.toLowerCase()));
+          const isLaporan = sheetsToProcess.some(s => s && ['harian', 'mingguan', 'bulanan', 'schedule'].includes(s.toLowerCase()));
           const engine = isLaporan ? generateLaporanReport : generateProjectReport;
 
-          await engine(project, userMember, enrichedLines, selectedSheets, { 
+          await engine(project, userMember, enrichedLines, sheetsToProcess, { 
             projectPrices, 
             globalOverhead: project?.profit_percent ?? project?.overhead_percent ?? 10, 
             ppnPercent: project.ppn_percent ?? 12,
