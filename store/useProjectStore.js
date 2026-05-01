@@ -1,216 +1,136 @@
 import { create } from 'zustand';
-import { 
-  fetchMemberInfo, 
-  fetchUserMembershipSlots, 
-  fetchUserProjects,
-  fetchLocations,
-  syncUserLocation,
-  upsertProject,
-  joinProjectByCode,
-  deleteProject,
-  leaveProject,
-  assignProjectSlot,
-  resetProjectSlot,
-  removeProjectMember,
-  updateProjectStartDate as serviceUpdateProjectStartDate,
-  fetchProjectMembers,
-} from '@/lib/services/rabService';
-import { supabase } from '@/lib/supabase';
+import { getProjectTabData } from '@/lib/services/rabService';
 
 /**
  * useProjectStore
- * Focused on core project metadata and user membership.
- * Enforces Single Source of Truth (SSOT) architecture.
+ * Global state management for Zona Geometry projects using Zustand.
+ * Follows the "Strangler Fig" pattern - currently only infrastructure, 
+ * not yet integrated into the existing UI to ensure stability.
  */
-const useProjectStore = create((set, get) => ({
+const useProjectStore = create((set) => ({
   // --- STATE ---
-  member: null,         
-  projects: {},         // Normalized: { [id]: project }
-  selectedProject: '',  
-  locations: [],        
-  isLoading: true,
-  tabData: { schedule: { lines: [] }, ahsp: [], harga: [] },
-  tabLoading: false,
-  ahspCatalog: {},
-  
+  activeProject: null, // Stores current project metadata/identity
+  rabData: [],         // Stores ahsp_lines (RAB items)
+  masterData: {        // Catalog data for AHSP and basic prices
+    ahsp: [],
+    basicPrices: []
+  },
+  isLoading: false,    // Global loading indicator
+  tabData: {           // Data for project tabs (AHSP, Harga, Schedule, etc.)
+    ahsp: [],
+    harga: [],
+    tkdn: null,
+    dok: [],
+    schedule: { lines: [], resources: [] },
+    cco: [],
+    mc: [],
+    backup: [],
+  },
+  ahspCatalog: {},      // Detailed AHSP details for manpower calculations
+  tabLoading: false,   // Loading indicator for tab data
+  tabVersion: 0,       // Version counter to prevent race conditions during tab switching
+
   // --- ACTIONS ---
 
-  initStore: async () => {
-    set({ isLoading: true });
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      const user = session?.user;
-      if (!user) {
-        set({ isLoading: false });
-        return { error: 'No session' };
-      }
+  // Project Actions
+  setActiveProject: (project) => set({ activeProject: project }),
 
-      const [memberRes, locationsRes] = await Promise.all([
-        fetchMemberInfo(user.id),
-        fetchLocations()
-      ]);
+  clearProject: () => set({
+    activeProject: null,
+    rabData: [],
+    isLoading: false
+  }),
 
-      if (memberRes.error) throw memberRes.error;
-      set({ member: memberRes.data, locations: locationsRes.data || [] });
+  // RAB Data Actions
+  setRabData: (data) => set({ rabData: data }),
 
-      const slotsRes = await fetchUserMembershipSlots(user.id);
-      const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
-      
-      const projectsRes = await fetchUserProjects(user.id, accessibleIds);
-      if (projectsRes.error) throw projectsRes.error;
-
-      const normalizedProjects = {};
-      (projectsRes.data || []).forEach(p => {
-        normalizedProjects[p.id] = p;
-      });
-
-      set({ projects: normalizedProjects });
-      return { data: projectsRes.data };
-    } catch (error) {
-      console.error('Error initializing store:', error);
-      return { error };
-    } finally {
-      set({ isLoading: false });
-    }
-  },
-
-  setSelectedProject: (projectId) => {
-    set({ selectedProject: projectId });
-    const { projects, member } = get();
-    if (projectId && member?.user_id) {
-      const proj = projects[projectId];
-      if (proj?.location_id) {
-        syncUserLocation(member.user_id, proj.location_id);
-      }
-    }
-  },
-
-  refreshProjects: async () => {
-    const { member } = get();
-    if (!member?.user_id) return;
-    const slotsRes = await fetchUserMembershipSlots(member.user_id);
-    const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
-    const projectsRes = await fetchUserProjects(member.user_id, accessibleIds);
-    if (!projectsRes.error) {
-      const normalizedProjects = {};
-      (projectsRes.data || []).forEach(p => {
-        normalizedProjects[p.id] = p;
-      });
-      set({ projects: normalizedProjects });
-    }
-  },
-
-  setProjects: (projectsArray) => {
-    const normalized = {};
-    projectsArray.forEach(p => { normalized[p.id] = p; });
-    set({ projects: normalized });
-  },
-
-  updateProjectInList: (projectId, updates) => set((state) => ({
-    projects: {
-      ...state.projects,
-      [projectId]: { ...state.projects[projectId], ...updates }
-    }
+  addRabItem: (item) => set((state) => ({
+    rabData: [...state.rabData, item]
   })),
 
-  saveProjectIdentity: async (projectId, payload) => {
+  updateRabItem: (id, updates) => set((state) => ({
+    rabData: state.rabData.map((item) =>
+      item.id === id ? { ...item, ...updates } : item
+    )
+  })),
+
+  removeRabItem: (id) => set((state) => ({
+    rabData: state.rabData.filter((item) => item.id !== id)
+  })),
+
+  // Master Data Actions
+  setMasterData: (data) => set((state) => ({
+    masterData: { ...state.masterData, ...data }
+  })),
+
+  setAhspCatalog: (ahsp) => set((state) => ({
+    masterData: { ...state.masterData, ahsp }
+  })),
+
+  setBasicPrices: (basicPrices) => set((state) => ({
+    masterData: { ...state.masterData, basicPrices }
+  })),
+
+  // Status Actions
+  setIsLoading: (status) => set({ isLoading: status }),
+
+  // Tab Data Actions
+  setTabData: (data) => set((state) => ({
+    tabData: typeof data === 'function' ? data(state.tabData) : { ...state.tabData, ...data }
+  })),
+
+  setTabLoading: (status) => set({ tabLoading: status }),
+
+  fetchTabData: async (tab, projectId, currentProjectObj = null) => {
+    if (!projectId) {
+      set({
+        tabData: { ahsp: [], harga: [], tkdn: null, dok: [], schedule: { lines: [], resources: [] }, cco: [], mc: [] },
+        tabLoading: false
+      });
+      return;
+    }
+
+    const { tabVersion, tabData } = useProjectStore.getState();
+    const nextVersion = tabVersion + 1;
+    set({ tabVersion: nextVersion });
+
+    // SWR-style loading: only show spinner if we have no data yet for this specific tab data
+    const hasData = (() => {
+      switch (tab) {
+        case 'proyek': case 'progress': case 'schedule': case 'export': return tabData.ahsp?.length > 0;
+        case 'terpakai': return tabData.harga?.length > 0;
+        case 'perubahan': return tabData.cco?.length > 0 || tabData.mc?.length > 0;
+        case 'tkdn': return tabData.tkdn !== null;
+        case 'dok': return tabData.dok?.length > 0;
+        case 'backup': return tabData.backup?.length > 0 || tabData.ahsp?.length > 0;
+        default: return false;
+      }
+    })();
+
+    if (!hasData) {
+      set({ tabLoading: true });
+    }
+
     try {
-      const { data, error } = await upsertProject(projectId, payload);
-      if (error) throw error;
-      if (projectId) {
-        get().updateProjectInList(projectId, data);
-      } else {
-        set((state) => ({ 
-          projects: { ...state.projects, [data.id]: data } 
+      const { data, error } = await getProjectTabData(tab, projectId, currentProjectObj);
+
+      // Ensure we only update if this is still the latest request
+      if (useProjectStore.getState().tabVersion === nextVersion) {
+        if (error) throw error;
+
+        const { catalog, ...restData } = data || {};
+
+        set((state) => ({
+          tabData: { ...state.tabData, ...restData },
+          ahspCatalog: catalog ? { ...state.ahspCatalog, ...catalog } : state.ahspCatalog,
+          tabLoading: false
         }));
       }
-      return { data, error: null };
     } catch (error) {
-      return { data: null, error };
-    }
-  },
-
-  handleJoinProject: async (joinCode) => {
-    const { member } = get();
-    const { data, error } = await joinProjectByCode(member.user_id, joinCode);
-    if (!error) await get().refreshProjects();
-    return { data, error };
-  },
-
-  handleDeleteProject: async (projectId) => {
-    const { error } = await deleteProject(projectId);
-    if (!error) {
-      set((state) => {
-        const { [projectId]: _, ...rest } = state.projects;
-        return {
-          projects: rest,
-          selectedProject: state.selectedProject === projectId ? '' : state.selectedProject
-        };
-      });
-    }
-    return { error };
-  },
-
-  handleLeaveProject: async (projectId) => {
-    const { error } = await leaveProject(projectId);
-    if (!error) await get().refreshProjects();
-    return { error };
-  },
-
-  handleAssignSlot: async (projectId, userId, slotRole) => {
-    const result = await assignProjectSlot(projectId, userId, slotRole);
-    if (!result.error) await get().refreshProjects();
-    return result;
-  },
-
-  handleResetSlot: async (projectId, slotRole) => {
-    const result = await resetProjectSlot(projectId, slotRole);
-    if (!result.error) await get().refreshProjects();
-    return result;
-  },
-
-  handleRemoveMember: async (projectId, userId) => {
-    const result = await removeProjectMember(projectId, userId);
-    if (!result.error) await get().refreshProjects();
-    return result;
-  },
-
-  updateProjectStartDate: async (projectId, startDate) => {
-    const { error } = await serviceUpdateProjectStartDate(projectId, startDate);
-    if (!error) {
-      get().updateProjectInList(projectId, { start_date: startDate });
-    }
-    return { error };
-  },
-
-  fetchProjectMembers: async (projectId) => {
-    return await fetchProjectMembers(projectId);
-  },
-
-  getProjectsArray: () => Object.values(get().projects),
-
-  setTabData: (data) => set({ tabData: data }),
-
-  fetchTabData: async (activeTab, projectId, currentProjectObj) => {
-    if (!projectId) return;
-    set({ tabLoading: true });
-    try {
-      const { fetchRabData } = await import('@/lib/services/rabService');
-      const res = await fetchRabData(projectId);
-      if (!res.error) {
-        set({ 
-          tabData: {
-            schedule: { lines: res.lines || [] },
-            ahsp: res.lines || [],
-            harga: res.masterPrices || []
-          },
-          ahspCatalog: res.ahspCatalog || {}
-        });
+      console.error('Error in fetchTabData store action:', error);
+      if (useProjectStore.getState().tabVersion === nextVersion) {
+        set({ tabLoading: false });
       }
-    } catch (error) {
-      console.error('fetchTabData error:', error);
-    } finally {
-      set({ tabLoading: false });
     }
   },
 }));
