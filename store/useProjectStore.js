@@ -14,6 +14,8 @@ import {
   removeProjectMember,
   updateProjectStartDate as serviceUpdateProjectStartDate,
   fetchProjectMembers,
+  fetchRabData,
+  fetchAhspCatalog
 } from '@/lib/services/rabService';
 import { supabase } from '@/lib/supabase';
 
@@ -81,15 +83,14 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      const { fetchRabData, fetchAhspCatalog } = await import('@/lib/services/rabService');
-      
+      // Use static imports instead of dynamic await import to avoid production crashes
       const { lines, masterPrices } = await fetchRabData(projectId);
       
       const nextTabData = { 
         ...get().tabData, 
         rab: lines || [], 
         ahsp: lines || [],
-        schedule: { lines: lines || [] } // Sync schedule lines too
+        schedule: { lines: lines || [] }
       };
       const nextCatalog = { ...get().ahspCatalog };
 
