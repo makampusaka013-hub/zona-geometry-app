@@ -22,8 +22,27 @@ export default function DataTerpakaiTab({
   const filteredHargaRows = useMemo(() => {
     const rows = tabData?.harga || [];
     if (resFilter === 'all') return rows;
-    return rows.filter(r => {
-      const j = (r.jenis_komponen || '').toLowerCase();
+    
+    return rows.filter(item => {
+      const rawJ = (item.jenis_komponen || '').toLowerCase();
+      const code = (item.key_item || item.kode_item || '').trim().toUpperCase();
+      const unit = (item.satuan || '').toUpperCase();
+      const name = (item.uraian || '').toLowerCase();
+
+      let j = rawJ;
+      // Heuristic fallback if type is missing or ambiguous
+      if (!rawJ || rawJ === 'bahan_upah_alat' || rawJ === 'upah') {
+        if (code.startsWith('A') || code.startsWith('B')) {
+          j = 'bahan';
+        } else if (code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang') || name.includes('mandor')) {
+          j = 'tenaga';
+        } else if (code.startsWith('M') || unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+          j = 'alat';
+        } else {
+          j = 'bahan';
+        }
+      }
+
       if (resFilter === 'tenaga') return j === 'upah' || j === 'tenaga' || j === 'worker';
       if (resFilter === 'bahan') return j === 'bahan' || j === 'material' || j === 'barang';
       if (resFilter === 'alat') return j === 'alat' || j === 'peralatan' || j === 'mesin';
