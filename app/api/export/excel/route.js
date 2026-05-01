@@ -83,13 +83,23 @@ export async function POST(request) {
     });
     
     // 5. Return as Stream
+    // --- PROTEKSI ANTI-CORRUPT: Pastikan ada minimal 1 sheet ---
+    if (workbook.worksheets.length === 0) {
+      const fallbackSheet = workbook.addWorksheet('Data Kosong');
+      fallbackSheet.getCell('A1').value = 'Data RAB kosong atau filter sheet menghapus semua data.';
+    }
+
     const buffer = await workbook.xlsx.writeBuffer();
     
+    // Sanitasi Nama File untuk Header
+    const safeName = (project.name || 'Export').replace(/[^a-zA-Z0-9 \-_]/g, '').trim();
+
     return new NextResponse(buffer, {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': `attachment; filename="Export_${project.name}.xlsx"`,
+        'Content-Disposition': `attachment; filename="Export_${safeName}.xlsx"`,
+        'Cache-Control': 'no-cache',
       },
     });
 

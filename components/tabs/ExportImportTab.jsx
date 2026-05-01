@@ -144,11 +144,17 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           })
         });
 
-        // --- PROTEKSI API ERROR: Cek Content-Type ---
+        // --- PROTEKSI API ERROR: Whitelist Spreadsheet Biner ---
         const contentType = response.headers.get('content-type');
-        if (contentType && contentType.includes('application/json')) {
-          const errData = await response.json();
-          throw new Error(errData.error || 'Server Error');
+        
+        // Tolak jika response adalah HTML, JSON, atau text biasa (Bukan Excel)
+        if (!contentType || !contentType.includes('spreadsheetml.sheet')) {
+          let errorMsg = 'Server gagal menghasilkan file Excel yang valid.';
+          if (contentType && contentType.includes('application/json')) {
+            const errData = await response.json();
+            errorMsg = errData.error || errorMsg;
+          }
+          throw new Error(errorMsg);
         }
 
         const blob = await response.blob();
