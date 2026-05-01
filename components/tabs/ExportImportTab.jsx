@@ -387,7 +387,16 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         if (exportMode === 'catalog') {
           const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
           const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-          await generateProjectReport(project, userMember, enrichedLines, sheetsToProcess, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+            isCatalog: true, 
+            catAhsp, 
+            catPrice, 
+            headerImage: hImg, 
+            paperSize, 
+            scheduleData, 
+            progressData: progData,
+            fileName: `Katalog_Regional_${project.location || 'Export'}.xlsx`
+          });
         } else {
           const [projectRes, catalogRes, overrideRes] = await Promise.all([
             supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
@@ -404,6 +413,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           const isLaporan = sheetsToProcess.some(s => s && ['harian', 'mingguan', 'bulanan', 'schedule'].includes(s.toLowerCase()));
           const engine = isLaporan ? generateLaporanReport : generateProjectReport;
 
+          const fileLabel = isLaporan ? 'Laporan' : 'RAB';
           await engine(project, userMember, enrichedLines, sheetsToProcess, { 
             projectPrices, 
             globalOverhead: project?.profit_percent ?? project?.overhead_percent ?? 10, 
@@ -412,7 +422,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             paperSize, 
             scheduleData, 
             progressData: progData,
-            fileName: `Proyek ${project.name || ''}`
+            fileName: `${fileLabel}_${project.work_name || project.name || 'Export'}.xlsx`
           });
         }
         toast.success('Laporan kustom berhasil diunduh.');
