@@ -48,6 +48,7 @@ export default function ProgressTab({
   currentUserId
 }) {
   const [progressData, setProgressData] = useState({}); // { [entity_id|name]: { [day]: val } }
+  const [dailyReports, setDailyReports] = useState({}); // { [day]: { weather_index, weather_description } }
   const [customRoles, setCustomRoles] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
   const [newRoleName, setNewRoleName] = useState('');
@@ -61,16 +62,15 @@ export default function ProgressTab({
     if (activeTab !== 'progress' || !projectId) return;
     async function loadProgress() {
       setLoadingProgress(true);
-      const { data, error } = await supabase
-        .from('project_progress_daily')
-        .select('*')
-        .eq('project_id', projectId)
-        .eq('created_by', currentUserId);
+      const [progressRes, reportsRes] = await Promise.all([
+        supabase.from('project_progress_daily').select('*').eq('project_id', projectId).eq('created_by', currentUserId),
+        supabase.from('daily_reports').select('*').eq('project_id', projectId)
+      ]);
 
-      if (!error && data) {
+      if (!progressRes.error && progressRes.data) {
         const mapped = {};
         const customs = new Set();
-        data.forEach(row => {
+        progressRes.data.forEach(row => {
           const key = row.entity_id || row.entity_name;
           if (!mapped[key]) mapped[key] = {};
           mapped[key][row.day_number] = Number(row.val);
@@ -80,6 +80,21 @@ export default function ProgressTab({
         });
         setProgressData(mapped);
         setCustomRoles(Array.from(customs));
+      }
+
+      if (!reportsRes.error && reportsRes.data) {
+        const reportMap = {};
+        reportsRes.data.forEach(r => {
+          // Convert date to day_number relative to projectStartDate
+          const d = new Date(r.report_date);
+          const start = new Date(projectStartDate);
+          const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
+          reportMap[diff] = {
+            weather_index: r.weather_index,
+            weather_description: r.weather_description
+          };
+        });
+        setDailyReports(reportMap);
       }
       setLoadingProgress(false);
     }
@@ -178,6 +193,32 @@ export default function ProgressTab({
       setSavingStatus('saved');
       setTimeout(() => setSavingStatus(null), 2000);
     }, 1500);
+  };
+
+  const updateWeather = async (day, field, value) => {
+    const newReports = {
+      ...dailyReports,
+      [day]: {
+        ...(dailyReports[day] || { weather_index: 1, weather_description: '' }),
+        [field]: value
+      }
+    };
+    setDailyReports(newReports);
+
+    // Save to DB
+    const reportDate = new Date(projectStartDate);
+    reportDate.setDate(reportDate.getDate() + (day - 1));
+
+    const { error } = await supabase
+      .from('daily_reports')
+      .upsert({
+        project_id: projectId,
+        report_date: reportDate.toISOString().split('T')[0],
+        [field]: value,
+        updated_at: new Date().toISOString()
+      }, { onConflict: 'project_id,report_date' });
+
+    if (error) console.error('Weather save failed:', error);
   };
 
   const handleStatusUpdate = (e, lineId, newStatus) => {
@@ -305,6 +346,39 @@ export default function ProgressTab({
           {savingStatus === 'saving' ? <Spinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
           {savingStatus === 'saving' ? 'Menyimpan...' : 'Simpan Progress'}
         </button>
+      </div>
+
+      {/* ── Weather & Daily Notes Section ── */}
+      <div className="grid grid-cols-1 md:grid-cols-7 gap-2 px-4 mb-2">
+        {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
+          const day = viewStartIndex + idx + 1;
+          const report = dailyReports[day] || { weather_index: 1, weather_description: '' };
+          return (
+            <div key={day} className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2 shadow-sm">
+              <div className="flex justify-between items-center">
+                <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">H-{day}</span>
+                <select 
+                  value={report.weather_index || 1}
+                  onChange={(e) => updateWeather(day, 'weather_index', parseInt(e.target.value))}
+                  className="text-[10px] font-bold bg-transparent border-none focus:ring-0 text-indigo-600 dark:text-orange-400 cursor-pointer p-0"
+                >
+                  <option value={1}>☀️ Cerah</option>
+                  <option value={2}>⛅ Berawan</option>
+                  <option value={3}>🌦️ Gerimis</option>
+                  <option value={4}>🌧️ Hujan</option>
+                  <option value={5}>⛈️ Badai</option>
+                </select>
+              </div>
+              <input 
+                type="text"
+                placeholder="Ket. Cuaca/Kondisi..."
+                value={report.weather_description || ''}
+                onChange={(e) => updateWeather(day, 'weather_description', e.target.value)}
+                className="text-[9px] font-bold bg-slate-50 dark:bg-slate-800/50 border-none rounded-lg px-2 py-1 focus:ring-1 focus:ring-indigo-500/30 dark:focus:ring-orange-500/30 placeholder:opacity-50 text-slate-600 dark:text-slate-300"
+              />
+            </div>
+          );
+        })}
       </div>
 
       <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm">
