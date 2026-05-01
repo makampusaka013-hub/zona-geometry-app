@@ -6,10 +6,7 @@ import LocationSelect from '../LocationSelect';
 import { toast } from '@/lib/toast';
 import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
-import * as ProReport from '@/lib/reporting_pro';
-import { generateProjectReport } from '@/lib/excel_engine';
 import { generateProjectPDF } from '@/lib/pdf_engine';
-import { generateLaporanReport as generateLaporanStatic } from '@/lib/laporan_excel_static';
 import { generateLaporanReport as generateLaporanFormula } from '@/lib/laporan_excel';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
@@ -17,7 +14,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
   const [exportMode, setExportMode] = useState('project'); // 'project' | 'catalog'
   const [selectedSheets, setSelectedSheets] = useState(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule']);
   const [reportType, setReportType] = useState('harian');
-  const [reportEngine, setReportEngine] = useState('static'); // 'static' | 'formula'
   const [dateRange, setDateRange] = useState({
     start: new Date().toISOString().split('T')[0],
     end: new Date().toISOString().split('T')[0]
@@ -92,9 +88,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
       if (progressRes.error) throw progressRes.error;
 
-      const engineFn = reportEngine === 'static' ? generateLaporanStatic : generateLaporanFormula;
-
-      await engineFn(project, userMember, ahspLines, [reportType], {
+      await generateLaporanFormula(project, userMember, ahspLines, [reportType], {
         progressData: progressRes.data,
         dailyReports: reportsRes.data,
         resources: resourcesRes.data,
@@ -105,7 +99,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         fileName: `Laporan ${reportType.toUpperCase()} - ${project.name}`
       });
 
-      toast.success(`Laporan ${reportType} (${reportEngine}) berhasil diunduh.`);
+      toast.success(`Laporan ${reportType} berhasil diunduh.`);
     } catch (err) {
       toast.error('Gagal mengambil data progres: ' + err.message);
     } finally {
@@ -652,21 +646,6 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                         </button>
                       ))}
                     </div>
-                  </div>
-
-                  <div className="flex items-center gap-4 mb-6 p-1 bg-slate-100 dark:bg-slate-800 rounded-xl w-fit">
-                    <button
-                      onClick={() => setReportEngine('static')}
-                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${reportEngine === 'static' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-500'}`}
-                    >
-                      Statis
-                    </button>
-                    <button
-                      onClick={() => setReportEngine('formula')}
-                      className={`px-4 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${reportEngine === 'formula' ? 'bg-indigo-600 text-white shadow-md' : 'text-slate-400 hover:text-slate-500'}`}
-                    >
-                      Full Rumus
-                    </button>
                   </div>
 
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
