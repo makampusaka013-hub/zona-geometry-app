@@ -19,7 +19,14 @@ This module handles the construction, editing, and persistence of the RAB (Renca
 - **`saveRabData` (Optimized)**: Uses Bulk Upsert for performance and RLS compliance.
 - **`fetchRabMasterData`**: Loads AHSP catalogs and regional prices.
 
-### 4. Reporting Engine (`/lib/excel_engine.js`)
+### 4. Database Schema (Supabase)
+- **RAB Core**: `public.projects`, `public.ahsp_lines`, `public.ahsp_line_snapshots`.
+- **Change Management**: `public.project_cco` (CCO), `public.project_mc` (Mutual Check).
+- **Execution Tracking**: `public.project_progress_daily`, `public.daily_reports`.
+- **Volume Calculations**: `public.project_backup_volume` (Back-up Volume support).
+- **User Context**: `public.members` (Extended user data), `public.locations`.
+
+### 5. Reporting Engine (`/lib/excel_engine.js`)
 - **Anti-Corruption Engine**: Uses surgical deletion of metadata (Defined Names, Print Area) to preserve Excel XML integrity.
 - **Calendar-Aligned Schedule**: Week headers (M1-M5) automatically sync with calendar months for professional timeline accuracy.
 - **Borderless Cover Layout**: Zero-margin, footer-less cover printing (A1:N65) with high-fidelity "fit-to-page" scaling.
@@ -32,13 +39,14 @@ This module handles the construction, editing, and persistence of the RAB (Renca
 | **Tab Sync** | ✅ STABLE | Deep data refresh implemented. |
 | **Excel Export** | ✅ STABLE | v2.1: Calendar sync & Borderless Cover fix. |
 | **UI Polish** | ✅ STABLE | Full-viewport modal blur & high z-index overlays. |
-| **AHSP Mapping** | ✅ STABLE | Fixed non-existent column errors. |
-| **CCO Module** | ⏳ PLANNED | Next major feature update. |
+| **RAB Snapshots** | ✅ STABLE | Versioning via `ahsp_line_snapshots`. |
+| **CCO / MC** | ⏳ IN-DEV | Tables ready: `project_cco`, `project_mc`. |
 
 ## 🛡️ Security (RLS)
 Persistence is protected by Supabase RLS. All inserts/updates must include:
-- `user_id` (Projects table)
+- `user_id` & `created_by` (Projects table)
 - `updated_by` (AHSP Lines table)
+- `client_id` (Sync consistency for local-first operations).
 - Valid `project_id` association.
 
 ---
