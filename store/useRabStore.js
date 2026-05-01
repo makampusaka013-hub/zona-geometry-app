@@ -94,11 +94,18 @@ const useRabStore = create((set, get) => ({
 
   saveRabData: async (projectId, identityPayload, allLines, deleteMissing = true) => {
     const { saveRabData: serviceSaveRab } = await import('@/lib/services/rabService');
-    const result = await serviceSaveRab(projectId, identityPayload, allLines, deleteMissing);
-    if (!result.error) {
-      // After save, we might want to refresh the local store or let the component do it
-      // For now, let's just return the result
-    }
+    
+    // Pembersihan Payload: Hapus ID yang bukan UUID v4 valid (seperti "temp-xxx")
+    const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+    const cleanedLines = allLines.map(line => {
+      if (line.id && !uuidRegex.test(String(line.id))) {
+        const { id, ...rest } = line; // Buang properti 'id'
+        return rest;
+      }
+      return line;
+    });
+
+    const result = await serviceSaveRab(projectId, identityPayload, cleanedLines, deleteMissing);
     return result;
   },
 
