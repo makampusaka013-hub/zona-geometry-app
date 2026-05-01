@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { FileSpreadsheet, Upload, Download, FileText, Calendar, Users, ChevronRight, MapPin, TrendingUp, Wallet, ClipboardList, Check, LayoutGrid, Info, Box } from 'lucide-react';
+import { supabase } from '@/lib/supabase';
 import * as XLSX from 'xlsx';
 import Spinner from '../Spinner';
 import LocationSelect from '../LocationSelect';
