@@ -30,7 +30,7 @@ const useProjectStore = create((set, get) => ({
   locations: [],
   tabData: { schedule: { lines: [] }, ahsp: [], harga: [], rab: [], changes: [], backup: [] },
   tabLoading: false,
-  ahspCatalog: {},
+  allRoles: {},          // { [projectId]: slot_role }
 
   // --- ACTIONS ---
 
@@ -53,7 +53,11 @@ const useProjectStore = create((set, get) => ({
       set({ member: memberRes.data, locations: locationsRes.data || [] });
 
       const slotsRes = await fetchUserMembershipSlots(user.id);
-      const accessibleIds = (slotsRes.data || []).map(m => m.project_id);
+      const rolesMap = {};
+      (slotsRes.data || []).forEach(m => {
+        rolesMap[m.project_id] = m.slot_role;
+      });
+      const accessibleIds = Object.keys(rolesMap);
 
       const projectsRes = await fetchUserProjects(user.id, accessibleIds);
       if (projectsRes.error) throw projectsRes.error;
@@ -63,7 +67,7 @@ const useProjectStore = create((set, get) => ({
         normalizedProjects[p.id] = p;
       });
 
-      set({ projects: normalizedProjects });
+      set({ projects: normalizedProjects, allRoles: rolesMap });
       return { data: projectsRes.data };
     } catch (error) {
       console.error('Error initializing store:', error);

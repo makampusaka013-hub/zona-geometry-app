@@ -195,10 +195,12 @@ function ProyekContent() {
         return { total: totalRounded, duration: currentProjectObj?.manual_duration || 0, isCco: true, version: activeCcoVersion.type };
       }
       
-      // Defensive access for tabData and ahsp
       const ahspItems = tabData?.ahsp || [];
-      const subtotalRab = ahspItems.reduce((sum, line) => sum + (Number(line.jumlah) || 0), 0);
-      
+      const subtotalRab = ahspItems.reduce((sum, line) => {
+        const rowTotal = Number(line.jumlah) || (Number(line.volume) * Number(line.harga_satuan)) || 0;
+        return sum + rowTotal;
+      }, 0);
+
       const ppnPct = currentProjectObj?.ppn_percent ?? 12;
       const ppn = subtotalRab * (ppnPct / 100);
       const totalExact = Math.round(subtotalRab + ppn);
@@ -406,6 +408,9 @@ function ProyekContent() {
 
   const isExpired = member?.isExpired;
   const isOwner = member?.user_id === projectOwnerId;
+  const allRoles = useProjectStore(s => s.allRoles) || {};
+  const userSlotRole = allRoles[selectedProject] || null;
+  
   const isAdmin = member?.role === 'admin';
   const isAdvance = member?.role === 'advance';
   const isPro = member?.role === 'pro';

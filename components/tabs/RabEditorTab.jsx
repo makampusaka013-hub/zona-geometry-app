@@ -460,11 +460,17 @@ export default function RabEditorTab({
   const [isEditingPagu, setIsEditingPagu] = useState(false);
   const [projectMeta, setProjectMeta] = useState({ ppn_percent: 12, hsp_value: 0 });
   const [globalOverhead, setGlobalOverhead] = useState(15);
+  const isExpired = member?.isExpired;
+  const isOwner = member?.user_id === ownerId;
+  const allRoles = useProjectStore(s => s.allRoles) || {};
+  const userSlotRole = allRoles[projectId] || null;
+  
+  const isAdmin = member?.role === 'admin' || userSlotRole === 'admin';
+  const isAdvance = member?.role === 'advance' || userSlotRole === 'advance';
+  const isPro = member?.role === 'pro' || userSlotRole === 'pro';
+  const isModeNormal = member?.role === 'normal' || userSlotRole === 'normal';
+  const isPrivileged = isAdmin || isPro || isAdvance || isOwner;
   const [dbMaxLsNum, setDbMaxLsNum] = useState(0);
-
-  const isAdmin = member?.role === 'admin';
-  const isPro = member?.role === 'pro';
-  const isPrivileged = isAdmin || isPro;
 
   const backupTotals = useMemo(() => {
     const map = {};
@@ -818,6 +824,7 @@ export default function RabEditorTab({
             harga_satuan: parseNum(r.hargaSatuan),
             profit_percent: parseNum(r.profitPercent),
             analisa_custom: r.analisaDetails || [],
+            jumlah: parseNum(r.volume) * parseNum(r.hargaSatuan),
             pekerja_input: r.pekerja_input || null,
             durasi_input: r.durasi_input || null,
             start_date: r.start_date || null
