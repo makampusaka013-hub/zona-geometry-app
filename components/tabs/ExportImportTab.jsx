@@ -144,16 +144,24 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           })
         });
 
-        if (!response.ok) {
+        // --- PROTEKSI API ERROR: Cek Content-Type ---
+        const contentType = response.headers.get('content-type');
+        if (contentType && contentType.includes('application/json')) {
           const errData = await response.json();
-          throw new Error(errData.error || 'Gagal mengekspor RAB');
+          throw new Error(errData.error || 'Server Error');
         }
 
         const blob = await response.blob();
         const url = window.URL.createObjectURL(blob);
         const a = document.createElement('a');
         a.href = url;
-        a.download = `RAB_${project.name || 'Export'}.xlsx`;
+        
+        // --- SANITASI NAMA FILE ---
+        const safeName = (project?.name || project?.work_name || 'Export')
+          .replace(/[^a-zA-Z0-9 \-_]/g, '')
+          .trim();
+        a.download = `RAB_${safeName}.xlsx`;
+        
         document.body.appendChild(a);
         a.click();
         window.URL.revokeObjectURL(url);
