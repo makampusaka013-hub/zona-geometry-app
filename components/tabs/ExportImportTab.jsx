@@ -9,7 +9,6 @@ import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
 import { generateProjectPDF } from '@/lib/pdf_engine';
-import { downloadSimpleTemplate } from '@/lib/simple_export';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
@@ -763,7 +762,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 w-full">
                       <button
-                        onClick={() => downloadSimpleTemplate(project?.name)}
+                        onClick={handleConfirmCustomExport}
                         disabled={loadingReport}
                         className="flex-1 flex items-center justify-center gap-3 bg-white dark:bg-white text-slate-900 px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-slate-900/20 disabled:opacity-50 disabled:hover:scale-100"
                       >
