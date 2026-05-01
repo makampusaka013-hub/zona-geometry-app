@@ -230,8 +230,23 @@ export default function ProgressTab({
         type: 'ahsp_item',
         status_approval: it.status_approval
       }));
-    } else if (viewMode === 'material') {
-      return (resources || []).filter(r => r.jenis === 'bahan').map(r => ({
+    } 
+    
+    // Heuristic Helper for Resources
+    const getJenis = (r) => {
+      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
+      const code = (r.kode_item || r.key_item || '').trim().toUpperCase();
+      const unit = (r.satuan || '').toUpperCase();
+      const name = (r.uraian || '').toLowerCase();
+      
+      if (rawJ === 'bahan' || rawJ === 'material' || code.startsWith('A') || code.startsWith('B')) return 'bahan';
+      if (rawJ === 'upah' || rawJ === 'tenaga' || code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang')) return 'upah';
+      if (rawJ === 'alat' || code.startsWith('M') || unit === 'JAM' || unit === 'SEWA') return 'alat';
+      return 'bahan'; // Fallback
+    };
+
+    if (viewMode === 'material') {
+      return (resources || []).filter(r => getJenis(r) === 'bahan').map(r => ({
         id: r.kode_item || r.uraian,
         name: r.uraian,
         unit: r.satuan,
@@ -239,7 +254,7 @@ export default function ProgressTab({
         type: 'resource'
       }));
     } else if (viewMode === 'alat') {
-      return (resources || []).filter(r => r.jenis === 'alat').map(r => ({
+      return (resources || []).filter(r => getJenis(r) === 'alat').map(r => ({
         id: r.kode_item || r.uraian,
         name: r.uraian,
         unit: r.satuan,
@@ -247,7 +262,7 @@ export default function ProgressTab({
         type: 'resource'
       }));
     } else {
-      const baseLabor = (resources || []).filter(r => r.jenis === 'upah').map(r => ({
+      const baseLabor = (resources || []).filter(r => getJenis(r) === 'upah').map(r => ({
         id: r.kode_item || r.uraian,
         name: r.uraian,
         unit: r.satuan,
