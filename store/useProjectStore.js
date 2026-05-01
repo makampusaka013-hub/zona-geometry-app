@@ -79,10 +79,14 @@ const useProjectStore = create((set, get) => ({
     try {
       const { fetchRabData, fetchAhspCatalog } = await import('@/lib/services/rabService');
       
-      // Always fetch RAB base for metrics
       const { lines, masterPrices } = await fetchRabData(projectId);
       
-      const nextTabData = { ...get().tabData, rab: lines || [], ahsp: lines || [] };
+      const nextTabData = { 
+        ...get().tabData, 
+        rab: lines || [], 
+        ahsp: lines || [],
+        schedule: { lines: lines || [] } // Sync schedule lines too
+      };
       const nextCatalog = { ...get().ahspCatalog };
 
       if (activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') {

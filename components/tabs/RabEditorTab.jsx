@@ -541,7 +541,7 @@ export default function RabEditorTab({
           id: item.id,
           key: item.id || Math.random().toString(36).substring(7),
           masterAhspId: item.master_ahsp_id,
-          masterAhspKode: item.master_ahsp_kode,
+          masterAhspKode: item.master_ahsp_kode || item.master_ahsp?.kode_ahsp || (item.mode === 'lumsum' ? 'LUMSUM' : ''),
           uraian: item.uraian,
           satuan: item.satuan,
           volume: String(item.volume || '0'),
