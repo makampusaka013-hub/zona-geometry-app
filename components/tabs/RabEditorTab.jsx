@@ -889,22 +889,24 @@ export default function RabEditorTab({
         setTimeout(() => reject(new Error('Timeout: Database tidak merespon dalam 30 detik.')), 30000);
       });
 
-      const { projectId: currentProjectId, lines: savedLines, error: saveErr } = await Promise.race([
+      const { projectId: currentProjectId, lines: savedLines, project: updatedProject, error: saveErr } = await Promise.race([
         useRabStore.getState().saveRabData(projectId, identityToSave, linesToUpsert, shouldDelete),
         timeoutPromise
       ]);
 
       if (saveErr) throw saveErr;
 
+      // SINKRONISASI IDENTITAS (PENTING: Versi & ID)
+      if (updatedProject) {
+        setIdentity(prev => ({
+          ...prev,
+          ...updatedProject,
+          version: updatedProject.version
+        }));
+      }
+
       // Update local state with real IDs from DB if they were new
       if (savedLines && savedLines.length > 0) {
-        const idMap = new Map();
-        savedLines.forEach(sl => {
-          // If we had a temporary key, map it to the new DB ID
-          // But since we use UUIDs now, they should match
-          idMap.set(sl.uraian + sl.sort_order, sl.id);
-        });
-
         setSections(prev => prev.map(s => ({
           ...s,
           lines: s.lines.map(l => {
@@ -912,11 +914,6 @@ export default function RabEditorTab({
             return match ? { ...l, id: match.id, key: match.id } : l;
           })
         })));
-      }
-
-      // Increment versi lokal agar save berikutnya sinkron dengan database
-      if (!silent) {
-        setIdentity(prev => ({ ...prev, version: (prev.version || 1) + 1 }));
       }
 
       const newSnapshot = {
