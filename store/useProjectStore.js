@@ -15,7 +15,7 @@ import {
   updateProjectStartDate as serviceUpdateProjectStartDate,
   fetchProjectMembers,
   fetchRabData,
-  fetchAhspCatalog
+  fetchAllAhspCatalog
 } from '@/lib/services/rabService';
 import { supabase } from '@/lib/supabase';
 
@@ -83,7 +83,6 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      // Use static imports instead of dynamic await import to avoid production crashes
       const { lines, masterPrices } = await fetchRabData(projectId);
       
       const nextTabData = { 
@@ -95,10 +94,11 @@ const useProjectStore = create((set, get) => ({
       const nextCatalog = { ...get().ahspCatalog };
 
       if (activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') {
-        const catalogRes = await fetchAhspCatalog();
+        const catalogRes = await fetchAllAhspCatalog();
         if (catalogRes.data) {
           catalogRes.data.forEach(item => {
-            nextCatalog[item.id] = item.details || [];
+            // item.master_ahsp_id based on view_katalog_ahsp_lengkap
+            nextCatalog[item.master_ahsp_id] = item.details || [];
           });
         }
       }
