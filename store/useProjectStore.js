@@ -28,7 +28,9 @@ const useProjectStore = create((set, get) => ({
   projects: {},         // Normalized: { [id]: project }
   selectedProject: '',
   locations: [],
-  isLoading: true,
+  tabData: { schedule: { lines: [] }, ahsp: [], harga: [], rab: [], changes: [], backup: [] },
+  tabLoading: false,
+  ahspCatalog: {},
 
   // --- ACTIONS ---
 
@@ -68,6 +70,43 @@ const useProjectStore = create((set, get) => ({
       return { error };
     } finally {
       set({ isLoading: false });
+    }
+  },
+
+  fetchTabData: async (activeTab, projectId, projectObj) => {
+    if (!projectId || activeTab === 'daftar') return;
+    set({ tabLoading: true });
+    try {
+      const { fetchRabData, fetchAhspCatalog } = await import('@/lib/services/rabService');
+      
+      // Always fetch RAB base for metrics
+      const { lines, masterPrices } = await fetchRabData(projectId);
+      
+      const nextTabData = { ...get().tabData, rab: lines || [], ahsp: lines || [] };
+      const nextCatalog = { ...get().ahspCatalog };
+
+      if (activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') {
+        const catalogRes = await fetchAhspCatalog();
+        if (catalogRes.data) {
+          catalogRes.data.forEach(item => {
+            nextCatalog[item.id] = item.details || [];
+          });
+        }
+      }
+
+      if (activeTab === 'perubahan') {
+        const { data: changes } = await supabase.from('project_changes').select('*').eq('project_id', projectId);
+        nextTabData.changes = changes || [];
+      }
+
+      set({ 
+        tabData: nextTabData, 
+        ahspCatalog: nextCatalog,
+        tabLoading: false 
+      });
+    } catch (err) {
+      console.error('Error fetchTabData:', err);
+      set({ tabLoading: false });
     }
   },
 

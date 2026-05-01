@@ -203,7 +203,12 @@ function ProyekContent() {
       const ppn = subtotalRab * (ppnPct / 100);
       const totalExact = Math.round(subtotalRab + ppn);
       let totalRounded = Math.ceil(totalExact / 1000) * 1000;
-      if (totalRounded === 0 && currentProjectObj?.total_kontrak) totalRounded = currentProjectObj?.total_kontrak;
+      
+      // FALLBACK: If RAB is empty but DB has total_kontrak, use it
+      if ((totalRounded === 0 || !ahspItems.length) && currentProjectObj?.total_kontrak) {
+        totalRounded = currentProjectObj?.total_kontrak;
+      }
+      
       return { total: totalRounded, duration: currentProjectObj?.manual_duration || 0, isCco: false };
     } catch (e) {
       console.error('Metrics calc error:', e);
@@ -295,7 +300,14 @@ function ProyekContent() {
     } else {
       setLaborSettings({});
     }
-  }, [currentProjectObj?.id]);
+    
+    // Sync project start date to local state
+    if (currentProjectObj?.start_date) {
+      setProjectStartDate(currentProjectObj.start_date);
+    } else {
+      setProjectStartDate('');
+    }
+  }, [currentProjectObj?.id, currentProjectObj?.start_date]);
 
   // ── Persist Labor Settings (Debounced) ──
   useEffect(() => {
@@ -1155,11 +1167,16 @@ function ProyekContent() {
                         initialIdentity={isCreating && !hasProject ? createForm : currentProjectObj}
                         backupData={tabData.backup}
                         member={member}
-                        onRefresh={(newId) => {
+                        onRefresh={async (newId) => {
                           setIsCreating(false);
                           setLocalTotalKontrak(null);
                           const targetId = newId || selectedProject;
                           if (newId) setSelectedProject(newId);
+                          
+                          // Refresh the list to show new projects or updated metadata
+                          await useProjectStore.getState().refreshProjects();
+                          
+                          // Fetch deep data for tabs
                           fetchTabData(activeTab, targetId, currentProjectObj);
                         }}
                         onEditIdentity={handleNewProject}
