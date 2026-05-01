@@ -16,17 +16,20 @@ This module handles the construction, editing, and persistence of the RAB (Renca
 - **Persistence Hooks**: Triggers manual save sequences on desktop/mobile sidebars.
 
 ### 3. Service Layer (`/lib/services/rabService.js`)
-- **`saveRabData` (Optimized)**: 
-  - Uses **Bulk Upsert** for high-performance saving.
-  - Handles **RLS Compliance** using `updated_by`.
-  - Cleans numerical data via `parseNum` helper.
+- **`saveRabData` (Optimized)**: Uses Bulk Upsert for performance and RLS compliance.
 - **`fetchRabMasterData`**: Loads AHSP catalogs and regional prices.
+
+### 4. Reporting Engine (`/lib/excel_engine.js`)
+- **Anti-Corruption Engine**: Uses surgical deletion of metadata (Defined Names, Print Area) to preserve Excel XML integrity.
+- **Browser Compatibility**: Implements 100ms download delay and DOM anchoring to fix missing extensions in Chrome/Incognito.
+- **Master Template Sync**: Mandatory use of `master_template_custom.xlsx` with programmatically set Print Areas & Titles.
 
 ## 🛠️ Status & Stability
 | Feature | Status | Note |
 | :--- | :--- | :--- |
 | **Manual Save** | ✅ STABLE | Uses Bulk Upsert & RLS compliance. |
 | **Tab Sync** | ✅ STABLE | Deep data refresh implemented. |
+| **Excel Export** | ✅ STABLE | Anti-corruption & Incognito naming fix. |
 | **UI Header** | ✅ POLISHED | Compact, non-wrapping layout. |
 | **AHSP Mapping** | ✅ STABLE | Fixed non-existent column errors. |
 | **CCO Module** | ⏳ PLANNED | Next major feature update. |
@@ -38,4 +41,4 @@ Persistence is protected by Supabase RLS. All inserts/updates must include:
 - Valid `project_id` association.
 
 ---
-*Last Updated: 2026-04-30 by Antigravity AI*
+*Last Updated: 2026-05-01 by Antigravity AI*
