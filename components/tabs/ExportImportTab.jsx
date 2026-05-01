@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { FileSpreadsheet, Upload, Download, FileText, Calendar, Users, ChevronRight, MapPin, TrendingUp, Wallet, ClipboardList, Check, LayoutGrid, Info, Box } from 'lucide-react';
+import { FileSpreadsheet, Upload, Download, FileText, Calendar, Users, ChevronRight, MapPin, TrendingUp, Wallet, ClipboardList, Check, LayoutGrid, Info } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import Spinner from '../Spinner';
 import LocationSelect from '../LocationSelect';
@@ -8,7 +8,6 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import * as ProReport from '@/lib/reporting_pro';
 import { generateProjectReport } from '@/lib/excel_engine';
-import { generateLaporanReport } from '@/lib/laporan_excel_static';
 import { generateProjectPDF } from '@/lib/pdf_engine';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
@@ -61,11 +60,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
   if (!project || !ahspLines || ahspLines.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
-        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-          TIDAK ADA DATA UNTUK DIEKSPOR
-        </h3>
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
+        <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
       </div>
     );
   }
@@ -91,33 +88,24 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
 
       if (error) throw error;
 
-      // Ambil harga satuan snapshot/katalog untuk kalkulasi bobot di database
-      const [projectRes, catalogRes, overrideRes] = await Promise.all([
-        supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-        supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-        supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-      ]);
-      const mergedMap = {};
-      (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-      const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+      const dailyMap = {};
+      progressData.forEach(row => {
+        if (!dailyMap[row.line_id]) dailyMap[row.line_id] = {};
+        dailyMap[row.line_id][row.day_number] = row.value;
+      });
 
-      const hImg = headerImage || null;
-
-      await generateLaporanReport(project, userMember, ahspLines, [reportType, 'database'], {
-        progressData,
-        projectPrices,
+      exportReportToExcel({
+        type: reportType,
+        project,
+        items: ahspLines,
+        dailyProgress: dailyMap,
         startDate: dateRange.start,
-        endDate: dateRange.end,
-        headerImage: hImg,
-        paperSize,
-        fileName: `Laporan_${reportType}_${project.name || 'Export'}.xlsx`
+        endDate: dateRange.end
       });
 
       toast.success(`Laporan ${reportType} berhasil diunduh.`);
     } catch (err) {
-      toast.error('Gagal generate laporan: ' + err.message);
+      toast.error('Gagal mengambil data progres: ' + err.message);
     } finally {
       setLoadingReport(false);
     }
@@ -350,12 +338,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateLaporanReport(project, userMember, ahspLines, ['schedule', 'database'], {
+        await generateProjectReport(project, userMember, ahspLines, ['schedule'], {
           scheduleData: sequenced,
           progressData: progData,
           projectPrices,
           paperSize: paperSize || 'A4',
           headerImage: hImg,
+          isStandalone: true,
           fileName: `Kurva-S ${project.name || ''}`
         });
       } catch (err) {
@@ -410,11 +399,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
           (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
           const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-          // Tentukan engine mana yang digunakan
-          const isLaporan = selectedSheets.some(s => ['harian', 'mingguan', 'bulanan', 'schedule'].includes(s.toLowerCase()));
-          const engine = isLaporan ? generateLaporanReport : generateProjectReport;
-
-          await engine(project, userMember, enrichedLines, selectedSheets, {
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, {
             projectPrices,
             globalOverhead: project?.profit_percent ?? project?.overhead_percent ?? 10,
             ppnPercent: project.ppn_percent ?? 12,
