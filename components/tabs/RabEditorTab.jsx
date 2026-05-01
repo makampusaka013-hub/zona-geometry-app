@@ -839,7 +839,8 @@ export default function RabEditorTab({
         hsp_value: parseNum(projectMeta.hsp_value || identity?.hsp_value),
         ppn_percent: parseNum(projectMeta.ppn_percent),
         overhead_percent: parseNum(globalOverhead),
-        start_date: identity?.start_date || new Date().toISOString().split('T')[0]
+        start_date: identity?.start_date || new Date().toISOString().split('T')[0],
+        version: identity?.version || 1 // <-- WAJIB ADA: Kirim versi saat ini agar tidak dianggap konflik
       };
 
       if (!projectId && !identity?.work_name && !identity?.name) {
@@ -911,6 +912,11 @@ export default function RabEditorTab({
             return match ? { ...l, id: match.id, key: match.id } : l;
           })
         })));
+      }
+
+      // Increment versi lokal agar save berikutnya sinkron dengan database
+      if (!silent) {
+        setIdentity(prev => ({ ...prev, version: (prev.version || 1) + 1 }));
       }
 
       const newSnapshot = {
