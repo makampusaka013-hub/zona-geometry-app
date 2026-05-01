@@ -868,9 +868,9 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
       )}
       {/* MODAL PENGATURAN EKSPOR */}
       {isExportModalOpen && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setIsExportModalOpen(false)} />
-          <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in duration-300">
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center p-4">
+          <div className="fixed inset-0 bg-slate-900/80 backdrop-blur-md" onClick={() => setIsExportModalOpen(false)} />
+          <div className="relative bg-white dark:bg-slate-900 w-full max-w-xl rounded-[3rem] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden animate-in zoom-in duration-300 z-10">
             {/* Header Modal */}
             <div className="p-8 bg-gradient-to-br from-indigo-600 to-indigo-800 text-white flex items-center justify-between">
               <div>
