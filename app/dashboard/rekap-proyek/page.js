@@ -232,15 +232,16 @@ function ProyekContent() {
 
     const urlId = searchParams.get('id');
 
-    // Kasus 1: URL punya ID tapi state kosong (Direct Link / Refresh)
-    if (urlId && isValidId(urlId) && urlId !== selectedProject) {
-      setSelectedProject(urlId);
-    }
-    // Kasus 2: State punya ID tapi URL beda (UI Click)
-    else if (isValidId(selectedProject) && urlId !== selectedProject) {
+    // Kasus 1: State punya ID tapi URL beda (UI Click / Dropdown)
+    // Kita prioritaskan State karena ini yang diklik langsung oleh user
+    if (isValidId(selectedProject) && urlId !== selectedProject) {
       const params = new URLSearchParams(searchParams.toString());
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }
+    // Kasus 2: URL punya ID tapi state masih kosong (Direct Link / Refresh)
+    else if (urlId && isValidId(urlId) && !selectedProject) {
+      setSelectedProject(urlId);
     }
     // Kasus 3: Tidak ada pilihan di URL, sinkronkan State ke URL jika sudah ada
     else if (!isValidId(urlId) && isValidId(selectedProject)) {
