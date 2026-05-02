@@ -106,7 +106,7 @@ function calculateHargaSatuan(baseSubtotal, profitPercent) {
   return total;
 }
 
-function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder }) {
+function AsyncCombobox({ value, kode, mode, locationId, projectId, onSelect, placeholder }) {
   const [query, setQuery] = useState(kode || value || '');
   const [results, setResults] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -168,7 +168,7 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
             type: 'ahsp'
           }));
         } else {
-          const { data, error } = await searchLumpsumItems(query);
+          const { data, error } = await searchLumpsumItems(query, projectId);
           if (!error) {
             combined = (data || []).map(d => ({
               id: d.id,
@@ -251,7 +251,7 @@ function AsyncCombobox({ value, kode, mode, locationId, onSelect, placeholder })
 }
 
 function RabSectionTable({
-  sec, sIdx, identity, member, backupTotals, isPrivileged,
+  sec, sIdx, identity, member, backupTotals, isPrivileged, projectId,
   updateRow, updateProfitRow, handleAhspSelect, saveToMasterLumsum,
   setSections, dbMaxLsNum, generateNextCode, globalOverhead,
   createEmptyRow, formatIdr, parseNum, toRoman, calculateHargaSatuan
@@ -327,6 +327,7 @@ function RabSectionTable({
                         kode={row.masterAhspKode}
                         mode={row.mode}
                         locationId={identity?.location_id || member?.selected_location_id}
+                        projectId={projectId}
                         onSelect={data => handleAhspSelect(sec.id, row.key, data)}
                         placeholder="CARI..."
                       />
@@ -805,7 +806,7 @@ export default function RabEditorTab({
       setError('Harap isi Nama Pekerjaan & Harga sebelum simpan katalog.');
       return;
     }
-    const { nextCode, error } = await useRabStore.getState().saveLumpsumToMaster({
+    const { nextCode, error } = await useRabStore.getState().saveLumpsumToMaster(projectId, {
       uraian: row.uraian,
       satuan: row.satuan,
       hargaSatuan: parseNum(row.hargaSatuan)
@@ -1182,6 +1183,7 @@ export default function RabEditorTab({
                   member={member}
                   backupTotals={backupTotals}
                   isPrivileged={isPrivileged}
+                  projectId={projectId}
                   updateRow={updateRow}
                   updateProfitRow={updateProfitRow}
                   handleAhspSelect={handleAhspSelect}
