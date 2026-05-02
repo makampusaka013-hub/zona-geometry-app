@@ -43,6 +43,9 @@ SELECT
   SUM(CASE WHEN final_kode ILIKE 'M%' THEN (harga_item * koefisien) ELSE 0::numeric END) AS total_alat,
   SUM(harga_item * koefisien) AS total_subtotal,
   
+  -- Tambahkan Total Harga termasuk Profit bawaan AHSP
+  SUM(harga_item * koefisien) * (1 + (COALESCE(MAX(ma.overhead_profit), 15) / 100)) AS total_harga_satuan,
+
   CASE WHEN MIN(harga_item) > 0 THEN true ELSE false END AS is_lengkap,
 
   CASE WHEN SUM(harga_item * koefisien) > 0 

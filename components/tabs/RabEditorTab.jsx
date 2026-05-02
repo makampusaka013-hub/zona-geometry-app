@@ -1094,7 +1094,8 @@ export default function RabEditorTab({
                         type="number"
                         value={globalOverhead}
                         onChange={e => setGlobalOverhead(e.target.value)}
-                        className="w-10 h-6 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-center text-[10px] font-bold text-indigo-600 dark:text-orange-500 focus:ring-1 focus:ring-indigo-500"
+                        onFocus={e => e.target.select()}
+                        className="w-10 h-6 bg-white dark:bg-slate-700 border border-slate-300 dark:border-slate-600 rounded text-center text-[10px] font-black text-indigo-600 dark:text-orange-500 focus:ring-2 focus:ring-indigo-500 cursor-pointer relative z-10"
                       />
                       <span className="text-[9px] font-bold text-slate-400">%</span>
                     </div>
