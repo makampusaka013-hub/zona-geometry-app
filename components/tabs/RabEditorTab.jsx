@@ -279,8 +279,8 @@ function RabSectionTable({
             <tr className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
               <th className="px-1 py-2 text-left w-[2%]">#</th>
               <th className="px-1 py-2 text-left w-[14%]">ANALISA</th>
-              <th className="px-1 py-2 text-left w-[38%]">URAIAN PEKERJAAN</th>
               <th className="px-1 py-2 text-center w-[4%]">SAT</th>
+              <th className="px-1 py-2 text-left w-[38%]">URAIAN PEKERJAAN</th>
               <th className="px-1 py-2 text-center w-[7%]">PROFIT</th>
               <th className="px-1 py-2 text-right w-[8%]">VOL</th>
               <th className="px-1 py-2 text-right w-[12%]">HARGA</th>
@@ -332,21 +332,6 @@ function RabSectionTable({
                         placeholder="CARI..."
                       />
                     </td>
-                    <td className="px-1 py-2">
-                      <div className="flex flex-col">
-                        <input
-                          value={row.uraianCustom || row.uraian || ''}
-                          onChange={e => updateRow(sec.id, row.key, { uraian: e.target.value, uraianCustom: e.target.value })}
-                          onFocus={(e) => e.target.select()}
-                          onClick={e => e.stopPropagation()}
-                          className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
-                          placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
-                        />
-                        <div className="flex items-center gap-1 mt-0.5">
-                           <span className="text-[7px] font-black text-indigo-400 dark:text-orange-400 uppercase tracking-widest">{row.masterAhspId ? 'AHSP' : 'LUMSUM'}</span>
-                        </div>
-                      </div>
-                    </td>
                     <td className="px-1 py-2 text-center" onClick={e => e.stopPropagation()}>
                       {row.mode === 'lumsum' ? (
                         <>
@@ -371,6 +356,21 @@ function RabSectionTable({
                       ) : (
                         <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
                       )}
+                    </td>
+                    <td className="px-1 py-2">
+                      <div className="flex flex-col">
+                        <input
+                          value={row.uraianCustom || row.uraian || ''}
+                          onChange={e => updateRow(sec.id, row.key, { uraian: e.target.value, uraianCustom: e.target.value })}
+                          onFocus={(e) => e.target.select()}
+                          onClick={e => e.stopPropagation()}
+                          className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
+                          placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
+                        />
+                        <div className="flex items-center gap-1 mt-0.5">
+                           <span className="text-[7px] font-black text-indigo-400 dark:text-orange-400 uppercase tracking-widest">{row.masterAhspId ? 'AHSP' : 'LUMSUM'}</span>
+                        </div>
+                      </div>
                     </td>
                     <td className="px-1 py-2 text-center" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-0.5">
