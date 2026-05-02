@@ -761,13 +761,13 @@ function ProyekContent() {
     <div className={`min-h-screen bg-slate-50 dark:bg-[#0f172a] role-${userSlotRole}`}>
       <div className="sticky top-0 z-[80] bg-slate-50/80 backdrop-blur-md dark:bg-slate-900/90 border-b border-slate-200 dark:border-slate-800 px-6 py-5 shadow-sm">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-4 min-w-0 flex-1">
             <h1 className="hidden lg:flex text-xl font-bold text-slate-900 dark:text-slate-100 items-center gap-2">
               <Package className="w-6 h-6 text-indigo-600 dark:text-orange-500" /> Proyek
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="flex-1 flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide snap-x">
+            <div className="w-full flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-hide snap-x flex-nowrap">
               {visibleTabs.map(tab => (
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
@@ -1055,8 +1055,8 @@ function ProyekContent() {
                 </button>
               </div>
             ) : (
-              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden bg-white dark:bg-slate-900 shadow-sm">
-                <table className="min-w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
+              <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto bg-white dark:bg-slate-900 shadow-sm scrollbar-thin">
+                <table className="min-w-[800px] w-full divide-y divide-slate-100 dark:divide-slate-800 text-sm">
                   <thead className="bg-indigo-50/80 dark:bg-orange-600/10 text-[10px] uppercase tracking-widest text-indigo-600 dark:text-orange-400 font-black border-b border-slate-100 dark:border-slate-800">
                     <tr>
                       <th className="px-8 py-5 text-left w-1/3">PROYEK</th>
