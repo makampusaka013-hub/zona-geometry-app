@@ -83,12 +83,13 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      const { lines, masterPrices, masterDetails } = await fetchRabData(projectId);
+      const { lines, masterPrices, masterDetails, resources } = await fetchRabData(projectId);
       
       const nextTabData = { 
         ...get().tabData, 
         rab: lines || [], 
         ahsp: lines || [],
+        harga: resources || [],
         schedule: { lines: lines || [] }
       };
       const nextCatalog = { ...get().ahspCatalog, ...(masterDetails || {}) };
