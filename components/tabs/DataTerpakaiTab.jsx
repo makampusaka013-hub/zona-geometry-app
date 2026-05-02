@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, Fragment } from 'react';
 import Spinner from '../Spinner';
 import { Package, ClipboardList, Info, Filter, Edit3, X, RotateCcw, Wrench, Box } from 'lucide-react';
 import { supabase } from '@/lib/supabase';
@@ -78,7 +78,7 @@ export default function DataTerpakaiTab({
 }
 
 function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
-  const [selectedAhsp, setSelectedAhsp] = useState(null);
+  const [expandedId, setExpandedId] = useState(null);
 
   if (rows.length === 0) {
     return (
@@ -91,186 +91,143 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
     );
   }
 
-  return (
-    <>
-      <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl bg-white dark:bg-[#1e293b]">
-        <div className="overflow-x-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 relative">
-          <table className="w-full text-sm border-separate border-spacing-0">
-            <thead className="sticky top-0 z-30">
-              <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] uppercase font-black tracking-widest shadow-sm">
-                <th className="px-6 py-4 text-left border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">URAIAN PEKERJAAN</th>
-                <th className="px-6 py-4 text-center border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">SATUAN</th>
-                <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">VOLUME</th>
-                <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">HARGA SATUAN</th>
-                <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 sticky top-0 bg-slate-100 dark:bg-slate-900">TOTAL JUMLAH</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-              {rows.map((item, i) => (
-                <tr
-                  key={item.id || i}
-                  onClick={() => setSelectedAhsp(item)}
-                  className="hover:bg-indigo-50/50 dark:hover:bg-orange-900/20 transition-colors cursor-pointer group"
-                >
-                  <td className="px-6 py-4">
-                    <div className="flex items-center gap-2 mb-1">
-                      <div className="text-[10px] text-indigo-600 dark:text-orange-400 font-black font-mono">
-                        {item.master_ahsp?.kode_ahsp || `AHSP ${i + 1}`}
-                      </div>
-                      <span className="text-[8px] bg-indigo-50 dark:bg-slate-800 text-indigo-400 dark:text-slate-500 px-1.5 py-0.5 rounded border border-indigo-100 dark:border-slate-700 font-black group-hover:bg-indigo-600 group-hover:text-white group-hover:border-indigo-600 transition-all">LIHAT DETAIL</span>
-                    </div>
-                    <div className="font-bold text-slate-800 dark:text-slate-100 leading-snug">{item.uraian_custom || item.uraian}</div>
-                    <div className="text-[10px] text-slate-400 mt-1 uppercase font-semibold">{item.bab_pekerjaan || 'Tanpa Kategori'}</div>
-                  </td>
-                  <td className="px-6 py-4 text-slate-500 font-bold text-center">{item.satuan || '-'}</td>
-                  <td className="px-6 py-4 text-right font-mono text-xs font-bold">{Number(item.volume || 0).toLocaleString('id-ID')}</td>
-                  <td className="px-6 py-4 text-right font-mono text-xs font-medium text-slate-500 dark:text-slate-300">
-                    {formatIdr(item.harga_satuan)}
-                  </td>
-                  <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-900 dark:text-white">{formatIdr(item.jumlah)}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
-
-      {selectedAhsp && (
-        <AhspDetailModal
-          item={selectedAhsp}
-          details={ahspCatalog[selectedAhsp.master_ahsp_id] || selectedAhsp.analisa_custom || []}
-          hargaRows={hargaRows}
-          formatIdr={formatIdr}
-          onClose={() => setSelectedAhsp(null)}
-        />
-      )}
-    </>
-  );
-}
-
-function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
   const getOverridePrice = (kode) => {
     const found = hargaRows.find(r => r.key_item === kode || r.kode_item === kode);
     return found ? found.harga_snapshot : null;
   };
 
-  const grouped = useMemo(() => {
-    const list = Array.isArray(details) ? details : [];
-    return {
-      tenaga: list.filter(d => (d.jenis_komponen || d.jenis || '').toLowerCase() === 'tenaga'),
-      bahan: list.filter(d => (d.jenis_komponen || d.jenis || '').toLowerCase() === 'bahan'),
-      alat: list.filter(d => (d.jenis_komponen || d.jenis || '').toLowerCase() === 'alat'),
-      lainnya: list.filter(d => !['tenaga', 'bahan', 'alat'].includes((d.jenis_komponen || d.jenis || '').toLowerCase()))
-    };
-  }, [details]);
-
-  const subtotalAnalisa = useMemo(() => {
-    return Array.isArray(details) ? details.reduce((s, d) => {
-      const p = getOverridePrice(d.kode_item) || d.harga_konversi || d.harga || 0;
-      return s + (Number(d.koefisien || 0) * Number(p));
-    }, 0) : 0;
-  }, [details, hargaRows, getOverridePrice]);
-
-  const profitPercent = item.profit_percent !== null && item.profit_percent !== undefined ? Number(item.profit_percent) : 15;
-  const hargaSatuanRAB = Math.round(subtotalAnalisa * (1 + (profitPercent / 100)));
-
   return (
-    <div className="fixed inset-0 z-[300] flex items-center justify-center p-4 bg-slate-900/80 backdrop-blur-md animate-in fade-in duration-300">
-      <div className="bg-white dark:bg-slate-900 rounded-[2.5rem] w-full max-w-4xl max-h-[90vh] shadow-2xl border border-slate-200 dark:border-slate-800 overflow-hidden flex flex-col">
-        {/* Header */}
-        <div className="flex items-center justify-between px-8 py-6 border-b border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-900/50">
-          <div className="flex items-start gap-4">
-            <div className="p-3 bg-indigo-100 dark:bg-orange-900/40 rounded-2xl">
-              <ClipboardList className="w-6 h-6 text-indigo-600 dark:text-orange-400" />
-            </div>
-            <div>
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[10px] font-black font-mono text-indigo-500 dark:text-orange-400 bg-indigo-50 dark:bg-orange-900/20 px-2 py-0.5 rounded border border-indigo-100 dark:border-orange-900/10">
-                  {item.master_ahsp?.kode_ahsp || 'CUSTOM AHSP'}
-                </span>
-                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Rincian Analisa Pekerjaan</span>
-              </div>
-              <h3 className="text-lg font-black text-slate-900 dark:text-white leading-tight">{item.uraian_custom || item.uraian}</h3>
-              <p className="text-xs text-slate-500 mt-1 uppercase font-bold tracking-tight opacity-70">{item.bab_pekerjaan}</p>
-            </div>
-          </div>
-          <button onClick={onClose} className="p-3 rounded-2xl hover:bg-slate-200 dark:hover:bg-slate-800 transition-all group">
-            <X className="w-6 h-6 text-slate-400 group-hover:text-slate-600 dark:group-hover:text-white" />
-          </button>
-        </div>
+    <div className="rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-xl bg-white dark:bg-[#1e293b]">
+      <div className="overflow-x-auto max-h-[700px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 relative">
+        <table className="w-full text-sm border-separate border-spacing-0">
+          <thead className="sticky top-0 z-30">
+            <tr className="bg-slate-100 dark:bg-slate-900 text-slate-500 dark:text-slate-400 text-[9px] uppercase font-black tracking-widest shadow-sm">
+              <th className="px-6 py-4 text-left border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">URAIAN PEKERJAAN</th>
+              <th className="px-6 py-4 text-center border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">SATUAN</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">VOLUME</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">HARGA SATUAN</th>
+              <th className="px-6 py-4 text-right border-b border-slate-200 dark:border-slate-800 bg-slate-100 dark:bg-slate-900">TOTAL JUMLAH</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
+            {rows.map((item, i) => {
+              const rowId = item.id || i;
+              const isExpanded = expandedId === rowId;
+              const details = ahspCatalog[item.master_ahsp_id] || item.analisa_custom || [];
+              
+              // Sort details like in catalog
+              const sortedDetails = [...details].sort((a, b) => {
+                const order = { 'upah': 0, 'tenaga': 0, 'bahan': 1, 'alat': 2 };
+                const ja = (a.jenis_komponen || a.jenis || '').toLowerCase();
+                const jb = (b.jenis_komponen || b.jenis || '').toLowerCase();
+                return (order[ja] ?? 99) - (order[jb] ?? 99);
+              });
 
-        {/* Content */}
-        <div className="flex-1 overflow-y-auto p-8 space-y-8 scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-800">
-          {['tenaga', 'bahan', 'alat'].map(cat => (
-            grouped[cat].length > 0 && (
-              <div key={cat} className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <div className={`w-1.5 h-1.5 rounded-full ${cat === 'tenaga' ? 'bg-blue-500' : cat === 'bahan' ? 'bg-indigo-500' : 'bg-slate-500'}`} />
-                  <h4 className="text-[11px] font-black uppercase tracking-[0.2em] text-slate-400">
-                    {cat === 'tenaga' ? 'Tenaga Kerja' : cat === 'bahan' ? 'Bahan / Material' : 'Peralatan'}
-                  </h4>
-                </div>
-                <div className="rounded-2xl border border-slate-100 dark:border-slate-800 overflow-hidden">
-                  <table className="w-full text-xs text-left border-collapse">
-                    <thead>
-                      <tr className="bg-slate-50 dark:bg-slate-800/50 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="px-5 py-3 w-[15%]">Kode</th>
-                        <th className="px-5 py-3 w-[45%]">Uraian Komponen</th>
-                        <th className="px-5 py-3 text-center w-[10%]">Satuan</th>
-                        <th className="px-5 py-3 text-right w-[10%]">Koefisien</th>
-                        <th className="px-5 py-3 text-right w-[20%]">Harga Satuan</th>
-                        <th className="px-5 py-3 text-right w-[20%]">Subtotal</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
-                      {grouped[cat].map((d, idx) => {
-                        const price = getOverridePrice(d.kode_item) || d.harga_konversi || d.harga || 0;
-                        const sub = Number(d.koefisien || 0) * Number(price);
-                        return (
-                          <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                            <td className="px-5 py-3 font-mono text-[10px] font-bold text-indigo-500 dark:text-orange-400">{d.kode_item || d.kode_item_dasar || '-'}</td>
-                            <td className="px-5 py-3 font-bold text-slate-700 dark:text-slate-200">{d.uraian || d.uraian_ahsp}</td>
-                            <td className="px-5 py-3 text-center font-bold text-slate-400 uppercase">{d.satuan || d.satuan_uraian}</td>
-                            <td className="px-5 py-3 text-right font-mono font-bold text-indigo-600 dark:text-orange-400">{Number(d.koefisien || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}</td>
-                            <td className="px-5 py-3 text-right font-mono text-slate-500 dark:text-slate-400">{formatIdr(price)}</td>
-                            <td className="px-5 py-3 text-right font-mono font-black text-slate-900 dark:text-white">{formatIdr(sub)}</td>
-                          </tr>
-                        );
-                      })}
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            )
-          ))}
+              return (
+                <Fragment key={rowId}>
+                  <tr
+                    onClick={() => setExpandedId(isExpanded ? null : rowId)}
+                    className={`hover:bg-indigo-50/50 dark:hover:bg-orange-900/20 transition-colors cursor-pointer group ${isExpanded ? 'bg-indigo-50/30 dark:bg-orange-900/10' : ''}`}
+                  >
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="text-[10px] text-indigo-600 dark:text-orange-400 font-black font-mono">
+                          {item.master_ahsp?.kode_ahsp || `AHSP ${i + 1}`}
+                        </div>
+                        <span className={`text-[8px] px-1.5 py-0.5 rounded border font-black transition-all ${isExpanded ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 dark:bg-slate-800 text-indigo-400 dark:text-slate-500 border-indigo-100 dark:border-slate-700'}`}>
+                          {isExpanded ? 'TUTUP DETAIL' : 'LIHAT DETAIL'}
+                        </span>
+                      </div>
+                      <div className="font-bold text-slate-800 dark:text-slate-100 leading-snug">{item.uraian_custom || item.uraian}</div>
+                      <div className="text-[10px] text-slate-400 mt-1 uppercase font-semibold tracking-tighter">{item.bab_pekerjaan || 'Tanpa Kategori'}</div>
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 font-bold text-center">{item.satuan || '-'}</td>
+                    <td className="px-6 py-4 text-right font-mono text-xs font-bold">{Number(item.volume || 0).toLocaleString('id-ID')}</td>
+                    <td className="px-6 py-4 text-right font-mono text-xs font-medium text-slate-500 dark:text-slate-300">
+                      {formatIdr(item.harga_satuan)}
+                    </td>
+                    <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-900 dark:text-white">{formatIdr(item.jumlah)}</td>
+                  </tr>
 
-          {details.length === 0 && (
-            <div className="flex flex-col items-center justify-center py-12 opacity-30">
-              <ClipboardList className="w-16 h-16 mb-4" />
-              <p className="text-sm font-bold uppercase tracking-widest">Detail rincian tidak tersedia</p>
-            </div>
-          )}
-        </div>
+                  {/* INLINE EXPANDED DETAILS */}
+                  {isExpanded && (
+                    <tr>
+                      <td colSpan={5} className="px-4 py-4 bg-slate-50/50 dark:bg-slate-900/50 border-b border-slate-100 dark:border-slate-800">
+                        <div className="mx-4 mb-4 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-sm bg-white dark:bg-slate-800">
+                          <table className="w-full text-[10px] text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-50 dark:bg-slate-900/50 text-slate-400 font-black uppercase tracking-wider">
+                                <th className="px-4 py-3 w-[15%]">Kode</th>
+                                <th className="px-4 py-3 w-[45%]">Uraian Komponen</th>
+                                <th className="px-4 py-3 text-center w-[10%]">Satuan</th>
+                                <th className="px-4 py-3 text-right w-[10%]">Koef</th>
+                                <th className="px-4 py-3 text-right w-[20%]">Harga</th>
+                                <th className="px-4 py-3 text-right w-[20%]">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {sortedDetails.length > 0 ? sortedDetails.map((det, dIdx) => {
+                                const j = (det.jenis_komponen || det.jenis || '').toLowerCase();
+                                const price = getOverridePrice(det.kode_item || det.kode) || det.harga_konversi || det.harga || 0;
+                                const sub = Number(det.koefisien || 0) * Number(price);
+                                
+                                const badge = {
+                                  tenaga: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                  upah: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                  bahan: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                  alat: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                }[j] || 'bg-slate-100 text-slate-500';
 
-        {/* Footer Sumary */}
-        <div className="px-8 py-8 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-950 grid grid-cols-1 md:grid-cols-3 gap-6">
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Total Harga Dasar</div>
-            <div className="text-lg font-mono font-black text-slate-900 dark:text-white">{formatIdr(subtotalAnalisa)}</div>
-          </div>
-          <div className="bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm">
-            <div className="text-[9px] font-black text-slate-400 uppercase tracking-wider mb-2">Profit / Overhead ({profitPercent}%)</div>
-            <div className="text-lg font-mono font-black text-indigo-600 dark:text-orange-400">+{formatIdr(Math.round(subtotalAnalisa * (profitPercent / 100)))}</div>
-          </div>
-          <div className="bg-indigo-600 dark:bg-orange-600 p-5 rounded-2xl shadow-xl shadow-indigo-500/20 dark:shadow-orange-900/20 text-white">
-            <div className="text-[9px] font-black text-white/60 uppercase tracking-widest mb-2">Harga Satuan Pekerjaan (RAB)</div>
-            <div className="text-xl font-mono font-black">{formatIdr(hargaSatuanRAB)}</div>
-          </div>
-        </div>
+                                return (
+                                  <tr key={dIdx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30 transition-colors">
+                                    <td className="px-4 py-2 font-mono font-bold text-slate-400">{det.kode_item || det.kode || '-'}</td>
+                                    <td className="px-4 py-2 font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                      <span className={`text-[7px] px-1 py-0.5 rounded uppercase font-black tracking-widest ${badge}`}>{j === 'upah' || j === 'tenaga' ? 'Pekerja' : j}</span>
+                                      {det.uraian || det.nama_item || det.uraian_ahsp}
+                                    </td>
+                                    <td className="px-4 py-2 text-center font-bold text-slate-400">{det.satuan || det.satuan_uraian}</td>
+                                    <td className="px-4 py-2 text-right font-mono font-bold text-indigo-500 dark:text-orange-400">{Number(det.koefisien || 0).toLocaleString('id-ID', { maximumFractionDigits: 5 })}</td>
+                                    <td className="px-4 py-2 text-right font-mono text-slate-400">{formatIdr(price)}</td>
+                                    <td className="px-4 py-2 text-right font-mono font-black text-slate-900 dark:text-white">{formatIdr(sub)}</td>
+                                  </tr>
+                                );
+                              }) : (
+                                <tr>
+                                  <td colSpan={6} className="px-4 py-8 text-center text-slate-400 font-bold uppercase tracking-widest">Detail rincian tidak tersedia</td>
+                                </tr>
+                              )}
+                            </tbody>
+                          </table>
+                          
+                          {/* Mini Summary at bottom of expansion */}
+                          <div className="px-4 py-3 bg-slate-50 dark:bg-slate-900/50 flex justify-end gap-6 border-t border-slate-100 dark:border-slate-700">
+                             <div className="flex flex-col items-end">
+                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Total Harga Dasar</span>
+                               <span className="text-[10px] font-mono font-black text-slate-900 dark:text-white">
+                                 {formatIdr(sortedDetails.reduce((s, d) => s + (Number(d.koefisien || 0) * (getOverridePrice(d.kode_item || d.kode) || d.harga_konversi || d.harga || 0)), 0))}
+                               </span>
+                             </div>
+                             <div className="flex flex-col items-end">
+                               <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Profit ({item.profit_percent ?? 15}%)</span>
+                               <span className="text-[10px] font-mono font-black text-indigo-600 dark:text-orange-400">
+                                 +{formatIdr(Math.round(sortedDetails.reduce((s, d) => s + (Number(d.koefisien || 0) * (getOverridePrice(d.kode_item || d.kode) || d.harga_konversi || d.harga || 0)), 0) * ((item.profit_percent ?? 15) / 100)))}
+                               </span>
+                             </div>
+                          </div>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
     </div>
   );
 }
+
 
 // ─── Modal Override Harga ───────────────────────────────────────────────
 function OverrideModal({ item, formatIdr, onClose, onSaved }) {

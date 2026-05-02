@@ -83,7 +83,7 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      const { lines, masterPrices } = await fetchRabData(projectId);
+      const { lines, masterPrices, masterDetails } = await fetchRabData(projectId);
       
       const nextTabData = { 
         ...get().tabData, 
@@ -91,13 +91,12 @@ const useProjectStore = create((set, get) => ({
         ahsp: lines || [],
         schedule: { lines: lines || [] }
       };
-      const nextCatalog = { ...get().ahspCatalog };
+      const nextCatalog = { ...get().ahspCatalog, ...(masterDetails || {}) };
 
-      if (activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') {
+      if ((activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') && (!masterDetails || Object.keys(masterDetails).length === 0)) {
         const catalogRes = await fetchAllAhspCatalog();
         if (catalogRes.data) {
           catalogRes.data.forEach(item => {
-            // item.master_ahsp_id based on view_katalog_ahsp_lengkap
             nextCatalog[item.master_ahsp_id] = item.details || [];
           });
         }
