@@ -396,10 +396,15 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             progressData: progData 
           });
         } else {
-          // GAK USAH RIBET: Ambil langsung dari resources (Komponen Harga) yang sudah dihitung aplikasi
+          // AMBIL FULL DATA: Dari resources (Komponen Harga) aplikasi
           const projectPrices = resources.map(r => ({
             kode_item: r.kode_item || r.key_item,
-            harga_satuan: r.harga_snapshot || r.harga || 0
+            uraian: r.uraian,
+            satuan: r.satuan,
+            harga_satuan: r.harga_snapshot || r.harga || 0,
+            jenis: r.jenis_komponen || r.jenis || 'bahan',
+            tkdn: r.tkdn || r.tkdn_percent || 0,
+            total_volume_terpakai: r.total_volume_terpakai || 0
           }));
 
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, {
