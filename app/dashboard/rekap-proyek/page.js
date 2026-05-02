@@ -158,7 +158,8 @@ function ProyekContent() {
     ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
-    start_date: ''
+    start_date: '',
+    version: 1
   });
   
   const [createForm, setCreateForm] = useState({
@@ -166,7 +167,8 @@ function ProyekContent() {
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
-    start_date: new Date().toISOString().split('T')[0]
+    start_date: new Date().toISOString().split('T')[0],
+    version: 1
   });
 
   const isValidId = (id) => !!id && id !== 'null' && id !== 'undefined' && id !== '';
@@ -285,7 +287,8 @@ function ProyekContent() {
         kadis_nip: currentProjectObj?.kadis_nip || '',
         kabid_name: currentProjectObj?.kabid_name || '',
         kabid_nip: currentProjectObj?.kabid_nip || '',
-        start_date: currentProjectObj?.start_date || ''
+        start_date: currentProjectObj?.start_date || '',
+        version: currentProjectObj?.version || 1
       });
     } else if (!selectedProject) {
       setIdentityForm({
@@ -295,7 +298,8 @@ function ProyekContent() {
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
         konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
         kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
-        start_date: ''
+        start_date: '',
+        version: 1
       });
     }
   }, [currentProjectObj, storeLoading, selectedProject]);
@@ -366,10 +370,12 @@ function ProyekContent() {
 
   async function handleUpdateProjectIdentity(e) {
     if (e) e.preventDefault();
+    const proj = projects[selectedProject];
     const { error } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
+      version: proj?.version || identityForm.version || 1,
       updated_at: new Date().toISOString()
     });
 
