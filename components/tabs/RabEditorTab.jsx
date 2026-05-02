@@ -300,7 +300,6 @@ function RabSectionTable({
               const row = sec.lines[virtualRow.index];
               if (!row) return null; // Safety check to prevent crash on deletion
               const rIdx = virtualRow.index;
-              return (
               const isExpanded = !!row.isExpanded;
               const details = row.analisaDetails || [];
 
@@ -455,7 +454,6 @@ function RabSectionTable({
                     </tr>
                   )}
                 </Fragment>
-              );
               );
             })}
 
