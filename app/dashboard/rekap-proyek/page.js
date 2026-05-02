@@ -242,10 +242,11 @@ function ProyekContent() {
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-    // Kasus 3: Tidak ada pilihan, pilih yang pertama jika tersedia
-    else if (!isValidId(urlId) && !isValidId(selectedProject) && Object.keys(projects || {}).length > 0 && !isCreating) {
-      const firstId = Object.keys(projects)[0];
-      setSelectedProject(firstId);
+    // Kasus 3: Tidak ada pilihan di URL, sinkronkan State ke URL jika sudah ada
+    else if (!isValidId(urlId) && isValidId(selectedProject)) {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set('id', selectedProject);
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
   }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
