@@ -1298,7 +1298,15 @@ function ProyekContent() {
 
               {activeTab === 'export' && hasProject && (
                 <ErrorBoundary>
-                  <ExportImportTab tabLoading={tabLoading} ahspLines={tabData?.rab || []} project={projects[selectedProject]} isModeNormal={isModeNormal} userMember={member} subTab={exportSubTab} />
+                  <ExportImportTab 
+                    tabLoading={tabLoading} 
+                    ahspLines={tabData?.rab || []} 
+                    resources={tabData?.harga || []}
+                    project={projects[selectedProject]} 
+                    isModeNormal={isModeNormal} 
+                    userMember={member} 
+                    subTab={exportSubTab} 
+                  />
                 </ErrorBoundary>
               )}
             </>

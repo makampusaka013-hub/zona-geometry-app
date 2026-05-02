@@ -11,7 +11,7 @@ import { generateLaporanReport as generateLaporanFormula } from '@/lib/laporan_e
 import { generateProjectReport } from '@/lib/excel_engine';
 import * as ProReport from '@/lib/reporting_pro';
 
-export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
+export default function ExportImportTab({ tabLoading, ahspLines, resources = [], project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
   const [exportMode, setExportMode] = useState('project'); // 'project' | 'catalog'
   const [selectedSheets, setSelectedSheets] = useState(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule']);
@@ -372,12 +372,13 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         }
         let scheduleData = [];
         if (selectedSheets.some(s => s.toLowerCase() === 'schedule')) {
-          const ahspIds = [...new Set(enrichedLines.map(l => l.master_ahsp_id).filter(Boolean))];
-          const { data: catalogData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIds);
-          const catMap = {};
-          (catalogData || []).forEach(c => { catMap[c.master_ahsp_id] = c.details; });
           const { computeManpower, getSequencedSchedule } = await import('@/lib/manpower');
-          const manpower = computeManpower(enrichedLines, catMap, project.labor_settings || {});
+          // Use the details we already injected into enrichedLines
+          const catMapForSchedule = {};
+          enrichedLines.forEach(l => {
+            if (l.master_ahsp_id) catMapForSchedule[l.master_ahsp_id] = l.details || [];
+          });
+          const manpower = computeManpower(enrichedLines, catMapForSchedule, project.labor_settings || {});
           scheduleData = getSequencedSchedule(manpower, project.start_date);
         }
         const { data: progData } = await supabase.from('project_progress_daily').select('*').eq('project_id', project.id);
@@ -395,16 +396,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             progressData: progData 
           });
         } else {
-          const [projectRes, catalogRes, overrideRes] = await Promise.all([
-            supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
-            supabase.from('master_harga_dasar').select('kode_item, harga_satuan').eq('location_id', project.location_id),
-            supabase.from('master_harga_custom').select('kode_item, harga_satuan')
-          ]);
-          const mergedMap = {};
-          (catalogRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          (projectRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
-          const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
+          // GAK USAH RIBET: Ambil langsung dari resources (Komponen Harga) yang sudah dihitung aplikasi
+          const projectPrices = resources.map(r => ({
+            kode_item: r.kode_item || r.key_item,
+            harga_satuan: r.harga_snapshot || r.harga || 0
+          }));
 
           await generateProjectReport(project, userMember, enrichedLines, selectedSheets, {
             projectPrices,
