@@ -100,7 +100,7 @@ function ProyekContent() {
   // Connect to Global Store (Single Source of Truth)
   const { 
     member, projects, selectedProject, locations, isLoading: storeLoading,
-    initStore, setSelectedProject, setProjects, saveProjectIdentity
+    initStore, setSelectedProject, setProjects, saveProjectIdentity, handleDeleteProject: storeHandleDeleteProject
   } = useProjectStore();
 
   // Tab Data & Catalog are technically in useRabStore/useUIStore or local state
@@ -371,11 +371,15 @@ function ProyekContent() {
 
   async function handleUpdateProjectIdentity(e) {
     if (e) e.preventDefault();
-    const proj = projects[selectedProject];
+    
+    // Fix: Find project correctly to get the latest version
+    const proj = projects.find(p => p.id === selectedProject);
+    
     const { error } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
+      // Ensure we use the latest version from state
       version: proj?.version || identityForm.version || 1,
       updated_at: new Date().toISOString()
     });
@@ -547,6 +551,21 @@ function ProyekContent() {
     setProjectStartDate(val);
     const { error } = await useProjectStore.getState().updateProjectStartDate(selectedProject, val);
     if (error) toast.error('Gagal memperbarui tanggal mulai proyek');
+  }
+
+  async function confirmDelete() {
+    if (!confirmDeleteId) return;
+    const { error } = await storeHandleDeleteProject(confirmDeleteId);
+    if (error) {
+      toast.error('Gagal menghapus proyek: ' + error.message);
+    } else {
+      toast.success('Proyek berhasil dihapus permanen.');
+      if (selectedProject === confirmDeleteId) {
+        setSelectedProject('');
+        setActiveTab('daftar');
+      }
+    }
+    setConfirmDeleteId(null);
   }
 
   async function saveStartDate(lineId, date) {
@@ -1139,7 +1158,7 @@ function ProyekContent() {
                               </button>
                               {(myRole === 'Owner' || member?.role === 'admin') && (
                                 <button
-                                  onClick={() => handleDeleteProject(p.id)}
+                                  onClick={() => setConfirmDeleteId(p.id)}
                                   className="p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-xl transition-all opacity-0 group-hover:opacity-100"
                                   title="Hapus Proyek"
                                 >
@@ -2005,12 +2024,24 @@ function ProyekContent() {
                 </div>
               </div>
 
-              <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4">
-                <button type="button" onClick={() => setIsIdentityModalOpen(false)} className="flex-1 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-xs uppercase tracking-widest transition-all hover:bg-slate-200 border border-slate-200 dark:border-slate-700">Batal</button>
+              <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4 items-center">
+                <button 
+                  type="button" 
+                  onClick={() => {
+                    setIsIdentityModalOpen(false);
+                    setConfirmDeleteId(selectedProject);
+                  }} 
+                  className="w-full sm:w-auto px-6 py-4 bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 font-black rounded-2xl text-[10px] uppercase tracking-widest transition-all hover:bg-red-600 hover:text-white border border-red-200 dark:border-red-900/50 flex items-center justify-center gap-2"
+                >
+                  <Trash2 className="w-4 h-4" />
+                  Hapus Proyek
+                </button>
+                <div className="flex-1" />
+                <button type="button" onClick={() => setIsIdentityModalOpen(false)} className="w-full sm:w-auto px-8 py-4 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 font-bold rounded-2xl text-[10px] uppercase tracking-widest transition-all hover:bg-slate-200 border border-slate-200 dark:border-slate-700">Batal</button>
                 <button
                   type="submit"
-                  disabled={!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim()}
-                  className={`flex-[2] py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-xs transition-all ${(!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location?.trim())
+                  disabled={!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location_id}
+                  className={`w-full sm:w-auto px-12 py-4 font-black rounded-2xl shadow-xl uppercase tracking-[0.2em] text-[10px] transition-all ${(!identityForm.name?.trim() || !identityForm.fiscal_year?.trim() || !identityForm.location_id)
                     ? 'bg-slate-200 dark:bg-slate-800 text-slate-400 cursor-not-allowed shadow-none'
                     : 'bg-indigo-600 dark:bg-orange-600 text-white hover:scale-[1.02] active:scale-95'
                     }`}
