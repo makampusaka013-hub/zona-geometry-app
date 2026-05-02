@@ -346,8 +346,30 @@ function RabSectionTable({
                         </div>
                       </div>
                     </td>
-                    <td className="px-1 py-2 text-center">
-                      <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
+                    <td className="px-1 py-2 text-center" onClick={e => e.stopPropagation()}>
+                      {row.mode === 'lumsum' ? (
+                        <>
+                          <input
+                            list={`satuan-list-${row.key}`}
+                            value={row.satuan || ''}
+                            onChange={e => updateRow(sec.id, row.key, { satuan: e.target.value.toUpperCase() })}
+                            className="w-full bg-slate-50 dark:bg-slate-900 border-none text-[9px] font-black text-slate-600 dark:text-slate-300 text-center focus:ring-1 focus:ring-indigo-500 rounded px-1"
+                            placeholder="-"
+                          />
+                          <datalist id={`satuan-list-${row.key}`}>
+                            <option value="LS" />
+                            <option value="BUAH" />
+                            <option value="SET" />
+                            <option value="M'" />
+                            <option value="M2" />
+                            <option value="M3" />
+                            <option value="KG" />
+                            <option value="Ltr" />
+                          </datalist>
+                        </>
+                      ) : (
+                        <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
+                      )}
                     </td>
                     <td className="px-1 py-2 text-center" onClick={e => e.stopPropagation()}>
                       <div className="flex items-center justify-center gap-0.5">
@@ -400,7 +422,7 @@ function RabSectionTable({
                               const val = Math.max(0, parseFloat(e.target.value) || 0);
                               updateRow(sec.id, row.key, { hargaSatuan: String(val) });
                             }}
-                            className="w-full bg-white dark:bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
+                            className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
                             placeholder="0"
                           />
                         </div>
