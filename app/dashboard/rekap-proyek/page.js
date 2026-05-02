@@ -157,6 +157,7 @@ function ProyekContent() {
     program_name: '', activity_name: '', work_name: '',
     ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
+    kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
     start_date: ''
   });
   
@@ -164,6 +165,7 @@ function ProyekContent() {
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
+    kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
     start_date: new Date().toISOString().split('T')[0]
   });
 
@@ -279,6 +281,10 @@ function ProyekContent() {
         konsultan_name: currentProjectObj?.konsultan_name || '',
         konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
         kontraktor_director: currentProjectObj?.kontraktor_director || '',
+        kadis_name: currentProjectObj?.kadis_name || '',
+        kadis_nip: currentProjectObj?.kadis_nip || '',
+        kabid_name: currentProjectObj?.kabid_name || '',
+        kabid_nip: currentProjectObj?.kabid_nip || '',
         start_date: currentProjectObj?.start_date || ''
       });
     } else if (!selectedProject) {
@@ -288,6 +294,7 @@ function ProyekContent() {
         program_name: '', activity_name: '', work_name: '',
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
         konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
+        kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
         start_date: ''
       });
     }
@@ -1930,7 +1937,7 @@ function ProyekContent() {
                       </div>
                     </div>
 
-                    {/* Kontraktor */}
+                    {/* Kontraktor & Atasan */}
                     <div className="space-y-4">
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Direktur Kontraktor</label>
@@ -1938,6 +1945,42 @@ function ProyekContent() {
                           value={identityForm.kontraktor_director}
                           onChange={e => setIdentityForm({ ...identityForm, kontraktor_director: e.target.value })}
                           placeholder="Nama Pimpinan Komanditer"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 border-dashed">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nama Kepala Bidang</label>
+                        <input
+                          value={identityForm.kabid_name}
+                          onChange={e => setIdentityForm({ ...identityForm, kabid_name: e.target.value })}
+                          placeholder="Nama Kabid Cipta Karya"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">NIP Kepala Bidang</label>
+                        <input
+                          value={identityForm.kabid_nip}
+                          onChange={e => setIdentityForm({ ...identityForm, kabid_nip: e.target.value })}
+                          placeholder="NIP: 19..."
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 border-dashed">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">Nama Kepala Dinas</label>
+                        <input
+                          value={identityForm.kadis_name}
+                          onChange={e => setIdentityForm({ ...identityForm, kadis_name: e.target.value })}
+                          placeholder="Nama Kepala Dinas PUPR"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest px-1">NIP Kepala Dinas</label>
+                        <input
+                          value={identityForm.kadis_nip}
+                          onChange={e => setIdentityForm({ ...identityForm, kadis_nip: e.target.value })}
+                          placeholder="NIP: 19..."
                           className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
