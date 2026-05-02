@@ -251,20 +251,7 @@ function DashboardContent() {
     }
   }, [router, searchParams]);
 
-  useEffect(() => { 
-    loadData();
-    
-    // [REAL-TIME SYNC] Listen for any changes to projects
-    const channel = supabase.channel('dashboard-projects-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        loadData();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   // Pemicu sinkronisasi ulang jika ada parameter pembayaran sukses
   const paymentStatus = searchParams.get('payment');
@@ -367,13 +354,14 @@ function DashboardContent() {
         supabase.from('view_project_resource_summary').select('*').eq('project_id', projectId),
       ]);
 
+      // Stale check setelah fetch selesai
       if (myVersion !== statsVersionRef.current) return;
 
-      const startDate = proj?.start_date || null;
+      const startDate = proj?.start_date;
       const laborSettings = proj?.labor_settings || {};
       const items = itemsRaw || [];
 
-      // ── Phase 2: Catalog fetch ──
+      // ── Phase 2: Catalog fetch (conditional) ──
       const masterIds = [...new Set(items.map(l => l.master_ahsp_id).filter(Boolean))];
       let catalogMap = {};
       if (masterIds.length > 0) {
@@ -386,20 +374,12 @@ function DashboardContent() {
 
       if (myVersion !== statsVersionRef.current) return;
 
-      // ── Phase 3: Compute Stats & Sync ──
+      // ── Phase 3: Compute stats & Global Ratios (CPU-light) ──
       const totalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
       const totalItems = items.length || 0;
 
-      if (proj) {
-        setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...proj } : p));
-      }
-
       let totB = 0, totT = 0;
-      resources?.forEach(r => {
-        const val = Number(r.kontribusi_nilai) || 0;
-        totB += val;
-        totT += (val * (Number(r.nilai_tkdn) || 0)) / 100;
-      });
+      resources?.forEach(r => { totB += (Number(r.kontribusi_nilai) || 0); totT += (Number(r.nilai_tkdn) || 0); });
       const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
 
       const totalUpah = resources?.filter(r => {
@@ -420,21 +400,13 @@ function DashboardContent() {
         return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E');
       }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
+      // Project-wide ratios for items without specific breakdown (Fallback)
       const resSum = totalUpah + totalBahan + totalAlat || 1;
       const fallbackRatios = {
         upah: totalUpah / resSum,
         bahan: totalBahan / resSum,
         alat: totalAlat / resSum
       };
-
-      setProjectStats({ totalItems, totalRab, tkdnPct, resources, totalUpah, totalBahan, totalAlat });
-
-      if (!startDate) {
-        setChartData([]);
-        setProjectItems(items.map(it => ({ ...it, progressRupiah: 0, totalRupiah: Number(it.jumlah || 0) })));
-        setStatsLoading(false);
-        return;
-      }
 
       const manpowerItems = computeManpower(items, catalogMap, laborSettings);
       const laborOnlyItems = manpowerItems.filter(it => it.has_labor);
@@ -446,7 +418,19 @@ function DashboardContent() {
         return { ...it, progressRupiah, totalRupiah: Number(it.jumlah || 0) };
       });
 
+      setProjectStats({ totalItems, totalRab, tkdnPct, resources, totalUpah, totalBahan, totalAlat });
       setProjectItems(itemDetailedProgress);
+
+      // ── Phase 4: Chunked Kurva-S computation (anti-freeze) ──
+      const lastFinishDay = (sequencedSchedule || []).reduce((max, it) => {
+        if (!it.seq_end) return max;
+        const d = Math.ceil((new Date(it.seq_end) - new Date(startDate)) / 86400000) + 1;
+        return d > max ? d : max;
+      }, 0);
+      const progMaxDay = (progress || []).reduce((max, p) => Number(p.day_number) > max ? Number(p.day_number) : max, 0);
+      const maxDay = Math.max(lastFinishDay || 30, progMaxDay);
+      const nonLaborSum = items.filter(it => !laborOnlyItems.some(l => l.id === it.id)).reduce((s, r) => s + Number(r.jumlah || 0), 0);
+      const denominatorRab = totalRab > 0 ? totalRab : 1;
 
       // Pre-build category ratios and breakdowns for all items
       const itemBreakdowns = items.map(it => {
@@ -461,9 +445,10 @@ function DashboardContent() {
 
         if (baseTotal > 0) {
           uRatio = details.filter(isU).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
-          bRatio = details.filter(isB).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.harga || 0), 0) / baseTotal;
-          aRatio = details.filter(isA).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.harga || 0), 0) / baseTotal;
+          bRatio = details.filter(isB).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
+          aRatio = details.filter(isA).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
         } else {
+          // Fallback to project-wide ratios if item has no valid breakdown
           uRatio = fallbackRatios.upah;
           bRatio = fallbackRatios.bahan;
           aRatio = fallbackRatios.alat;
@@ -472,17 +457,6 @@ function DashboardContent() {
         const total = Number(it.jumlah || 0);
         return { id: it.id, upah: total * uRatio, bahan: total * bRatio, alat: total * aRatio, total };
       });
-
-      // ── Phase 4: Chunked Kurva-S computation (anti-freeze) ──
-      const lastFinishDay = (sequencedSchedule || []).reduce((max, it) => {
-        if (!it.seq_end) return max;
-        const d = Math.ceil((new Date(it.seq_end) - new Date(startDate)) / 86400000) + 1;
-        return d > max ? d : max;
-      }, 0);
-      const progMaxDay = (progress || []).reduce((max, p) => Number(p.day_number) > max ? Number(p.day_number) : max, 0);
-      const maxDay = Math.max(lastFinishDay || 30, progMaxDay);
-      const nonLaborSum = items.filter(it => !laborOnlyItems.some(l => l.id === it.id)).reduce((s, r) => s + Number(r.jumlah || 0), 0);
-      const denominatorRab = totalRab > 0 ? totalRab : 1;
 
       // Split breakdowns into Labor-based (scheduled) and Non-Labor (linear)
       const scheduledBreakdowns = itemBreakdowns.filter(b => laborOnlyItems.some(l => l.id === b.id));
@@ -1022,24 +996,11 @@ function DashboardContent() {
         <div className="lg:col-span-3 space-y-8">
           {projects.length > 0 && (
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">
-                {selProject?.code || 'TANPA-KODE'} 
-                {selProject?.fiscal_year ? ` / ${selProject.fiscal_year}` : ''}
-              </h4>
-              <div className="text-xl font-black mb-6 line-clamp-2 leading-tight h-14">{selName}</div>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">{selProject?.code || 'TANPA-KODE'}</h4>
+              <div className="text-xl font-black mb-6">{selName}</div>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <Calendar className="w-4 h-4" /> 
-                  <span className="text-xs font-bold">
-                    {selProject?.start_date 
-                      ? new Date(selProject.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                      : 'Tanggal belum diatur'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <MapPin className="w-4 h-4" /> 
-                  <span className="text-xs font-bold truncate">{selProject?.location || 'Lokasi belum diatur'}</span>
-                </div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><Calendar className="w-4 h-4" /> <span className="text-xs font-bold">{selProject?.fiscal_year || '—'}</span></div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><MapPin className="w-4 h-4" /> <span className="text-xs font-bold truncate">{selProject?.location || '—'}</span></div>
               </div>
               <Link href={`/dashboard/rekap-proyek?id=${selectedId}`} className="mt-8 w-full bg-white/20 hover:bg-white/30 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
                 Detail Pekerjaan <ChevronRight className="w-4 h-4" />
