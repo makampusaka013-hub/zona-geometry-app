@@ -393,11 +393,17 @@ function DashboardContent() {
       const totalRab = Math.ceil((subtotalRab * (1 + ppnPct / 100)) / 1000) * 1000;
       const totalItems = items.length || 0;
 
+      // Identity update: Sync proj data back to projects list to fix sidebar/cards
+      if (proj) {
+        setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...proj } : p));
+      }
+
       // Calculate Resource Totals from breakdowns
       let totalUpah = 0;
       let totalBahan = 0;
       let totalAlat = 0;
       let totalTkdnValue = 0;
+      const fallbackRatios = { upah: 0.3, bahan: 0.6, alat: 0.1 };
 
       const itemBreakdowns = items.map(it => {
         let details = catalogMap[it.master_ahsp_id] || it.analisa_custom || [];
@@ -459,6 +465,29 @@ function DashboardContent() {
 
       const tkdnPct = totalRab > 0 ? (totalTkdnValue / subtotalRab) * 100 : 0;
       
+      // Mapping items to a scheduled format for S-Curve
+      const sequencedSchedule = items
+        .filter(it => it.start_date && (it.durasi_input || it.durasi_hari))
+        .map(it => {
+          const dur = Math.max(Number(it.durasi_input || it.durasi_hari || 1), 1);
+          const start = new Date(it.start_date);
+          const end = new Date(start);
+          end.setDate(start.getDate() + dur - 1);
+          return {
+            id: it.id,
+            seq_start: start.toISOString(),
+            seq_end: end.toISOString(),
+            durasi_hari: dur,
+            jumlah: Number(it.jumlah || 0)
+          };
+        });
+
+      // For S-Curve calculation, assume all items contribute to labor/non-labor stats
+      const laborOnlyItems = items.filter(it => {
+        const u = itemBreakdowns.find(x => x.id === it.id)?.upah || 0;
+        return u > 0;
+      });
+
       setProjectStats({ totalItems, totalRab, tkdnPct, resources, totalUpah, totalBahan, totalAlat });
       setProjectItems(items.map(it => {
         const b = itemBreakdowns.find(x => x.id === it.id);
