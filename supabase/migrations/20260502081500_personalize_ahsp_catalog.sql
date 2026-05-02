@@ -46,11 +46,23 @@ WITH detail_calc AS (
       ELSE 'bahan' -- Fallback ke bahan jika ragu, agar tetap muncul di list material
     END AS jenis_komponen
   FROM public.master_ahsp ma
-  -- Gunakan JOIN ke ahsp_id
   LEFT JOIN public.master_ahsp_details mad ON mad.ahsp_id = ma.id
-  LEFT JOIN public.master_konversi mk ON mk.uraian_ahsp = mad.uraian_ahsp AND (mk.satuan_ahsp IS NOT DISTINCT FROM mad.satuan_uraian)
-  LEFT JOIN public.master_harga_dasar mhd ON mhd.id = mk.item_dasar_id
-  LEFT JOIN public.master_harga_custom mhc ON (mhc.overrides_harga_dasar_id = mhd.id OR mhc.kode_item = mhd.kode_item) AND mhc.user_id = auth.uid()
+  -- JOIN 1: Lewat Tabel Konversi (Resmi)
+  LEFT JOIN public.master_konversi mk ON trim(mk.uraian_ahsp) = trim(mad.uraian_ahsp) AND (trim(mk.satuan_ahsp) IS NOT DISTINCT FROM trim(mad.satuan_uraian))
+  
+  -- JOIN 2: Harga Dasar (Bisa lewat Konversi atau langsung lewat Nama/Kode sebagai Fallback)
+  LEFT JOIN public.master_harga_dasar mhd ON (
+    mhd.id = mk.item_dasar_id OR 
+    trim(mhd.nama_item) = trim(mad.uraian_ahsp) OR 
+    trim(mhd.kode_item) = trim(mad.uraian_ahsp)
+  )
+  
+  -- JOIN 3: Harga Custom (Override)
+  LEFT JOIN public.master_harga_custom mhc ON (
+    mhc.overrides_harga_dasar_id = mhd.id OR 
+    trim(mhc.kode_item) = trim(mhd.kode_item) OR
+    trim(mhc.nama_item) = trim(mad.uraian_ahsp)
+  ) AND mhc.user_id = auth.uid()
 )
 SELECT
   master_ahsp_id,
