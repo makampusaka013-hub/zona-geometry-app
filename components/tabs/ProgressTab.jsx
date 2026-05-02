@@ -475,6 +475,8 @@ export default function ProgressTab({
                         <td key={day} className="px-1 py-4 text-center w-[55px]">
                           <input
                             type="number"
+                            step="any"
+                            min="0"
                             value={daily[day] || ''}
                             disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, e.target.value)}

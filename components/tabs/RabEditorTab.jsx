@@ -353,9 +353,14 @@ function RabSectionTable({
                       <div className="flex items-center justify-center gap-0.5">
                         <input
                           type="number"
+                          step="any"
+                          min="0"
                           value={row.profitPercent ?? ''}
                           onFocus={e => e.target.select()}
-                          onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
+                          onChange={e => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            updateProfitRow(sec.id, row.key, String(val));
+                          }}
                           className="w-8 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[9px] font-black text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
                         />
                         <span className="text-[8px] text-slate-400 font-bold">%</span>
@@ -365,9 +370,14 @@ function RabSectionTable({
                       <div className="flex flex-col items-end gap-1 relative group-vol">
                         <input
                           type="number"
+                          step="any"
+                          min="0"
                           value={row.volume ?? ''}
                           onFocus={e => e.target.select()}
-                          onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })}
+                          onChange={e => {
+                            const val = Math.max(0, parseFloat(e.target.value) || 0);
+                            updateRow(sec.id, row.key, { volume: String(val) });
+                          }}
                           className={`w-12 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-1 py-0.5 text-right font-mono font-black text-[9px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
                           placeholder="0"
                         />
@@ -382,10 +392,15 @@ function RabSectionTable({
                         <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
                           <input
                             type="number"
+                            step="any"
+                            min="0"
                             value={row.hargaSatuan ?? ''}
                             onFocus={e => e.target.select()}
-                            onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
-                            className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
+                            onChange={e => {
+                              const val = Math.max(0, parseFloat(e.target.value) || 0);
+                              updateRow(sec.id, row.key, { hargaSatuan: String(val) });
+                            }}
+                            className="w-full bg-white dark:bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
                             placeholder="0"
                           />
                         </div>
@@ -702,14 +717,14 @@ export default function RabEditorTab({
           } else if (patch.hargaSatuan !== undefined) {
             const newHarga = parseNum(patch.hargaSatuan);
             const base = parseNum(updated.baseSubtotal);
-            if (base > 100) { // Only calc profit backwards if base is significant
-              const newProfit = ((newHarga / base) - 1) * 100;
-              updated.profitPercent = String(Math.max(-100, Math.min(1000, Math.round(newProfit * 100) / 100)));
-              updated.hargaSatuan = String(newHarga);
-            } else {
+            if (updated.mode === 'lumsum' || base <= 0) {
               updated.baseSubtotal = String(newHarga);
               updated.hargaSatuan = String(newHarga);
               updated.profitPercent = "0";
+            } else {
+              const newProfit = ((newHarga / base) - 1) * 100;
+              updated.profitPercent = String(Math.max(0, Math.min(1000, Math.round(newProfit * 100) / 100)));
+              updated.hargaSatuan = String(newHarga);
             }
           }
           return updated;
@@ -756,8 +771,8 @@ export default function RabEditorTab({
       uraianCustom: data.type === 'lumsum' ? (data.nama_pekerjaan || data.nama_item || data.uraian) : '',
       satuan: data.satuan_pekerjaan || data.satuan,
       baseSubtotal: String(data.total_subtotal),
-      hargaSatuan: String(hs),
-      profitPercent: String(globalOverhead),
+      hargaSatuan: String(data.type === 'lumsum' ? data.total_subtotal : hs),
+      profitPercent: data.type === 'lumsum' ? "0" : String(globalOverhead),
       mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp',
       analisaDetails: data.details || []
     });
