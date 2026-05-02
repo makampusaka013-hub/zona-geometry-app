@@ -400,8 +400,7 @@ function RabSectionTable({
                       </button>
                     </td>
                   </tr>
-                </tr>
-              </Fragment>
+                </Fragment>
               );
             })}
 
