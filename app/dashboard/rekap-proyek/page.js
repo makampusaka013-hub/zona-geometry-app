@@ -323,10 +323,10 @@ function ProyekContent() {
     }
   }, [currentProjectObj?.id, currentProjectObj?.start_date]);
 
-  /* 
   // ── Persist Labor Settings (Debounced) ──
   useEffect(() => {
-    if (!selectedProject || !laborSettings || Object.keys(laborSettings).length === 0) return;
+    // IMPORTANT: Disable auto-save if the identity modal is open to prevent version conflicts
+    if (!selectedProject || !laborSettings || Object.keys(laborSettings).length === 0 || isIdentityModalOpen) return;
     
     const timer = setTimeout(async () => {
       // Always get the latest project object from the store's current state to avoid stale versioning
@@ -344,8 +344,7 @@ function ProyekContent() {
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [laborSettings, selectedProject, saveProjectIdentity]);
-  */
+  }, [laborSettings, selectedProject, saveProjectIdentity, isIdentityModalOpen]);
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();

@@ -474,7 +474,8 @@ export default function RabEditorTab({
   backupData = [],
   member,
   projectStartDate,
-  setProjectStartDate
+  setProjectStartDate,
+  isIdentityModalOpen = false
 }) {
   const userMember = member;
   const [loading, setLoading] = useState(true);
@@ -679,7 +680,8 @@ export default function RabEditorTab({
   // Mechanism: Debounced Auto-Save
   useEffect(() => {
     // Only auto-save if project exists and not currently loading or manual saving
-    if (!projectId || loading || saving) return;
+    // IMPORTANT: Disable auto-save if the identity modal is open to prevent version conflicts
+    if (!projectId || loading || saving || isIdentityModalOpen) return;
 
     const timer = setTimeout(() => {
       // Only auto-save if not already auto-saving
