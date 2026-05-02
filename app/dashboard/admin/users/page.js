@@ -115,7 +115,7 @@ export default function AdminUsersPage() {
     // Note: delete_user_entirely might still need the actual user_id (Auth ID), 
     // so we need to find the auth_user_id from the user data if needed.
     // For now, assuming it still uses the user_id returned by RPC.
-    const target = users.find(u => u.id === id);
+    const target = users.find(u => u.user_id === id);
     const { error } = await supabase.rpc('delete_user_entirely', { target_user_id: target?.auth_user_id || id });
     if (error) toast.error(`Gagal menghapus user: ${error.message}`);
     loadData();
@@ -123,11 +123,11 @@ export default function AdminUsersPage() {
   }
 
   const filtered = filterStatus === 'all' ? users : users.filter(u => {
-    const status = u.role === 'admin' ? 'active' : (u.approval_status || 'pending');
+    const status = u.user_role === 'admin' ? 'active' : (u.user_status || 'pending');
     return status === filterStatus;
   });
 
-  const pendingCount = users.filter(u => u.role !== 'admin' && (u.approval_status || 'pending') === 'pending').length;
+  const pendingCount = users.filter(u => u.user_role !== 'admin' && (u.user_status || 'pending') === 'pending').length;
 
   if (loading) return (
     <div className="flex min-h-[50vh] items-center justify-center">
@@ -157,9 +157,9 @@ export default function AdminUsersPage() {
       <div className="flex gap-2 mb-5 flex-wrap">
         {[
           { key: 'all', label: 'Semua' },
-          { key: 'pending', label: `Menunggu (${users.filter(u => (u.approval_status||'pending') === 'pending').length})` },
-          { key: 'active', label: `Aktif (${users.filter(u => u.approval_status === 'active').length})` },
-          { key: 'suspended', label: `Suspend (${users.filter(u => u.approval_status === 'suspended').length})` },
+          { key: 'pending', label: `Menunggu (${users.filter(u => (u.user_status||'pending') === 'pending').length})` },
+          { key: 'active', label: `Aktif (${users.filter(u => u.user_status === 'active').length})` },
+          { key: 'suspended', label: `Suspend (${users.filter(u => u.user_status === 'suspended').length})` },
         ].map(({ key, label }) => (
           <button key={key} onClick={() => setFilterStatus(key)}
             className={`px-4 py-1.5 rounded-full text-xs font-bold border transition-all ${filterStatus === key ? 'bg-indigo-600 dark:bg-orange-500 text-white border-transparent' : 'bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-slate-300'}`}>
@@ -188,18 +188,18 @@ export default function AdminUsersPage() {
                 {filtered.length === 0 ? (
                   <tr><td colSpan={6} className="px-5 py-12 text-center text-slate-400">Belum ada user pada filter ini.</td></tr>
                 ) : filtered.map((u) => {
-                  const isAdmin = u.role === 'admin';
-                  const approvalStatus = isAdmin ? 'active' : (u.approval_status || 'pending');
+                  const isAdmin = u.user_role === 'admin';
+                  const approvalStatus = isAdmin ? 'active' : (u.user_status || 'pending');
                   const sCfg = STATUS_CONFIG[approvalStatus];
                   const SIcon = sCfg.icon;
                   return (
-                    <tr key={u.id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors">
+                    <tr key={u.user_id} className="hover:bg-slate-50/80 dark:hover:bg-slate-800/30 transition-colors">
                       <td className="px-5 py-4">
-                        <div className="font-semibold text-slate-900 dark:text-slate-100">{u.email || 'Tanpa Email'}</div>
-                        <div className="text-xs text-slate-400 mt-0.5">{u.full_name || 'Tanpa Nama'}</div>
+                        <div className="font-semibold text-slate-900 dark:text-slate-100">{u.user_email || 'Tanpa Email'}</div>
+                        <div className="text-xs text-slate-400 mt-0.5">{u.user_full_name || 'Tanpa Nama'}</div>
                       </td>
                       <td className="px-5 py-4 text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                        {new Date(u.created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
+                        {new Date(u.user_created_at).toLocaleDateString('id-ID', { year: 'numeric', month: 'short', day: 'numeric' })}
                       </td>
                       <td className="px-5 py-4 text-center">
                         <div className="flex items-center justify-center gap-1 flex-wrap">
@@ -214,7 +214,7 @@ export default function AdminUsersPage() {
                               <button key={s} 
                                 onClick={(e) => {
                                   e.preventDefault();
-                                  if (!isActive && !isAdmin) handleApproveStatus(u.id, s);
+                                  if (!isActive && !isAdmin) handleApproveStatus(u.user_id, s);
                                 }}
                                 disabled={loading || isAdmin}
                                 title={isAdmin ? 'Admin selalu aktif' : (isActive ? `Status: ${cfg.label}` : `Set ${cfg.label}`)}
@@ -233,14 +233,14 @@ export default function AdminUsersPage() {
                       </td>
                       <td className="px-5 py-4 text-center">
                         <input type="date"
-                          value={u.expired_at ? new Date(u.expired_at).toISOString().split('T')[0] : ''}
-                          onChange={e => handleExpiredChange(u.id, e.target.value)}
+                          value={u.user_expired_at ? new Date(u.user_expired_at).toISOString().split('T')[0] : ''}
+                          onChange={e => handleExpiredChange(u.user_id, e.target.value)}
                           disabled={loading}
                           className="block w-full max-w-[130px] mx-auto rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 px-2 py-1 text-xs font-semibold focus:border-indigo-500 dark:focus:border-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500 shadow-sm disabled:opacity-50"
                         />
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <select value={u.role} onChange={e => handleRoleChange(u.id, e.target.value)}
+                        <select value={u.user_role} onChange={e => handleRoleChange(u.user_id, e.target.value)}
                           disabled={loading}
                           className="block w-full max-w-[110px] mx-auto rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#0f172a] text-slate-800 dark:text-slate-100 px-2 py-1 text-xs font-bold focus:border-indigo-500 dark:focus:border-orange-500 focus:ring-1 focus:ring-indigo-500 dark:focus:ring-orange-500 shadow-sm disabled:opacity-50">
                           <option value="normal">Normal</option>
@@ -250,7 +250,7 @@ export default function AdminUsersPage() {
                         </select>
                       </td>
                       <td className="px-5 py-4 text-center">
-                        <button onClick={() => handleDeleteUser(u.id, u.full_name)} title="Hapus user permanen"
+                        <button onClick={() => handleDeleteUser(u.user_id, u.user_full_name)} title="Hapus user permanen"
                           disabled={loading}
                           className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 rounded-lg transition-all focus:outline-none disabled:opacity-30">
                           <Trash2 className="w-4 h-4" />
