@@ -588,7 +588,7 @@ function DashboardContent() {
     }
   }
 
-  const selProject = projects[selectedId];
+  const selProject = projects.find(p => p.id === selectedId);
   const selName = selProject?.name || selProject?.activity_name || selProject?.work_name || '—';
 
   const processedChartData = useMemo(() => {
