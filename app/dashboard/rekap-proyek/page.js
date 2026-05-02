@@ -323,6 +323,7 @@ function ProyekContent() {
     }
   }, [currentProjectObj?.id, currentProjectObj?.start_date]);
 
+  /* 
   // ── Persist Labor Settings (Debounced) ──
   useEffect(() => {
     if (!selectedProject || !laborSettings || Object.keys(laborSettings).length === 0) return;
@@ -344,6 +345,7 @@ function ProyekContent() {
 
     return () => clearTimeout(timer);
   }, [laborSettings, selectedProject, saveProjectIdentity]);
+  */
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
