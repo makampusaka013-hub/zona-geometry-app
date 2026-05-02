@@ -8,6 +8,8 @@ import { supabase } from '@/lib/supabase';
 import { exportReportToExcel, romanize } from '@/lib/reporting';
 import { generateProjectPDF } from '@/lib/pdf_engine';
 import { generateLaporanReport as generateLaporanFormula } from '@/lib/laporan_excel';
+import { generateProjectReport } from '@/lib/excel_engine';
+import * as ProReport from '@/lib/reporting_pro';
 
 export default function ExportImportTab({ tabLoading, ahspLines, project, isModeNormal = false, userMember, subTab = 'export' }) {
   const [loadingReport, setLoadingReport] = useState(false);
