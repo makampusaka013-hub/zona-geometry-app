@@ -83,13 +83,14 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      const { lines, masterPrices, masterDetails, resources } = await fetchRabData(projectId);
+      const { lines, masterPrices, masterDetails, resources, tkdnSummary } = await fetchRabData(projectId);
       
       const nextTabData = { 
         ...get().tabData, 
         rab: lines || [], 
         ahsp: lines || [],
         harga: resources || [],
+        tkdn: tkdnSummary || { total_nilai: 0, total_tkdn_nilai: 0, total_tkdn_pct: 0, byJenis: {} },
         schedule: { lines: lines || [] }
       };
       const nextCatalog = { ...get().ahspCatalog, ...(masterDetails || {}) };
