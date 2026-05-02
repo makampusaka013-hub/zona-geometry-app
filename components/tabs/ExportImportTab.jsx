@@ -415,7 +415,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             paperSize,
             scheduleData,
             progressData: progData,
-            isStandalone: true,
+            isStandalone: false,
             fileName: `Proyek ${project.name || ''}`
           });
         }
