@@ -251,20 +251,7 @@ function DashboardContent() {
     }
   }, [router, searchParams]);
 
-  useEffect(() => { 
-    loadData();
-    
-    // [REAL-TIME SYNC] Listen for any changes to projects
-    const channel = supabase.channel('dashboard-projects-sync')
-      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
-        loadData();
-      })
-      .subscribe();
-      
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [loadData]);
+  useEffect(() => { loadData(); }, [loadData]);
 
   // Pemicu sinkronisasi ulang jika ada parameter pembayaran sukses
   const paymentStatus = searchParams.get('payment');
@@ -391,11 +378,6 @@ function DashboardContent() {
       const totalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
       const totalItems = items.length || 0;
 
-      // Identity update: Sync proj data back to projects list
-      if (proj) {
-        setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...proj } : p));
-      }
-
       let totB = 0, totT = 0;
       resources?.forEach(r => { totB += (Number(r.kontribusi_nilai) || 0); totT += (Number(r.nilai_tkdn) || 0); });
       const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
@@ -418,6 +400,7 @@ function DashboardContent() {
         return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E');
       }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
 
+      // Project-wide ratios for items without specific breakdown (Fallback)
       const resSum = totalUpah + totalBahan + totalAlat || 1;
       const fallbackRatios = {
         upah: totalUpah / resSum,
@@ -448,6 +431,32 @@ function DashboardContent() {
       const maxDay = Math.max(lastFinishDay || 30, progMaxDay);
       const nonLaborSum = items.filter(it => !laborOnlyItems.some(l => l.id === it.id)).reduce((s, r) => s + Number(r.jumlah || 0), 0);
       const denominatorRab = totalRab > 0 ? totalRab : 1;
+
+      // Pre-build category ratios and breakdowns for all items
+      const itemBreakdowns = items.map(it => {
+        let details = catalogMap[it.master_ahsp_id] || it.analisa_custom || [];
+        const baseTotal = details.reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) || 0;
+
+        const isU = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('L') || j === 'upah' || j === 'tenaga'; };
+        const isB = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('B') || k.startsWith('A') || j === 'bahan' || j === 'material'; };
+        const isA = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('M') || k.startsWith('E') || j === 'alat' || j === 'peralatan'; };
+
+        let uRatio = 0, bRatio = 0, aRatio = 0;
+
+        if (baseTotal > 0) {
+          uRatio = details.filter(isU).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
+          bRatio = details.filter(isB).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
+          aRatio = details.filter(isA).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
+        } else {
+          // Fallback to project-wide ratios if item has no valid breakdown
+          uRatio = fallbackRatios.upah;
+          bRatio = fallbackRatios.bahan;
+          aRatio = fallbackRatios.alat;
+        }
+
+        const total = Number(it.jumlah || 0);
+        return { id: it.id, upah: total * uRatio, bahan: total * bRatio, alat: total * aRatio, total };
+      });
 
       // Split breakdowns into Labor-based (scheduled) and Non-Labor (linear)
       const scheduledBreakdowns = itemBreakdowns.filter(b => laborOnlyItems.some(l => l.id === b.id));
@@ -987,24 +996,11 @@ function DashboardContent() {
         <div className="lg:col-span-3 space-y-8">
           {projects.length > 0 && (
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">
-                {selProject?.code || 'TANPA-KODE'} 
-                {selProject?.fiscal_year ? ` / ${selProject.fiscal_year}` : ''}
-              </h4>
-              <div className="text-xl font-black mb-6 line-clamp-2 leading-tight h-14">{selName}</div>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">{selProject?.code || 'TANPA-KODE'}</h4>
+              <div className="text-xl font-black mb-6">{selName}</div>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <Calendar className="w-4 h-4" /> 
-                  <span className="text-xs font-bold">
-                    {selProject?.start_date 
-                      ? new Date(selProject.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
-                      : 'Tanggal belum diatur'}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <MapPin className="w-4 h-4" /> 
-                  <span className="text-xs font-bold truncate">{selProject?.location || 'Lokasi belum diatur'}</span>
-                </div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><Calendar className="w-4 h-4" /> <span className="text-xs font-bold">{selProject?.fiscal_year || '—'}</span></div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><MapPin className="w-4 h-4" /> <span className="text-xs font-bold truncate">{selProject?.location || '—'}</span></div>
               </div>
               <Link href={`/dashboard/rekap-proyek?id=${selectedId}`} className="mt-8 w-full bg-white/20 hover:bg-white/30 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
                 Detail Pekerjaan <ChevronRight className="w-4 h-4" />
