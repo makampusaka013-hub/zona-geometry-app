@@ -161,8 +161,16 @@ const useProjectStore = create((set, get) => ({
 
   saveProjectIdentity: async (projectId, payload) => {
     try {
-      const { data, error } = await upsertProject(projectId, payload);
+      const currentProj = get().projects[projectId];
+      // Inject current version if missing to prevent conflict with partial updates
+      const finalPayload = { 
+        ...payload, 
+        version: payload.version || currentProj?.version || 1 
+      };
+      
+      const { data, error } = await upsertProject(projectId, finalPayload);
       if (error) throw error;
+      
       if (projectId) {
         get().updateProjectInList(projectId, data);
       } else {
@@ -172,6 +180,7 @@ const useProjectStore = create((set, get) => ({
       }
       return { data, error: null };
     } catch (error) {
+      console.error('Error in saveProjectIdentity store action:', error);
       return { data: null, error };
     }
   },
@@ -222,9 +231,9 @@ const useProjectStore = create((set, get) => ({
   },
 
   updateProjectStartDate: async (projectId, startDate) => {
-    const { error } = await serviceUpdateProjectStartDate(projectId, startDate);
-    if (!error) {
-      get().updateProjectInList(projectId, { start_date: startDate });
+    const { data, error } = await serviceUpdateProjectStartDate(projectId, startDate);
+    if (!error && data) {
+      get().updateProjectInList(projectId, data);
     }
     return { error };
   },
