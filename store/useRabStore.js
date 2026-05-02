@@ -18,16 +18,19 @@ const useRabStore = create((set, get) => ({
 
   // Actions
   loadRabData: async (projectId) => {
-    const { project, lines, masterPrices, error } = await fetchRabData(projectId);
+    const { project, lines, masterPrices, masterDetails, error } = await fetchRabData(projectId);
     if (!error && lines) {
       const normalizedItems = {};
       lines.forEach(line => {
         normalizedItems[line.id] = line;
       });
-      set({ rabItems: normalizedItems });
+      set({ 
+        rabItems: normalizedItems,
+        ahspCatalog: masterDetails || {}
+      });
       useScheduleStore.getState().syncFromRab(normalizedItems);
     }
-    return { project, lines, masterPrices, error };
+    return { project, lines, masterPrices, masterDetails, error };
   },
 
   setRabItems: (items) => {

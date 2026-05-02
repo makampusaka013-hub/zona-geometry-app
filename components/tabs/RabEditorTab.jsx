@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect, useTransition } from 'react';
+import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffect, useTransition, Fragment } from 'react';
 import { createPortal } from 'react-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import Spinner from '../Spinner';
@@ -301,97 +301,161 @@ function RabSectionTable({
               if (!row) return null; // Safety check to prevent crash on deletion
               const rIdx = virtualRow.index;
               return (
-                <tr
-                  key={row.key}
-                  ref={virtualizer.measureElement}
-                  data-index={virtualRow.index}
-                  className="hover:bg-slate-50 dark:hover:bg-slate-700 bg-opacity-30 transition-colors group h-[64px]"
-                >
-                  <td className="px-1 py-2 text-slate-400 font-mono text-[9px] truncate">
-                    {rIdx + 1}
-                  </td>
-                  <td className="px-1 py-2 relative group-code">
-                    <AsyncCombobox
-                      value={row.uraian}
-                      kode={row.masterAhspKode}
-                      mode={row.mode}
-                      locationId={identity?.location_id || member?.selected_location_id}
-                      onSelect={data => handleAhspSelect(sec.id, row.key, data)}
-                      placeholder="CARI..."
-                    />
-                  </td>
-                  <td className="px-1 py-2">
-                    <input
-                      value={row.uraianCustom || row.uraian || ''}
-                      onChange={e => updateRow(sec.id, row.key, { uraian: e.target.value, uraianCustom: e.target.value })}
-                      onFocus={(e) => e.target.select()}
-                      className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
-                      placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
-                    />
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
-                  </td>
-                  <td className="px-1 py-2 text-center">
-                    <div className="flex items-center justify-center gap-0.5">
-                      <input
-                        type="number"
-                        value={row.profitPercent ?? ''}
-                        onFocus={e => e.target.select()}
-                        onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
-                        className="w-8 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[9px] font-black text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
+              const isExpanded = !!row.isExpanded;
+              const details = row.analisaDetails || [];
+
+              // Sort details like in catalog: L -> A/B -> M
+              const sortedDetails = [...details].sort((a, b) => {
+                const order = { 'upah': 0, 'tenaga': 0, 'bahan': 1, 'alat': 2 };
+                const ja = (a.jenis_komponen || '').toLowerCase();
+                const jb = (b.jenis_komponen || '').toLowerCase();
+                return (order[ja] ?? 99) - (order[jb] ?? 99);
+              });
+
+              return (
+                <Fragment key={row.key}>
+                  <tr
+                    ref={virtualizer.measureElement}
+                    data-index={virtualRow.index}
+                    onClick={() => updateRow(sec.id, row.key, { isExpanded: !isExpanded })}
+                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group h-[64px] cursor-pointer ${isExpanded ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}
+                  >
+                    <td className="px-1 py-2 text-slate-400 font-mono text-[9px] truncate">
+                      {rIdx + 1}
+                    </td>
+                    <td className="px-1 py-2 relative group-code" onClick={e => e.stopPropagation()}>
+                      <AsyncCombobox
+                        value={row.uraian}
+                        kode={row.masterAhspKode}
+                        mode={row.mode}
+                        locationId={identity?.location_id || member?.selected_location_id}
+                        onSelect={data => handleAhspSelect(sec.id, row.key, data)}
+                        placeholder="CARI..."
                       />
-                      <span className="text-[8px] text-slate-400 font-bold">%</span>
-                    </div>
-                  </td>
-                  <td className="px-1 py-2 text-right">
-                    <div className="flex flex-col items-end gap-1 relative group-vol">
-                      <input
-                        type="number"
-                        value={row.volume ?? ''}
-                        onFocus={e => e.target.select()}
-                        onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })}
-                        className={`w-12 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-1 py-0.5 text-right font-mono font-black text-[9px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
-                        placeholder="0"
-                      />
-                      {isPrivileged && backupTotals[row.id || row.key] !== undefined && (
-                        <button
-                          onClick={() => updateRow(sec.id, row.key, { volume: String(backupTotals[row.id || row.key]) })}
-                          className="absolute -left-4 top-1/2 -translate-y-1/2 p-0.5 bg-amber-500 hover:bg-amber-600 text-white rounded shadow-lg opacity-0 group-hover-vol:opacity-100 transition-all scale-75"
-                          title={`Val: ${backupTotals[row.id || row.key]}`}
-                        >
-                          <Calculator className="w-2 h-2" />
-                        </button>
-                      )}
-                    </div>
-                  </td>
-                  <td className="px-1 py-2">
-                    {row.mode === 'ahsp' && row.masterAhspId ? (
-                      <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-black text-[9px] truncate bg-slate-50 dark:bg-slate-800/50 px-1 py-1 rounded border border-slate-100 dark:border-slate-700 select-none cursor-not-allowed opacity-80" title="Harga dari Analisa (Fix)">
-                        {formatIdr(parseNum(row.hargaSatuan))}
+                    </td>
+                    <td className="px-1 py-2">
+                      <div className="flex flex-col">
+                        <input
+                          value={row.uraianCustom || row.uraian || ''}
+                          onChange={e => updateRow(sec.id, row.key, { uraian: e.target.value, uraianCustom: e.target.value })}
+                          onFocus={(e) => e.target.select()}
+                          onClick={e => e.stopPropagation()}
+                          className="w-full bg-transparent border-none px-0 py-0 text-[10px] text-slate-700 dark:text-slate-300 font-bold focus:ring-0 placeholder:text-slate-400 truncate"
+                          placeholder={row.mode === 'lumsum' ? "Nama..." : "Deskripsi..."}
+                        />
+                        <div className="flex items-center gap-1 mt-0.5">
+                           <span className="text-[7px] font-black text-indigo-400 dark:text-orange-400 uppercase tracking-widest">{row.masterAhspId ? 'AHSP' : 'LUMSUM'}</span>
+                           {details.length > 0 && (
+                             <span className="text-[7px] bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-orange-400 px-1 rounded font-black border border-indigo-100 dark:border-slate-700">
+                               {isExpanded ? 'TUTUP DETAIL' : `LIHAT DETAIL (${details.length})`}
+                             </span>
+                           )}
+                        </div>
                       </div>
-                    ) : (
-                      <div className="flex flex-col gap-1">
+                    </td>
+                    <td className="px-1 py-2 text-center">
+                      <span className="text-[9px] font-black text-slate-500 uppercase">{row.satuan || '-'}</span>
+                    </td>
+                    <td className="px-1 py-2 text-center" onClick={e => e.stopPropagation()}>
+                      <div className="flex items-center justify-center gap-0.5">
                         <input
                           type="number"
-                          value={row.hargaSatuan ?? ''}
+                          value={row.profitPercent ?? ''}
                           onFocus={e => e.target.select()}
-                          onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
-                          className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
+                          onChange={e => updateProfitRow(sec.id, row.key, e.target.value)}
+                          className="w-8 h-6 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded text-center text-[9px] font-black text-slate-700 dark:text-slate-300 focus:ring-1 focus:ring-indigo-500"
+                        />
+                        <span className="text-[8px] text-slate-400 font-bold">%</span>
+                      </div>
+                    </td>
+                    <td className="px-1 py-2 text-right" onClick={e => e.stopPropagation()}>
+                      <div className="flex flex-col items-end gap-1 relative group-vol">
+                        <input
+                          type="number"
+                          value={row.volume ?? ''}
+                          onFocus={e => e.target.select()}
+                          onChange={e => updateRow(sec.id, row.key, { volume: e.target.value })}
+                          className={`w-12 bg-white dark:bg-slate-900 border ${backupTotals[row.id || row.key] ? 'border-amber-200 dark:border-amber-900 border-opacity-40 ring-2 ring-amber-500 ring-opacity-5' : 'border-slate-200 dark:border-slate-700'} px-1 py-0.5 text-right font-mono font-black text-[9px] text-indigo-600 dark:text-orange-400 rounded focus:ring-1 focus:ring-indigo-500 transition-all`}
                           placeholder="0"
                         />
                       </div>
-                    )}
-                  </td>
-                  <td className="px-1 py-2 text-right font-mono font-black text-slate-900 dark:text-white text-[10px] truncate">
-                    {formatIdr(parseNum(row.volume) * parseNum(row.hargaSatuan))}
-                  </td>
-                  <td className="px-0.5 py-2 text-center">
-                    <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-0.5 text-slate-300 hover:text-red-500 transition-colors">
-                      <Trash2 className="w-2.5 h-2.5" />
-                    </button>
-                  </td>
-                </tr>
+                    </td>
+                    <td className="px-1 py-2">
+                      {row.mode === 'ahsp' && row.masterAhspId ? (
+                        <div className="text-right font-mono text-slate-800 dark:text-slate-200 font-black text-[9px] truncate bg-slate-50 dark:bg-slate-800/50 px-1 py-1 rounded border border-slate-100 dark:border-slate-700 select-none cursor-not-allowed opacity-80" title="Harga dari Analisa (Fix)">
+                          {formatIdr(parseNum(row.hargaSatuan))}
+                        </div>
+                      ) : (
+                        <div className="flex flex-col gap-1" onClick={e => e.stopPropagation()}>
+                          <input
+                            type="number"
+                            value={row.hargaSatuan ?? ''}
+                            onFocus={e => e.target.select()}
+                            onChange={e => updateRow(sec.id, row.key, { hargaSatuan: e.target.value })}
+                            className="w-full bg-white dark:bg-slate-900 border border-indigo-100 dark:border-orange-900 border-opacity-40 px-1 py-0.5 text-right font-mono font-black text-indigo-700 dark:text-orange-500 rounded text-[9px]"
+                            placeholder="0"
+                          />
+                        </div>
+                      )}
+                    </td>
+                    <td className="px-1 py-2 text-right font-mono font-black text-slate-900 dark:text-white text-[10px] truncate">
+                      {formatIdr(parseNum(row.volume) * parseNum(row.hargaSatuan))}
+                    </td>
+                    <td className="px-0.5 py-2 text-center" onClick={e => e.stopPropagation()}>
+                      <button onClick={() => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, lines: s.lines.filter(r => r.key !== row.key) } : s))} className="p-0.5 text-slate-300 hover:text-red-500 transition-colors">
+                        <Trash2 className="w-2.5 h-2.5" />
+                      </button>
+                    </td>
+                  </tr>
+
+                  {/* EXPANDED DETAILS TABLE */}
+                  {isExpanded && details.length > 0 && (
+                    <tr>
+                      <td colSpan={9} className="px-1 py-3 bg-slate-50/50 dark:bg-slate-900/50">
+                        <div className="ml-10 mr-10 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner bg-white dark:bg-slate-800">
+                          <table className="w-full text-[9px] text-left border-collapse">
+                            <thead>
+                              <tr className="bg-slate-100 dark:bg-slate-900/50 text-slate-400 font-black uppercase tracking-wider">
+                                <th className="px-4 py-2 w-[15%]">Kode</th>
+                                <th className="px-4 py-2 w-[45%]">Uraian Komponen</th>
+                                <th className="px-4 py-2 text-center w-[8%]">Satuan</th>
+                                <th className="px-4 py-2 text-right w-[8%]">Koef</th>
+                                <th className="px-4 py-2 text-right w-[12%]">Harga Dasar</th>
+                                <th className="px-4 py-2 text-right w-[12%]">Subtotal</th>
+                              </tr>
+                            </thead>
+                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                              {sortedDetails.map((det, dIdx) => {
+                                const j = (det.jenis_komponen || '').toLowerCase();
+                                const badge = {
+                                  tenaga: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                  upah: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
+                                  bahan: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
+                                  alat: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
+                                }[j] || 'bg-slate-100 text-slate-500';
+
+                                return (
+                                  <tr key={dIdx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
+                                    <td className="px-4 py-2 font-mono font-bold text-slate-400">{det.kode_item || det.kode || '-'}</td>
+                                    <td className="px-4 py-2 font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
+                                      <span className={`text-[7px] px-1 py-0.5 rounded uppercase font-black tracking-widest ${badge}`}>{j === 'upah' || j === 'tenaga' ? 'Pekerja' : j}</span>
+                                      {det.uraian || det.nama_item}
+                                    </td>
+                                    <td className="px-4 py-2 text-center font-bold text-slate-400">{det.satuan}</td>
+                                    <td className="px-4 py-2 text-right font-mono font-bold text-indigo-500 dark:text-orange-400">{Number(det.koefisien || 0).toLocaleString('id-ID', { maximumFractionDigits: 5 })}</td>
+                                    <td className="px-4 py-2 text-right font-mono text-slate-400">{formatIdr(det.harga_konversi || det.harga)}</td>
+                                    <td className="px-4 py-2 text-right font-mono font-black text-slate-900 dark:text-white">{formatIdr(Number(det.koefisien || 0) * Number(det.harga_konversi || det.harga || 0))}</td>
+                                  </tr>
+                                );
+                              })}
+                            </tbody>
+                          </table>
+                        </div>
+                      </td>
+                    </tr>
+                  )}
+                </Fragment>
+              );
               );
             })}
 
@@ -504,7 +568,7 @@ export default function RabEditorTab({
     }
     setLoading(true);
 
-    const { project: proj, lines, masterPrices, error: loadErr } = await useRabStore.getState().loadRabData(projectId);
+    const { project: proj, lines, masterPrices, masterDetails, error: loadErr } = await useRabStore.getState().loadRabData(projectId);
 
     if (loadErr) {
       setError(loadErr.message);
@@ -555,7 +619,7 @@ export default function RabEditorTab({
           baseSubtotal: String(Math.round(basePrice)),
           profitPercent: String(finalProfit),
           mode: item.master_ahsp_id ? 'ahsp' : 'lumsum',
-          analisaDetails: item.analisa_custom || [],
+          analisaDetails: item.analisa_custom?.length > 0 ? item.analisa_custom : (masterDetails[item.master_ahsp_id] || []),
           isExpanded: false,
           version: item.version
         });
@@ -750,7 +814,7 @@ export default function RabEditorTab({
       hargaSatuan: String(hs),
       profitPercent: String(globalOverhead),
       mode: data.type === 'lumsum' ? 'lumsum' : 'ahsp',
-      analisaDetails: []
+      analisaDetails: data.details || []
     });
   };
 
