@@ -214,11 +214,12 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
                   <table className="w-full text-xs text-left border-collapse">
                     <thead>
                       <tr className="bg-slate-50 dark:bg-slate-800/50 text-[9px] font-black text-slate-400 uppercase tracking-wider">
-                        <th className="px-5 py-3">Uraian Komponen</th>
-                        <th className="px-5 py-3 text-center">Satuan</th>
-                        <th className="px-5 py-3 text-right">Koefisien</th>
-                        <th className="px-5 py-3 text-right">Harga Satuan</th>
-                        <th className="px-5 py-3 text-right">Subtotal</th>
+                        <th className="px-5 py-3 w-[15%]">Kode</th>
+                        <th className="px-5 py-3 w-[45%]">Uraian Komponen</th>
+                        <th className="px-5 py-3 text-center w-[10%]">Satuan</th>
+                        <th className="px-5 py-3 text-right w-[10%]">Koefisien</th>
+                        <th className="px-5 py-3 text-right w-[20%]">Harga Satuan</th>
+                        <th className="px-5 py-3 text-right w-[20%]">Subtotal</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
@@ -227,8 +228,9 @@ function AhspDetailModal({ item, details, hargaRows, formatIdr, onClose }) {
                         const sub = Number(d.koefisien || 0) * Number(price);
                         return (
                           <tr key={idx} className="hover:bg-slate-50 dark:hover:bg-slate-800/30 transition-colors">
-                            <td className="px-5 py-3 font-bold text-slate-700 dark:text-slate-200">{d.uraian}</td>
-                            <td className="px-5 py-3 text-center font-bold text-slate-400 uppercase">{d.satuan}</td>
+                            <td className="px-5 py-3 font-mono text-[10px] font-bold text-indigo-500 dark:text-orange-400">{d.kode_item || d.kode_item_dasar || '-'}</td>
+                            <td className="px-5 py-3 font-bold text-slate-700 dark:text-slate-200">{d.uraian || d.uraian_ahsp}</td>
+                            <td className="px-5 py-3 text-center font-bold text-slate-400 uppercase">{d.satuan || d.satuan_uraian}</td>
                             <td className="px-5 py-3 text-right font-mono font-bold text-indigo-600 dark:text-orange-400">{Number(d.koefisien || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}</td>
                             <td className="px-5 py-3 text-right font-mono text-slate-500 dark:text-slate-400">{formatIdr(price)}</td>
                             <td className="px-5 py-3 text-right font-mono font-black text-slate-900 dark:text-white">{formatIdr(sub)}</td>
