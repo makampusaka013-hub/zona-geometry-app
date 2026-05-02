@@ -278,13 +278,13 @@ function RabSectionTable({
           <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-sm">
             <tr className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
               <th className="px-1 py-2 text-left w-[2%]">#</th>
-              <th className="px-1 py-2 text-left w-[10%]">ANALISA</th>
-              <th className="px-1 py-2 text-left w-[25%]">URAIAN PEKERJAAN</th>
-              <th className="px-1 py-2 text-center w-[5%]">SAT</th>
-              <th className="px-1 py-2 text-center w-[6%]">PROFIT</th>
-              <th className="px-1 py-2 text-right w-[6%]">VOL</th>
-              <th className="px-1 py-2 text-right w-[15%]">HARGA</th>
-              <th className="px-1 py-2 text-right w-[27%]">TOTAL</th>
+              <th className="px-1 py-2 text-left w-[8%]">ANALISA</th>
+              <th className="px-1 py-2 text-left w-[48%]">URAIAN PEKERJAAN</th>
+              <th className="px-1 py-2 text-center w-[4%]">SAT</th>
+              <th className="px-1 py-2 text-center w-[5%]">PROFIT</th>
+              <th className="px-1 py-2 text-right w-[5%]">VOL</th>
+              <th className="px-1 py-2 text-right w-[13%]">HARGA</th>
+              <th className="px-1 py-2 text-right w-[13%]">TOTAL</th>
               <th className="px-1 py-2 w-[2%]"></th>
             </tr>
           </thead>
