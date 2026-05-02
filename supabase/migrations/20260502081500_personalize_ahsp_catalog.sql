@@ -1,6 +1,5 @@
 -- =============================================================================
--- Migration: Personalize AHSP Catalog & Unify Calculations
--- Target: view_katalog_ahsp_lengkap & view_analisa_ahsp
+-- REPAIR Migration: Personalize AHSP Catalog (FIX MISSING ITEMS)
 -- =============================================================================
 
 DROP VIEW IF EXISTS public.view_analisa_ahsp CASCADE;
@@ -20,13 +19,13 @@ WITH detail_calc AS (
     mad.uraian_ahsp AS detail_uraian,
     mad.satuan_uraian AS detail_satuan,
     mad.koefisien,
-    mhd.kode_item AS detail_kode_item,
+    COALESCE(mhd.kode_item, mad.uraian_ahsp) AS detail_kode_item,
     
-    -- HARGA DINAMIS: Ambil dari Custom Override jika ada, jika tidak ambil dari Harga Dasar
+    -- HARGA DINAMIS
     COALESCE(mhc.harga_satuan, mhd.harga_satuan, 0) AS harga_toko,
     
     CASE 
-      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'L' THEN 100::numeric 
+      WHEN upper(substring(trim(coalesce(mhd.kode_item, mad.uraian_ahsp)), 1, 1)) = 'L' THEN 100::numeric 
       ELSE COALESCE(mhd.tkdn_percent, 0)
     END AS detail_tkdn,
     
@@ -37,19 +36,20 @@ WITH detail_calc AS (
     
     -- Nilai TKDN
     ((COALESCE(COALESCE(mhc.harga_satuan, mhd.harga_satuan), 0) / COALESCE(NULLIF(mk.faktor_konversi, 0::numeric), 1::numeric)) * COALESCE(mad.koefisien, 0)) * 
-    (CASE WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'L' THEN 100::numeric ELSE COALESCE(mhd.tkdn_percent, 0) END / 100.0) AS nilai_tkdn,
+    (CASE WHEN upper(substring(trim(coalesce(mhd.kode_item, mad.uraian_ahsp)), 1, 1)) = 'L' THEN 100::numeric ELSE COALESCE(mhd.tkdn_percent, 0) END / 100.0) AS nilai_tkdn,
 
+    -- Deteksi Jenis Komponen yang lebih kuat
     CASE
-      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'L' THEN 'tenaga'
-      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) IN ('A', 'B') THEN 'bahan'
-      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'M' THEN 'alat'
-      ELSE 'lainnya'
+      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'L' OR lower(mad.uraian_ahsp) ~ '^(pekerja|tukang|mandor|kepala tukang)' THEN 'tenaga'
+      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) IN ('A', 'B') OR lower(mad.satuan_uraian) IN ('kg', 'm3', 'm2', 'm1', 'btg', 'bh', 'zak', 'ltr') THEN 'bahan'
+      WHEN upper(substring(trim(coalesce(mhd.kode_item, '')), 1, 1)) = 'M' OR lower(mad.uraian_ahsp) ~ '(alat|excavator|vibro|loader|truck)' THEN 'alat'
+      ELSE 'bahan' -- Fallback ke bahan jika ragu, agar tetap muncul di list material
     END AS jenis_komponen
   FROM public.master_ahsp ma
+  -- Gunakan JOIN ke ahsp_id
   LEFT JOIN public.master_ahsp_details mad ON mad.ahsp_id = ma.id
   LEFT JOIN public.master_konversi mk ON mk.uraian_ahsp = mad.uraian_ahsp AND (mk.satuan_ahsp IS NOT DISTINCT FROM mad.satuan_uraian)
   LEFT JOIN public.master_harga_dasar mhd ON mhd.id = mk.item_dasar_id
-  -- JOIN KE HARGA CUSTOM (OVERRIDE) MILIK USER
   LEFT JOIN public.master_harga_custom mhc ON (mhc.overrides_harga_dasar_id = mhd.id OR mhc.kode_item = mhd.kode_item) AND mhc.user_id = auth.uid()
 )
 SELECT
@@ -64,8 +64,6 @@ SELECT
   SUM(CASE WHEN jenis_komponen = 'tenaga' THEN COALESCE(subtotal, 0) ELSE 0::numeric END) AS total_upah,
   SUM(CASE WHEN jenis_komponen = 'bahan' THEN COALESCE(subtotal, 0) ELSE 0::numeric END) AS total_bahan,
   SUM(CASE WHEN jenis_komponen = 'alat' THEN COALESCE(subtotal, 0) ELSE 0::numeric END) AS total_alat,
-  
-  -- TOTAL SUBTOTAL ADALAH HPP MURNI (TANPA PROFIT DATABASE)
   SUM(COALESCE(subtotal, 0)) AS total_subtotal,
   
   MIN(COALESCE(subtotal, 0)) AS min_subtotal_item,
@@ -87,8 +85,7 @@ SELECT
       'koefisien', koefisien,
       'harga_konversi', (harga_toko / faktor_efektif),
       'jenis_komponen', jenis_komponen,
-      'subtotal', subtotal,
-      'tkdn', detail_tkdn
+      'subtotal', subtotal
     )
   ) FILTER (WHERE detail_uraian IS NOT NULL) AS details
   
