@@ -167,6 +167,7 @@ function ProyekContent() {
     contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
+    pptk_nip: '',
     start_date: new Date().toISOString().split('T')[0],
     version: 1
   });
@@ -1916,6 +1917,15 @@ function ProyekContent() {
                           value={identityForm.pptk_name}
                           onChange={e => setIdentityForm({ ...identityForm, pptk_name: e.target.value })}
                           placeholder="Pejabat Pelaksana Teknis"
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">NIP PPTK</label>
+                        <input
+                          value={identityForm.pptk_nip}
+                          onChange={e => setIdentityForm({ ...identityForm, pptk_nip: e.target.value })}
+                          placeholder="NIP: 19..."
                           className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
