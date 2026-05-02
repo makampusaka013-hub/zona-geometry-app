@@ -316,8 +316,7 @@ function RabSectionTable({
                   <tr
                     ref={virtualizer.measureElement}
                     data-index={virtualRow.index}
-                    onClick={() => updateRow(sec.id, row.key, { isExpanded: !isExpanded })}
-                    className={`hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group h-[64px] cursor-pointer ${isExpanded ? 'bg-indigo-50/30 dark:bg-indigo-900/10' : ''}`}
+                    className="hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors group h-[64px]"
                   >
                     <td className="px-1 py-2 text-slate-400 font-mono text-[9px] truncate">
                       {rIdx + 1}
@@ -344,11 +343,6 @@ function RabSectionTable({
                         />
                         <div className="flex items-center gap-1 mt-0.5">
                            <span className="text-[7px] font-black text-indigo-400 dark:text-orange-400 uppercase tracking-widest">{row.masterAhspId ? 'AHSP' : 'LUMSUM'}</span>
-                           {details.length > 0 && (
-                             <span className="text-[7px] bg-indigo-50 dark:bg-slate-800 text-indigo-600 dark:text-orange-400 px-1 rounded font-black border border-indigo-100 dark:border-slate-700">
-                               {isExpanded ? 'TUTUP DETAIL' : `LIHAT DETAIL (${details.length})`}
-                             </span>
-                           )}
                         </div>
                       </div>
                     </td>
@@ -406,54 +400,8 @@ function RabSectionTable({
                       </button>
                     </td>
                   </tr>
-
-                  {/* EXPANDED DETAILS TABLE */}
-                  {isExpanded && details.length > 0 && (
-                    <tr>
-                      <td colSpan={9} className="px-1 py-3 bg-slate-50/50 dark:bg-slate-900/50">
-                        <div className="ml-10 mr-10 rounded-xl border border-slate-200 dark:border-slate-700 overflow-hidden shadow-inner bg-white dark:bg-slate-800">
-                          <table className="w-full text-[9px] text-left border-collapse">
-                            <thead>
-                              <tr className="bg-slate-100 dark:bg-slate-900/50 text-slate-400 font-black uppercase tracking-wider">
-                                <th className="px-4 py-2 w-[15%]">Kode</th>
-                                <th className="px-4 py-2 w-[45%]">Uraian Komponen</th>
-                                <th className="px-4 py-2 text-center w-[8%]">Satuan</th>
-                                <th className="px-4 py-2 text-right w-[8%]">Koef</th>
-                                <th className="px-4 py-2 text-right w-[12%]">Harga Dasar</th>
-                                <th className="px-4 py-2 text-right w-[12%]">Subtotal</th>
-                              </tr>
-                            </thead>
-                            <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                              {sortedDetails.map((det, dIdx) => {
-                                const j = (det.jenis_komponen || '').toLowerCase();
-                                const badge = {
-                                  tenaga: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                                  upah: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400',
-                                  bahan: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400',
-                                  alat: 'bg-orange-100 text-orange-700 dark:bg-orange-900/30 dark:text-orange-400'
-                                }[j] || 'bg-slate-100 text-slate-500';
-
-                                return (
-                                  <tr key={dIdx} className="hover:bg-slate-50 dark:hover:bg-slate-700/30">
-                                    <td className="px-4 py-2 font-mono font-bold text-slate-400">{det.kode_item || det.kode || '-'}</td>
-                                    <td className="px-4 py-2 font-bold text-slate-700 dark:text-slate-300 flex items-center gap-2">
-                                      <span className={`text-[7px] px-1 py-0.5 rounded uppercase font-black tracking-widest ${badge}`}>{j === 'upah' || j === 'tenaga' ? 'Pekerja' : j}</span>
-                                      {det.uraian || det.nama_item}
-                                    </td>
-                                    <td className="px-4 py-2 text-center font-bold text-slate-400">{det.satuan}</td>
-                                    <td className="px-4 py-2 text-right font-mono font-bold text-indigo-500 dark:text-orange-400">{Number(det.koefisien || 0).toLocaleString('id-ID', { maximumFractionDigits: 5 })}</td>
-                                    <td className="px-4 py-2 text-right font-mono text-slate-400">{formatIdr(det.harga_konversi || det.harga)}</td>
-                                    <td className="px-4 py-2 text-right font-mono font-black text-slate-900 dark:text-white">{formatIdr(Number(det.koefisien || 0) * Number(det.harga_konversi || det.harga || 0))}</td>
-                                  </tr>
-                                );
-                              })}
-                            </tbody>
-                          </table>
-                        </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                </tr>
+              </Fragment>
               );
             })}
 
@@ -647,7 +595,7 @@ export default function RabEditorTab({
     }
 
     setLoading(false);
-  }, [projectId, globalOverhead]);
+  }, [projectId]);
 
   // Persistent Draft Logic
   useEffect(() => {
@@ -718,7 +666,7 @@ export default function RabEditorTab({
     }, 5000); // 5 seconds debounce
 
     return () => clearTimeout(timer);
-  }, [sections, identity, projectMeta, globalOverhead]);
+  }, [sections, identity, projectMeta]);
 
   useEffect(() => {
     loadRab();
