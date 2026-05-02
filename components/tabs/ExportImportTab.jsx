@@ -90,16 +90,70 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
 
       if (progressRes.error) throw progressRes.error;
 
-      await generateLaporanFormula(project, userMember, ahspLines, [reportType], {
-        progressData: progressRes.data,
-        dailyReports: reportsRes.data,
-        resources: resourcesRes.data,
-        startDate: dateRange.start,
-        endDate: dateRange.end,
-        paperSize,
-        headerImage,
-        fileName: `Laporan ${reportType.toUpperCase()} - ${project.name}`
-      });
+      // Prepare Daily Progress Map for Excel VLOOKUP
+      const progressMapByDay = {};
+      
+      // 1. Group Volume Progress
+      if (progressRes.data) {
+        progressRes.data.forEach(p => {
+          const day = p.day_number;
+          if (!progressMapByDay[day]) progressMapByDay[day] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
+          
+          if (p.entity_type === 'item') {
+            progressMapByDay[day].progressMap[p.entity_id] = Number(p.val || 0);
+          } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
+            // Check if labor
+            const res = (resourcesRes.data || []).find(r => (r.kode_item || r.uraian) === p.entity_key);
+            if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor') {
+              const key = (p.entity_name || p.entity_key || '').toLowerCase().replace(/\s/g, '_');
+              progressMapByDay[day].labor[key] = Number(p.val || 0);
+            } else if (res?.jenis === 'bahan') {
+              progressMapByDay[day].materials.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+            } else if (res?.jenis === 'alat') {
+              progressMapByDay[day].equipment.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+            }
+          }
+        });
+      }
+
+      // 2. Group Weather & Metadata
+      if (reportsRes.data) {
+        reportsRes.data.forEach(r => {
+          // Find day number from report_date relative to project start
+          const start = new Date(project.start_date);
+          const current = new Date(r.report_date);
+          const dayNum = Math.floor((current - start) / (1000 * 60 * 60 * 24)) + 1;
+          
+          if (!progressMapByDay[dayNum]) progressMapByDay[dayNum] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
+          
+          progressMapByDay[dayNum].date = r.report_date;
+          progressMapByDay[dayNum].dayName = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(current);
+          progressMapByDay[dayNum].weather = {
+            index: r.weather_index,
+            condition: r.weather_description || '-',
+            situation: r.notes || '-'
+          };
+        });
+      }
+
+      if (reportType === 'pdf') {
+        // PDF Export Logic
+        await generateProjectPDF(project, userMember, ahspLines, ['cover', 'RAB', 'REKAP'], {
+          startDate: dateRange.start,
+          endDate: dateRange.end,
+          paperSize,
+          headerImage,
+          fileName: `Laporan PDF - ${project.name}`
+        });
+      } else {
+        // Excel Export Logic (Multisheet: Harian + Mingguan + Bulanan)
+        await generateLaporanFormula(project, userMember, ahspLines, ['harian', 'mingguan', 'bulanan'], {
+          progressDataMap: progressMapByDay,
+          paperSize,
+          headerImage,
+          fileName: `Bundel Laporan Progres - ${project.name}`
+        });
+      }
 
       toast.success(`Laporan ${reportType} berhasil diunduh.`);
     } catch (err) {
@@ -649,59 +703,64 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                       </div>
                     </div>
                     <div className="flex bg-slate-100 dark:bg-slate-800 p-1 rounded-xl">
-                      {['harian', 'mingguan', 'bulanan'].map(t => (
+                      {['excel', 'pdf'].map(t => (
                         <button
                           key={t}
                           onClick={() => setReportType(t)}
-                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${reportType === t ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
+                          className={`px-3 py-1.5 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${reportType === t || (t === 'excel' && ['harian', 'mingguan', 'bulanan'].includes(reportType)) ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-400 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}
                         >
-                          {t}
+                          {t === 'excel' ? 'EXCEL (SEMUA)' : 'PDF'}
                         </button>
                       ))}
                     </div>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Mulai</label>
-                      <div className="relative group">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                        <input
-                          type="date"
-                          value={dateRange.start}
-                          onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-                        />
+                  {/* Tanggal hanya muncul untuk PDF */}
+                  {reportType === 'pdf' && (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Mulai</label>
+                        <div className="relative group">
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                          <input
+                            type="date"
+                            value={dateRange.start}
+                            onChange={e => setDateRange(prev => ({ ...prev, start: e.target.value }))}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                          />
+                        </div>
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Selesai</label>
+                        <div className="relative group">
+                          <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
+                          <input
+                            type="date"
+                            value={dateRange.end}
+                            onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
+                            className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
+                          />
+                        </div>
                       </div>
                     </div>
-                    <div className="space-y-2">
-                      <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest">Tanggal Selesai</label>
-                      <div className="relative group">
-                        <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-colors" />
-                        <input
-                          type="date"
-                          value={dateRange.end}
-                          onChange={e => setDateRange(prev => ({ ...prev, end: e.target.value }))}
-                          className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 focus:ring-indigo-500 transition-all cursor-pointer"
-                        />
-                      </div>
-                    </div>
-                  </div>
+                  )}
 
                   <div className="flex flex-col sm:flex-row gap-4">
-                    <button
-                      onClick={handleSetCurrentPeriod}
-                      className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
-                    >
-                      Set Periode Berjalan
-                    </button>
+                    {reportType === 'pdf' && (
+                      <button
+                        onClick={handleSetCurrentPeriod}
+                        className="flex-1 py-4 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-2xl text-[10px] font-black uppercase tracking-widest hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
+                      >
+                        Set Periode Berjalan
+                      </button>
+                    )}
                     <button
                       onClick={handleExportReport}
                       disabled={loadingReport}
                       className="flex-[2] py-4 bg-indigo-600 dark:bg-orange-600 text-white rounded-2xl text-[10px] font-black uppercase tracking-[0.2em] shadow-lg hover:translate-y-[-2px] active:translate-y-0 transition-all flex items-center justify-center gap-3 disabled:opacity-50"
                     >
                       {loadingReport ? <Spinner className="w-4 h-4" /> : <Download className="w-4 h-4" />}
-                      Generate Laporan {reportType}
+                      {reportType === 'pdf' ? 'Generate Laporan PDF' : 'Download Bundel Laporan (Excel)'}
                     </button>
                   </div>
                 </div>
@@ -744,19 +803,22 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                       </div>
                     </div>
                     <p className="text-slate-400 text-sm leading-relaxed">
-                      Gunakan mesin pelaporan kustom untuk memilih sheet spesifik yang akan dimasukkan ke dalam dokumen Excel Anda. Mendukung format formal untuk audit dan pengajuan termin.
+                      Mode Master Export aktif. Seluruh dokumen teknis (RAB, AHSP, HSP, Rekap, hingga Kurva-S) akan digabungkan dalam satu file Excel profesional.
                     </p>
-                    <div className="flex flex-wrap gap-2">
-                      {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule'].map(sheet => (
-                        <button
-                          key={sheet}
-                          onClick={() => toggleSheet(sheet)}
-                          className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${selectedSheets.includes(sheet) ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
-                        >
-                          {sheet}
-                        </button>
-                      ))}
-                    </div>
+                    {/* Sembunyikan pilihan sheet untuk Admin/Pro sesuai permintaan */}
+                    {!['admin', 'advance', 'pro'].includes(userMember?.role?.toLowerCase()) && (
+                      <div className="flex flex-wrap gap-2">
+                        {['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule'].map(sheet => (
+                          <button
+                            key={sheet}
+                            onClick={() => toggleSheet(sheet)}
+                            className={`px-4 py-2 rounded-xl text-[9px] font-black uppercase tracking-widest border transition-all ${selectedSheets.includes(sheet) ? 'bg-white text-slate-900 border-white' : 'bg-transparent text-white/40 border-white/10 hover:border-white/30'}`}
+                          >
+                            {sheet}
+                          </button>
+                        ))}
+                      </div>
+                    )}
 
                   </div>
                   <div className="bg-white/5 p-8 rounded-[2rem] border border-white/10 backdrop-blur-sm space-y-6 flex flex-col justify-center">
@@ -771,7 +833,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                     </div>
                     <div className="flex flex-col sm:flex-row gap-4 w-full">
                       <button
-                        onClick={handleConfirmCustomExport}
+                        onClick={() => {
+                          // Untuk Admin/Pro, otomatis pilih SEMUA sheet
+                          setSelectedSheets(['cover', 'RAB', 'REKAP', 'HSP', 'AHSP', 'HARGA SATUAN', 'schedule']);
+                          handleConfirmCustomExport();
+                        }}
                         disabled={loadingReport}
                         className="flex-1 flex items-center justify-center gap-3 bg-white dark:bg-white text-slate-900 px-8 py-5 rounded-2xl font-black text-sm uppercase tracking-widest hover:bg-slate-100 hover:scale-[1.02] active:scale-95 transition-all duration-300 shadow-xl shadow-slate-900/20 disabled:opacity-50 disabled:hover:scale-100"
                       >
@@ -780,7 +846,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                         ) : (
                           <div className="flex items-center gap-3">
                             <Download className="h-5 w-5" />
-                            <span>Export Custom .XLSX</span>
+                            <span>Download Master Bundle .XLSX</span>
                           </div>
                         )}
                       </button>
