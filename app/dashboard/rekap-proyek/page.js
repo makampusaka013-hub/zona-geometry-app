@@ -372,8 +372,8 @@ function ProyekContent() {
   async function handleUpdateProjectIdentity(e) {
     if (e) e.preventDefault();
     
-    // Fix: Find project correctly to get the latest version
-    const proj = projects.find(p => p.id === selectedProject);
+    // Fix: projects is an OBJECT, not an array.
+    const proj = projects[selectedProject];
     
     const { error } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
