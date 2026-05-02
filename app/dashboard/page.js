@@ -391,6 +391,32 @@ function DashboardContent() {
       const totalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
       const totalItems = items.length || 0;
 
+      // Identity update: Sync proj data back to projects list (Ensures sidebar updates)
+      if (proj) {
+        setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...proj } : p));
+      }
+
+      const startDate = proj?.start_date || new Date().toISOString(); 
+      const laborSettings = proj?.labor_settings || {};
+      const items = itemsRaw || [];
+
+      // ── Phase 2: Catalog fetch (conditional) ──
+      const masterIds = [...new Set(items.map(l => l.master_ahsp_id).filter(Boolean))];
+      let catalogMap = {};
+      if (masterIds.length > 0) {
+        const { data: catData } = await supabase
+          .from('view_katalog_ahsp_lengkap')
+          .select('master_ahsp_id, details')
+          .in('master_ahsp_id', masterIds);
+        catData?.forEach(c => { catalogMap[c.master_ahsp_id] = c.details; });
+      }
+
+      if (myVersion !== statsVersionRef.current) return;
+
+      // ── Phase 3: Compute stats & Global Ratios (CPU-light) ──
+      const totalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
+      const totalItems = items.length || 0;
+
       // Identity update: Sync proj data back to projects list
       if (proj) {
         setProjects(prev => prev.map(p => p.id === projectId ? { ...p, ...proj } : p));
