@@ -392,9 +392,78 @@ function DashboardContent() {
       const ppnPct = proj?.ppn_percent ?? 12;
       const totalRab = Math.ceil((subtotalRab * (1 + ppnPct / 100)) / 1000) * 1000;
       const totalItems = items.length || 0;
+
+      // Calculate Resource Totals from breakdowns
+      let totalUpah = 0;
+      let totalBahan = 0;
+      let totalAlat = 0;
+      let totalTkdnValue = 0;
+
+      const itemBreakdowns = items.map(it => {
+        let details = catalogMap[it.master_ahsp_id] || it.analisa_custom || [];
+        const baseTotal = details.reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) || 0;
+
+        const isU = d => { 
+          const k = (d.kode_item || d.kode || '').trim().toUpperCase(); 
+          const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); 
+          return k.startsWith('L') || j === 'upah' || j === 'tenaga' || j.includes('pekerja'); 
+        };
+        const isB = d => { 
+          const k = (d.kode_item || d.kode || '').trim().toUpperCase(); 
+          const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); 
+          return k.startsWith('B') || k.startsWith('A') || j === 'bahan' || j === 'material'; 
+        };
+        const isA = d => { 
+          const k = (d.kode_item || d.kode || '').trim().toUpperCase(); 
+          const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); 
+          return k.startsWith('M') || k.startsWith('E') || j === 'alat' || j === 'peralatan' || j.includes('mesin'); 
+        };
+
+        let uVal = 0, bVal = 0, aVal = 0;
+        let itTkdn = 0;
+
+        if (baseTotal > 0) {
+          const uSub = details.filter(isU).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0);
+          const bSub = details.filter(isB).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0);
+          const aSub = details.filter(isA).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0);
+          
+          // Ratio calculation
+          const uRatio = uSub / baseTotal;
+          const bRatio = bSub / baseTotal;
+          const aRatio = aSub / baseTotal;
+
+          const total = Number(it.jumlah || 0);
+          uVal = total * uRatio;
+          bVal = total * bRatio;
+          aVal = total * aRatio;
+
+          // TKDN Calculation
+          const tkdnTotal = details.reduce((s, d) => s + (Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0) * (Number(d.tkdn_pct || 0) / 100)), 0);
+          itTkdn = (tkdnTotal / baseTotal) * total;
+        } else {
+          // Fallback to 30/60/10 ratio if no details
+          const total = Number(it.jumlah || 0);
+          uVal = total * 0.3;
+          bVal = total * 0.6;
+          aVal = total * 0.1;
+          itTkdn = total * 0.4; // generic 40% fallback
+        }
+
+        totalUpah += uVal;
+        totalBahan += bVal;
+        totalAlat += aVal;
+        totalTkdnValue += itTkdn;
+
+        return { id: it.id, upah: uVal, bahan: bVal, alat: aVal, total: Number(it.jumlah || 0) };
+      });
+
+      const tkdnPct = totalRab > 0 ? (totalTkdnValue / subtotalRab) * 100 : 0;
       
       setProjectStats({ totalItems, totalRab, tkdnPct, resources, totalUpah, totalBahan, totalAlat });
-      setProjectItems(itemDetailedProgress);
+      setProjectItems(items.map(it => {
+        const b = itemBreakdowns.find(x => x.id === it.id);
+        return { ...it, progressRupiah: 0, totalRupiah: it.jumlah, upah: b?.upah || 0, bahan: b?.bahan || 0, alat: b?.alat || 0 };
+      }));
 
       // ── Phase 4: Chunked Kurva-S computation (anti-freeze) ──
       const lastFinishDay = (sequencedSchedule || []).reduce((max, it) => {
@@ -406,32 +475,6 @@ function DashboardContent() {
       const maxDay = Math.max(lastFinishDay || 30, progMaxDay);
       const nonLaborSum = items.filter(it => !laborOnlyItems.some(l => l.id === it.id)).reduce((s, r) => s + Number(r.jumlah || 0), 0);
       const denominatorRab = totalRab > 0 ? totalRab : 1;
-
-      // Pre-build category ratios and breakdowns for all items
-      const itemBreakdowns = items.map(it => {
-        let details = catalogMap[it.master_ahsp_id] || it.analisa_custom || [];
-        const baseTotal = details.reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) || 0;
-
-        const isU = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('L') || j === 'upah' || j === 'tenaga'; };
-        const isB = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('B') || k.startsWith('A') || j === 'bahan' || j === 'material'; };
-        const isA = d => { const k = (d.kode_item || d.kode || '').trim().toUpperCase(); const j = (d.jenis || d.jenis_komponen || '').toLowerCase(); return k.startsWith('M') || k.startsWith('E') || j === 'alat' || j === 'peralatan'; };
-
-        let uRatio = 0, bRatio = 0, aRatio = 0;
-
-        if (baseTotal > 0) {
-          uRatio = details.filter(isU).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
-          bRatio = details.filter(isB).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
-          aRatio = details.filter(isA).reduce((s, d) => s + Number(d.jumlah_harga_snapshot || d.jumlah_harga || 0), 0) / baseTotal;
-        } else {
-          // Fallback to project-wide ratios if item has no valid breakdown
-          uRatio = fallbackRatios.upah;
-          bRatio = fallbackRatios.bahan;
-          aRatio = fallbackRatios.alat;
-        }
-
-        const total = Number(it.jumlah || 0);
-        return { id: it.id, upah: total * uRatio, bahan: total * bRatio, alat: total * aRatio, total };
-      });
 
       // Split breakdowns into Labor-based (scheduled) and Non-Labor (linear)
       const scheduledBreakdowns = itemBreakdowns.filter(b => laborOnlyItems.some(l => l.id === b.id));
