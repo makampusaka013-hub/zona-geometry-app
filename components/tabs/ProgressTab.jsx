@@ -230,15 +230,15 @@ export default function ProgressTab({
         type: 'ahsp_item',
         status_approval: it.status_approval
       }));
-    } 
-    
+    }
+
     // Heuristic Helper for Resources
     const getJenis = (r) => {
       const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
       const code = (r.kode_item || r.key_item || '').trim().toUpperCase();
       const unit = (r.satuan || '').toUpperCase();
       const name = (r.uraian || '').toLowerCase();
-      
+
       if (rawJ === 'bahan' || rawJ === 'material' || code.startsWith('A') || code.startsWith('B')) return 'bahan';
       if (rawJ === 'upah' || rawJ === 'tenaga' || code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang')) return 'upah';
       if (rawJ === 'alat' || code.startsWith('M') || unit === 'JAM' || unit === 'SEWA') return 'alat';
@@ -327,10 +327,10 @@ export default function ProgressTab({
             <ChevronLeft className="w-4 h-4" />
           </button>
           <div className="flex flex-col items-center min-w-[120px]">
-             <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rentang Hari</span>
-             <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest leading-none">
-               {viewStartIndex + 1} - {Math.min(timeRange, viewStartIndex + daysPerPage)} dari {timeRange}
-             </span>
+            <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Rentang Hari</span>
+            <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest leading-none">
+              {viewStartIndex + 1} - {Math.min(timeRange, viewStartIndex + daysPerPage)} dari {timeRange}
+            </span>
           </div>
           <button
             onClick={() => setViewStartIndex(prev => Math.min(timeRange - 1, prev + daysPerPage))}
@@ -345,8 +345,8 @@ export default function ProgressTab({
           onClick={handleManualSave}
           disabled={savingStatus === 'saving'}
           className={`flex items-center gap-2 px-6 py-2.5 rounded-xl font-black text-[10px] uppercase tracking-widest transition-all shadow-lg active:scale-95 ${savingStatus === 'saving'
-              ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-              : 'bg-indigo-600 dark:bg-orange-600 hover:bg-indigo-700 dark:hover:bg-orange-700 text-white shadow-indigo-500/20 dark:shadow-orange-900/20'
+            ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+            : 'bg-indigo-600 dark:bg-orange-600 hover:bg-indigo-700 dark:hover:bg-orange-700 text-white shadow-indigo-500/20 dark:shadow-orange-900/20'
             }`}
         >
           {savingStatus === 'saving' ? <Spinner size="sm" /> : <Save className="w-3.5 h-3.5" />}
@@ -363,7 +363,7 @@ export default function ProgressTab({
             <div key={day} className="bg-white dark:bg-slate-900 p-3 rounded-2xl border border-slate-200 dark:border-slate-800 flex flex-col gap-2 shadow-sm">
               <div className="flex justify-between items-center">
                 <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter">H-{day}</span>
-                <select 
+                <select
                   value={report.weather_index || 1}
                   onChange={(e) => updateWeather(day, 'weather_index', parseInt(e.target.value))}
                   className="text-[10px] font-bold bg-transparent border-none focus:ring-0 text-indigo-600 dark:text-orange-400 cursor-pointer p-0"
@@ -375,7 +375,7 @@ export default function ProgressTab({
                   <option value={5}>⛈️ Badai</option>
                 </select>
               </div>
-              <input 
+              <input
                 type="text"
                 placeholder="Ket. Cuaca/Kondisi..."
                 value={report.weather_description || ''}

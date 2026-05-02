@@ -22,7 +22,7 @@ export default function DataTerpakaiTab({
   const filteredHargaRows = useMemo(() => {
     const rows = tabData?.harga || [];
     if (resFilter === 'all') return rows;
-    
+
     return rows.filter(item => {
       const rawJ = (item.jenis_komponen || '').toLowerCase();
       const code = (item.key_item || item.kode_item || '').trim().toUpperCase();
