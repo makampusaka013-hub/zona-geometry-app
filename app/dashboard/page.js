@@ -1083,8 +1083,28 @@ function DashboardContent() {
             <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Status Pekerjaan</h3>
               {(() => {
-                const lastDot = chartData[chartData.length - 1] || { realisasi: 0, rencana: 0 };
-                const deviasi = lastDot.realisasi - lastDot.rencana;
+                // Find today's day number relative to project start
+                const proj = projects.find(p => p.id === selectedId);
+                const startDate = proj?.start_date ? new Date(proj.start_date) : null;
+                const today = new Date();
+                const todayDayNum = startDate ? Math.floor((today - startDate) / 86400000) + 1 : 0;
+
+                // Search for the data point that matches "today"
+                // If not found (e.g. today is beyond project end), use the last point
+                let todayPoint = chartData.find(d => d.day === todayDayNum);
+                
+                // Fallback: If exact today is missing, try the latest point that is <= today
+                if (!todayPoint) {
+                  const pastPoints = chartData.filter(d => d.day <= todayDayNum);
+                  if (pastPoints.length > 0) {
+                    todayPoint = pastPoints[pastPoints.length - 1];
+                  } else {
+                    // If project hasn't started or no data, use the first point or last point
+                    todayPoint = chartData[chartData.length - 1] || { realisasi: 0, rencana: 0 };
+                  }
+                }
+
+                const deviasi = todayPoint.realisasi - todayPoint.rencana;
                 const isBehind = deviasi < 0;
 
                 return (
@@ -1102,11 +1122,11 @@ function DashboardContent() {
                     </div>
 
                     <div className="text-center pt-2">
-                      <div className="text-4xl font-black font-mono text-indigo-600 dark:text-orange-500">{lastDot.realisasi.toFixed(1)}%</div>
-                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Capaian Realisasi</div>
+                      <div className="text-4xl font-black font-mono text-indigo-600 dark:text-orange-500">{todayPoint.realisasi.toFixed(1)}%</div>
+                      <div className="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">Capaian Realisasi (Hari Ini)</div>
                     </div>
                     <div className="w-full h-2.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                      <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${lastDot.realisasi}%` }} />
+                      <div className="h-full bg-indigo-600 transition-all duration-1000" style={{ width: `${todayPoint.realisasi}%` }} />
                     </div>
                   </div>
                 );
