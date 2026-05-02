@@ -384,7 +384,16 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
         if (exportMode === 'catalog') {
           const { data: catAhsp } = await supabase.from('view_katalog_ahsp_lengkap').select('*');
           const { data: catPrice } = await supabase.from('master_harga_dasar').select('*, master_items(*)').eq('location_id', project.location_id);
-          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { isCatalog: true, catAhsp, catPrice, headerImage: hImg, paperSize, scheduleData, progressData: progData });
+          await generateProjectReport(project, userMember, enrichedLines, selectedSheets, { 
+            isCatalog: true, 
+            isStandalone: true, 
+            catAhsp, 
+            catPrice, 
+            headerImage: hImg, 
+            paperSize, 
+            scheduleData, 
+            progressData: progData 
+          });
         } else {
           const [projectRes, catalogRes, overrideRes] = await Promise.all([
             supabase.from('view_project_resource_summary').select('kode_item:key_item, harga_satuan:harga_snapshot').eq('project_id', project.id),
@@ -405,6 +414,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, project, isMode
             paperSize,
             scheduleData,
             progressData: progData,
+            isStandalone: true,
             fileName: `Proyek ${project.name || ''}`
           });
         }
