@@ -738,21 +738,6 @@ function ProyekContent() {
     }
   }
 
-  const handleDeleteProject = async (id) => {
-    setConfirmDeleteId(id);
-  };
-
-  const confirmDelete = async () => {
-    if (!confirmDeleteId) return;
-    const { error } = await useProjectStore.getState().handleDeleteProject(confirmDeleteId);
-    if (error) {
-      setModalStatus({ type: 'error', msg: error.message });
-    } else {
-      setModalStatus({ type: 'success', msg: 'Seluruh struktur data Proyek, CCO, MC, dan Dokumentasi telah dihapus permanen dari sistem.' });
-    }
-    setConfirmDeleteId(null);
-  };
-
   async function handleUpdateLineStatus(lineId, newStatus) {
     const { error } = await useProjectStore.getState().handleUpdateLineStatus(lineId, newStatus);
     if (error) toast.error('Gagal update status: ' + error.message);
