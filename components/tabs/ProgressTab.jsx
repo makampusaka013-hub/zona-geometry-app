@@ -239,9 +239,25 @@ export default function ProgressTab({
       const unit = (r.satuan || '').toUpperCase();
       const name = (r.uraian || '').toLowerCase();
 
-      if (rawJ === 'bahan' || rawJ === 'material' || code.startsWith('A') || code.startsWith('B')) return 'bahan';
-      if (rawJ === 'upah' || rawJ === 'tenaga' || code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang')) return 'upah';
-      if (rawJ === 'alat' || code.startsWith('M') || unit === 'JAM' || unit === 'SEWA') return 'alat';
+      // 1. Prioritas Satuan (Signal paling kuat)
+      if (unit === 'OH' || unit === 'ORG') return 'upah';
+      if (unit === 'JAM' || unit === 'SEWA') return 'alat';
+
+      // 2. Keyword Nama
+      if (/\b(pekerja|tukang|mandor|mekanik|sopir|driver)\b/.test(name)) return 'upah';
+      if (/\b(sewa|excavator|vibro|stamper|mixer|crane|truck|pompa|genset|bulldozer|grader)\b/.test(name)) return 'alat';
+
+      // 3. Jenis Explicit
+      if (rawJ.includes('upah') || rawJ.includes('tenaga')) return 'upah';
+      if (rawJ.includes('alat')) return 'alat';
+      if (rawJ.includes('bahan') || rawJ.includes('material')) return 'bahan';
+
+      // 4. Kode Prefiks (A=Tenaga, B=Bahan, C/E/M=Alat, L=Labor)
+      if (code.startsWith('A')) return 'upah';
+      if (code.startsWith('L')) return 'upah';
+      if (code.startsWith('B')) return 'bahan';
+      if (code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) return 'alat';
+
       return 'bahan'; // Fallback
     };
 
