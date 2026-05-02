@@ -161,10 +161,12 @@ const useProjectStore = create((set, get) => ({
 
   saveProjectIdentity: async (projectId, payload) => {
     try {
+      // Always get the FRESH state directly from get() to avoid stale closures
       const currentProj = get().projects[projectId];
-      // Inject current version if missing to prevent conflict with partial updates
+      
       const finalPayload = { 
         ...payload, 
+        // Use payload version if provided, otherwise fallback to the most recent store version
         version: payload.version || currentProj?.version || 1 
       };
       

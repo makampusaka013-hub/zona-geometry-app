@@ -328,15 +328,22 @@ function ProyekContent() {
     if (!selectedProject || !laborSettings || Object.keys(laborSettings).length === 0) return;
     
     const timer = setTimeout(async () => {
-      // Compare with current store object to avoid redundant saves
-      const current = projects[selectedProject]?.labor_settings;
+      // Always get the latest project object from the store's current state to avoid stale versioning
+      const latestProj = useProjectStore.getState().projects[selectedProject];
+      const current = latestProj?.labor_settings;
+      
+      // Compare with latest store object to avoid redundant saves
       if (JSON.stringify(current) === JSON.stringify(laborSettings)) return;
 
-      await saveProjectIdentity(selectedProject, { labor_settings: laborSettings });
+      console.log('Auto-saving labor settings for project:', selectedProject, 'Version:', latestProj?.version);
+      await saveProjectIdentity(selectedProject, { 
+        labor_settings: laborSettings,
+        version: latestProj?.version // Explicitly use the latest version
+      });
     }, 2000);
 
     return () => clearTimeout(timer);
-  }, [laborSettings, selectedProject]);
+  }, [laborSettings, selectedProject, saveProjectIdentity]);
 
   async function handleCreateSubmit(e) {
     if (e) e.preventDefault();
