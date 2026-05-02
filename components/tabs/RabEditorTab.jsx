@@ -269,12 +269,12 @@ function RabSectionTable({
   const totalSize = virtualizer.getTotalSize();
 
   return (
-    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700">
+    <div className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 overflow-hidden rounded-b-2xl">
       <div
         ref={parentRef}
-        className="overflow-x-auto overflow-y-auto max-h-[600px] scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 pb-4"
+        className="overflow-x-auto scrollbar-thin scrollbar-thumb-slate-200 dark:scrollbar-thumb-slate-700 pb-4"
       >
-        <table className="w-full border-separate border-spacing-0 relative table-fixed">
+        <table className="w-full min-w-[1000px] border-separate border-spacing-0 relative table-fixed">
           <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-900 shadow-sm">
             <tr className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
               <th className="px-1 py-2 text-left w-[2%]">#</th>
@@ -1105,7 +1105,7 @@ export default function RabEditorTab({
                 <div className="flex flex-col min-w-0">
                   <div className="flex items-center gap-2">
                     <h3 className="text-[11px] font-black text-slate-900 dark:text-white uppercase tracking-wider whitespace-nowrap">
-                      Builder RAB — Advanced
+                      Edit RAB
                     </h3>
                     {autoSaveStatus !== 'idle' && (
                       <div className="flex items-center gap-1 px-1.5 py-0.5 bg-slate-50 dark:bg-slate-900/50 rounded border border-slate-100 dark:border-slate-700 flex-shrink-0">
@@ -1161,13 +1161,13 @@ export default function RabEditorTab({
             {sections.map((sec, sIdx) => (
               <div key={sec.id} className="bg-white dark:bg-slate-800 rounded-2xl border border-slate-200 dark:border-slate-700 shadow-sm mb-6 last:mb-0 overflow-hidden">
                 <div className="bg-indigo-50 bg-opacity-50 dark:bg-orange-900 dark:bg-opacity-20 px-6 py-4 flex items-center justify-between border-b border-slate-200 dark:border-slate-700">
-                  <div className="flex items-center gap-3 w-full">
-                    <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400">{toRoman(sIdx + 1)}.</span>
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
+                    <span className="text-xs font-bold font-mono w-6 text-center text-indigo-600 dark:text-orange-400 shrink-0">{toRoman(sIdx + 1)}.</span>
                     <input
                       value={sec.namaBab}
                       onChange={e => setSections(prev => prev.map(s => s.id === sec.id ? { ...s, namaBab: e.target.value.toUpperCase() } : s))}
                       onFocus={(e) => e.target.select()}
-                      className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none w-full placeholder:text-slate-400 text-slate-900 dark:text-white"
+                      className="bg-transparent font-bold text-xs uppercase tracking-wider focus:outline-none flex-1 min-w-0 placeholder:text-slate-400 text-slate-900 dark:text-white"
                       placeholder="NAMA BAB PEKERJAAN..."
                     />
                   </div>

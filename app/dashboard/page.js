@@ -251,7 +251,20 @@ function DashboardContent() {
     }
   }, [router, searchParams]);
 
-  useEffect(() => { loadData(); }, [loadData]);
+  useEffect(() => { 
+    loadData();
+    
+    // [REAL-TIME SYNC] Listen for any changes to projects
+    const channel = supabase.channel('dashboard-projects-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
+        loadData();
+      })
+      .subscribe();
+      
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [loadData]);
 
   // Pemicu sinkronisasi ulang jika ada parameter pembayaran sukses
   const paymentStatus = searchParams.get('payment');
@@ -375,49 +388,11 @@ function DashboardContent() {
       if (myVersion !== statsVersionRef.current) return;
 
       // ── Phase 3: Compute stats & Global Ratios (CPU-light) ──
-      const totalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
+      const subtotalRab = items.reduce((s, r) => s + Number(r.jumlah || 0), 0) || 0;
+      const ppnPct = proj?.ppn_percent ?? 12;
+      const totalRab = Math.ceil((subtotalRab * (1 + ppnPct / 100)) / 1000) * 1000;
       const totalItems = items.length || 0;
-
-      let totB = 0, totT = 0;
-      resources?.forEach(r => { totB += (Number(r.kontribusi_nilai) || 0); totT += (Number(r.nilai_tkdn) || 0); });
-      const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
-
-      const totalUpah = resources?.filter(r => {
-        const j = (r.jenis_komponen || '').toLowerCase();
-        const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'upah' || j === 'tenaga' || j === 'worker' || k.startsWith('L');
-      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
-
-      const totalBahan = resources?.filter(r => {
-        const j = (r.jenis_komponen || '').toLowerCase();
-        const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'bahan' || j === 'material' || j === 'barang' || k.startsWith('B') || k.startsWith('A');
-      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
-
-      const totalAlat = resources?.filter(r => {
-        const j = (r.jenis_komponen || '').toLowerCase();
-        const k = (r.key_item || '').trim().toUpperCase();
-        return j === 'alat' || j === 'peralatan' || j === 'mesin' || k.startsWith('M') || k.startsWith('E');
-      }).reduce((s, r) => s + (Number(r.kontribusi_nilai) || 0), 0) || 0;
-
-      // Project-wide ratios for items without specific breakdown (Fallback)
-      const resSum = totalUpah + totalBahan + totalAlat || 1;
-      const fallbackRatios = {
-        upah: totalUpah / resSum,
-        bahan: totalBahan / resSum,
-        alat: totalAlat / resSum
-      };
-
-      const manpowerItems = computeManpower(items, catalogMap, laborSettings);
-      const laborOnlyItems = manpowerItems.filter(it => it.has_labor);
-      const sequencedSchedule = getSequencedSchedule(laborOnlyItems, startDate);
-
-      const itemDetailedProgress = sequencedSchedule.map(it => {
-        const totalProgressVal = progress?.filter(p => p.entity_id === it.id && p.entity_type === 'ahsp_item').reduce((sum, p) => sum + Number(p.val || 0), 0) || 0;
-        const progressRupiah = Number(it.volume || 0) > 0 ? (totalProgressVal / Number(it.volume)) * Number(it.jumlah || 0) : 0;
-        return { ...it, progressRupiah, totalRupiah: Number(it.jumlah || 0) };
-      });
-
+      
       setProjectStats({ totalItems, totalRab, tkdnPct, resources, totalUpah, totalBahan, totalAlat });
       setProjectItems(itemDetailedProgress);
 
@@ -996,11 +971,24 @@ function DashboardContent() {
         <div className="lg:col-span-3 space-y-8">
           {projects.length > 0 && (
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
-              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">{selProject?.code || 'TANPA-KODE'}</h4>
-              <div className="text-xl font-black mb-6">{selName}</div>
+              <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">
+                {selProject?.code || 'TANPA-KODE'} 
+                {selProject?.fiscal_year ? ` / ${selProject.fiscal_year}` : ''}
+              </h4>
+              <div className="text-xl font-black mb-6 line-clamp-2 leading-tight h-14">{selName}</div>
               <div className="space-y-4">
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><Calendar className="w-4 h-4" /> <span className="text-xs font-bold">{selProject?.fiscal_year || '—'}</span></div>
-                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl"><MapPin className="w-4 h-4" /> <span className="text-xs font-bold truncate">{selProject?.location || '—'}</span></div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
+                  <Calendar className="w-4 h-4" /> 
+                  <span className="text-xs font-bold">
+                    {selProject?.start_date 
+                      ? new Date(selProject.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
+                      : 'Tanggal belum diatur'}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
+                  <MapPin className="w-4 h-4" /> 
+                  <span className="text-xs font-bold truncate">{selProject?.location || 'Lokasi belum diatur'}</span>
+                </div>
               </div>
               <Link href={`/dashboard/rekap-proyek?id=${selectedId}`} className="mt-8 w-full bg-white/20 hover:bg-white/30 py-4 rounded-2xl text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 transition-all">
                 Detail Pekerjaan <ChevronRight className="w-4 h-4" />

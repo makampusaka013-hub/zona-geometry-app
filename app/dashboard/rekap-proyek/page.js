@@ -767,7 +767,7 @@ function ProyekContent() {
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 flex-nowrap lg:flex-initial overflow-visible">
+            <div className="flex-1 flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-800 overflow-x-auto scrollbar-hide snap-x">
               {visibleTabs.map(tab => (
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
