@@ -103,15 +103,25 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
               const valNum = parseFloat(p.val || 0);
               progressMapByDay[day].progressMap[p.entity_id] = isNaN(valNum) ? 0 : valNum;
             } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
-              const res = (resourcesRes.data || []).find(r => (r.kode_item || r.uraian) === p.entity_key);
-              if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor') {
+              const res = (resourcesRes.data || []).find(r => 
+                (r.kode_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
+              );
+              if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor' || p.entity_key?.toLowerCase().includes('pekerja')) {
                 const key = (p.entity_name || p.entity_key || '').toLowerCase().replace(/\s/g, '_');
                 const valNum = parseFloat(p.val || 0);
                 progressMapByDay[day].labor[key] = isNaN(valNum) ? 0 : valNum;
-              } else if (res?.jenis === 'bahan') {
-                progressMapByDay[day].materials.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+              } else if (res?.jenis === 'bahan' || p.entity_type === 'resource') {
+                progressMapByDay[day].materials.push({ 
+                  name: p.entity_name || p.entity_key, 
+                  volume: p.val, 
+                  unit: res?.satuan || '-' 
+                });
               } else if (res?.jenis === 'alat') {
-                progressMapByDay[day].equipment.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+                progressMapByDay[day].equipment.push({ 
+                  name: p.entity_name || p.entity_key, 
+                  volume: p.val, 
+                  unit: res?.satuan || '-' 
+                });
               }
             }
           });
