@@ -81,6 +81,10 @@ export default function ProgressTab({
           if (row.entity_type === 'custom_labor' && !row.entity_id) {
             customs.add(row.entity_name);
           }
+          // Support loading supervision_staff as well
+          if (row.entity_type === 'supervision_staff') {
+            // key will be row.entity_id (like 'direksi_tl')
+          }
         });
         setProgressData(mapped);
         setCustomRoles(Array.from(customs));
@@ -517,7 +521,8 @@ export default function ProgressTab({
                               const val = e.target.value;
                               // Allow only numbers, comma, and period
                               if (/^[0-9,.]*$/.test(val)) {
-                                updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, val);
+                                const entityName = row.type === 'supervision_staff' ? row.name : (row.type === 'custom_labor' ? row.name : null);
+                                updateCell(row.id, entityName, row.type, day, val);
                               }
                             }}
                             className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30"
