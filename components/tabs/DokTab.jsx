@@ -30,6 +30,7 @@ export default function DokTab({
   });
   const [googleToken, setGoogleToken] = React.useState(null);
   const [isDriveLoading, setIsDriveLoading] = React.useState(false);
+  const [isExportLoading, setIsExportLoading] = React.useState(false);
 
   // Load Google Scripts on Mount
   React.useEffect(() => {
@@ -229,10 +230,19 @@ export default function DokTab({
           )}
             <button
               onClick={handleExportExcel}
-              className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-600/30 transition-all text-sm font-medium"
+              disabled={isExportLoading}
+              className={`flex items-center gap-2 px-4 py-2 border rounded-xl transition-all text-sm font-medium ${
+                isExportLoading 
+                ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed' 
+                : 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 hover:bg-emerald-600/30'
+              }`}
             >
-              <FileSpreadsheet className="w-4 h-4" />
-              <span>Ekspor Excel</span>
+              {isExportLoading ? (
+                <div className="w-4 h-4 border-2 border-emerald-400 border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <FileSpreadsheet className="w-4 h-4" />
+              )}
+              <span>{isExportLoading ? 'Mengekspor...' : 'Ekspor Excel'}</span>
             </button>
 
             {!googleToken ? (
