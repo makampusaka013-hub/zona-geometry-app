@@ -286,12 +286,14 @@ function ProyekContent() {
         pptk_nip: currentProjectObj?.pptk_nip || '',
         konsultan_name: currentProjectObj?.konsultan_name || '',
         konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
+        konsultan_title: currentProjectObj?.konsultan_title || '', // Added
         kontraktor_director: currentProjectObj?.kontraktor_director || '',
+        kontraktor_title: currentProjectObj?.kontraktor_title || '', // Added
         kadis_name: currentProjectObj?.kadis_name || '',
         kadis_nip: currentProjectObj?.kadis_nip || '',
         kabid_name: currentProjectObj?.kabid_name || '',
         kabid_nip: currentProjectObj?.kabid_nip || '',
-        kontraktor_name: currentProjectObj?.kontraktor_name || '', // New Field
+        kontraktor_name: currentProjectObj?.kontraktor_name || '',
         start_date: currentProjectObj?.start_date || '',
         version: currentProjectObj?.version || 1
       });
@@ -301,8 +303,9 @@ function ProyekContent() {
         contract_number: '', hsp_value: 0, ppn_percent: 12,
         program_name: '', activity_name: '', work_name: '',
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
-        konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
-        kontraktor_name: '', // New Field
+        konsultan_name: '', konsultan_supervisor: '', konsultan_title: '',
+        kontraktor_director: '', kontraktor_title: '',
+        kontraktor_name: '',
         kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
         start_date: '',
         version: 1
@@ -1988,8 +1991,7 @@ function ProyekContent() {
                         <input
                           value={identityForm.konsultan_name}
                           onChange={e => setIdentityForm({ ...identityForm, konsultan_name: e.target.value })}
-                          placeholder="PT. / CV. ..."
-                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                       <div className="space-y-2">
@@ -1997,8 +1999,16 @@ function ProyekContent() {
                         <input
                           value={identityForm.konsultan_supervisor}
                           onChange={e => setIdentityForm({ ...identityForm, konsultan_supervisor: e.target.value })}
-                          placeholder="Nama penanda tangan"
-                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Jabatan Konsultan</label>
+                        <input
+                          placeholder="Contoh: Team Leader"
+                          value={identityForm.konsultan_title}
+                          onChange={e => setIdentityForm({ ...identityForm, konsultan_title: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                     </div>
@@ -2010,8 +2020,7 @@ function ProyekContent() {
                         <input
                           value={identityForm.kontraktor_name}
                           onChange={e => setIdentityForm({ ...identityForm, kontraktor_name: e.target.value })}
-                          placeholder="PT. / CV. ..."
-                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                       <div className="space-y-2">
@@ -2019,8 +2028,16 @@ function ProyekContent() {
                         <input
                           value={identityForm.kontraktor_director}
                           onChange={e => setIdentityForm({ ...identityForm, kontraktor_director: e.target.value })}
-                          placeholder="Nama Pimpinan Komanditer"
-                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Jabatan Kontraktor</label>
+                        <input
+                          placeholder="Contoh: Direktur"
+                          value={identityForm.kontraktor_title}
+                          onChange={e => setIdentityForm({ ...identityForm, kontraktor_title: e.target.value })}
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                         />
                       </div>
                       <div className="space-y-2 pt-2 border-t border-slate-100 dark:border-slate-800 border-dashed">
