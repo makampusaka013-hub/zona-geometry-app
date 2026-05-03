@@ -1,10 +1,35 @@
 import React from 'react';
 import Image from 'next/image';
 import Spinner from '../Spinner';
-import { Camera, MapPin, Box, FileSpreadsheet } from 'lucide-react';
+import { Camera, MapPin, Box, FileSpreadsheet, Plus, X, Upload, Trash2, Calendar, CloudSun, Save } from 'lucide-react';
 import { generateDokumentasiReport } from '@/lib/dokumentasi_excel';
+import { supabase } from '@/lib/supabase';
+import { toast } from '@/lib/toast';
 
-export default function DokTab({ activeTab, tabLoading, tabData }) {
+export default function DokTab({ 
+  activeTab, 
+  tabLoading, 
+  tabData, 
+  projectId, 
+  projectStartDate, 
+  isOwner, 
+  isAdmin, 
+  isAdvance, 
+  isPro, 
+  userSlotRole, 
+  onRefresh 
+}) {
+  const [showAddForm, setShowAddForm] = React.useState(false);
+  const [isSaving, setIsSaving] = React.useState(false);
+  const [form, setForm] = React.useState({
+    date: new Date().toISOString().split('T')[0],
+    weather: '☀️ Cerah',
+    notes: '',
+    photos: [] // { file, preview, caption }
+  });
+
+  const canEdit = isOwner || isAdmin || isAdvance || isPro || userSlotRole === 'pembuat';
+
   if (activeTab !== 'dok') return null;
 
   if (tabLoading) return <Spinner />;
@@ -28,22 +53,240 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
       });
     } catch (e) {
       console.error('Gagal cetak excel:', e);
-      alert('Gagal mengekspor dokumentasi ke Excel.');
+      toast.error('Gagal mengekspor dokumentasi ke Excel.');
+    }
+  };
+
+  const handleFileChange = (e) => {
+    const files = Array.from(e.target.files);
+    const newPhotos = files.map(file => ({
+      file,
+      preview: URL.createObjectURL(file),
+      caption: ''
+    }));
+    setForm(prev => ({ ...prev, photos: [...prev.photos, ...newPhotos] }));
+  };
+
+  const removePhoto = (index) => {
+    setForm(prev => {
+      const newPhotos = [...prev.photos];
+      URL.revokeObjectURL(newPhotos[index].preview);
+      newPhotos.splice(index, 1);
+      return { ...prev, photos: newPhotos };
+    });
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (!projectId) return;
+    setIsSaving(true);
+
+    try {
+      // 1. Dapatkan atau Buat Laporan Harian (Daily Report)
+      let reportId = null;
+      const { data: existingReport } = await supabase
+        .from('daily_reports')
+        .select('id')
+        .eq('project_id', projectId)
+        .eq('report_date', form.date)
+        .maybeSingle();
+
+      if (existingReport) {
+        reportId = existingReport.id;
+      } else {
+        const { data: newReport, error: reportErr } = await supabase
+          .from('daily_reports')
+          .insert({
+            project_id: projectId,
+            report_date: form.date,
+            weather_description: form.weather,
+            notes: form.notes
+          })
+          .select()
+          .single();
+        
+        if (reportErr) throw reportErr;
+        reportId = newReport.id;
+      }
+
+      // 2. Upload Foto ke Storage dan Simpan ke DB
+      for (const item of form.photos) {
+        const fileName = `${Date.now()}_${item.file.name}`;
+        const filePath = `${projectId}/${form.date}/${fileName}`;
+
+        const { error: uploadErr } = await supabase.storage
+          .from('project-photos')
+          .upload(filePath, item.file);
+
+        if (uploadErr) {
+          console.warn('Gagal upload ke storage, mencoba fallback...', uploadErr);
+          // Jika bucket belum ada atau error, kita skip upload storage 
+          // tapi biasanya admin harus set up bucket dulu
+          throw uploadErr;
+        }
+
+        const { data: { publicUrl } } = supabase.storage
+          .from('project-photos')
+          .getPublicUrl(filePath);
+
+        const { error: photoErr } = await supabase
+          .from('project_photos')
+          .insert({
+            report_id: reportId,
+            photo_url: publicUrl,
+            caption: item.caption,
+            uploaded_at: new Date().toISOString()
+          });
+
+        if (photoErr) throw photoErr;
+      }
+
+      toast.success('Dokumentasi berhasil disimpan!');
+      setShowAddForm(false);
+      setForm({ date: new Date().toISOString().split('T')[0], weather: '☀️ Cerah', notes: '', photos: [] });
+      if (onRefresh) onRefresh();
+    } catch (err) {
+      console.error('Save documentation error:', err);
+      toast.error('Gagal menyimpan dokumentasi: ' + (err.message || 'Terjadi kesalahan'));
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <div className="flex flex-col gap-8">
       {/* Header Actions */}
-      <div className="flex justify-end px-2">
-        <button 
-          onClick={handlePrintExcel}
-          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          Ekspor Dokumentasi (Excel)
-        </button>
+      <div className="flex items-center justify-between px-2">
+        <div className="flex flex-col">
+          <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.2em]">Dokumentasi Lapangan</h3>
+          <p className="text-[9px] text-slate-400 font-medium">Total {tabData.dok?.length || 0} Laporan Dokumentasi</p>
+        </div>
+        <div className="flex gap-3">
+          {canEdit && (
+            <button 
+              onClick={() => setShowAddForm(!showAddForm)}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-black text-[10px] uppercase tracking-widest transition-all active:scale-95 shadow-lg ${
+                showAddForm ? 'bg-slate-200 text-slate-600' : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20'
+              }`}
+            >
+              {showAddForm ? <X className="w-4 h-4" /> : <Plus className="w-4 h-4" />}
+              {showAddForm ? 'Batal' : 'Tambah Dokumentasi'}
+            </button>
+          )}
+          <button 
+            onClick={handlePrintExcel}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            Ekspor (Excel)
+          </button>
+        </div>
       </div>
+
+      {/* Add Form */}
+      {showAddForm && (
+        <div className="bg-white dark:bg-[#1e293b] rounded-[32px] border border-indigo-100 dark:border-slate-700 shadow-2xl p-8 animate-in slide-in-from-top-4 duration-300">
+          <form onSubmit={handleSubmit} className="space-y-8">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <Calendar className="w-3.5 h-3.5" /> Tanggal Laporan
+                </label>
+                <input 
+                  type="date" 
+                  required
+                  value={form.date}
+                  onChange={e => setForm(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                  <CloudSun className="w-3.5 h-3.5" /> Kondisi Cuaca
+                </label>
+                <select 
+                  value={form.weather}
+                  onChange={e => setForm(prev => ({ ...prev, weather: e.target.value }))}
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all"
+                >
+                  <option>☀️ Cerah</option>
+                  <option>⛅ Berawan</option>
+                  <option>🌦️ Gerimis</option>
+                  <option>🌧️ Hujan</option>
+                  <option>⛈️ Badai</option>
+                </select>
+              </div>
+              <div className="md:col-span-3 space-y-2">
+                <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Catatan Lapangan</label>
+                <textarea 
+                  placeholder="Tuliskan catatan kemajuan pekerjaan, kendala, atau instruksi lapangan..."
+                  value={form.notes}
+                  onChange={e => setForm(prev => ({ ...prev, notes: e.target.value }))}
+                  className="w-full px-5 py-4 bg-slate-50 dark:bg-[#020617] border border-slate-200 dark:border-slate-800 rounded-2xl text-xs font-bold outline-none focus:ring-2 focus:ring-indigo-500/20 transition-all min-h-[100px]"
+                />
+              </div>
+            </div>
+
+            <div className="space-y-4">
+              <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest flex items-center gap-2">
+                <Camera className="w-3.5 h-3.5" /> Unggah Foto Lapangan
+              </label>
+              
+              <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                {form.photos.map((item, idx) => (
+                  <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden border border-slate-200 dark:border-slate-700 bg-slate-100 dark:bg-slate-800">
+                    <img src={item.preview} className="w-full h-full object-cover" alt="Preview" />
+                    <button 
+                      type="button"
+                      onClick={() => removePhoto(idx)}
+                      className="absolute top-2 right-2 p-1.5 bg-rose-500 text-white rounded-lg opacity-0 group-hover:opacity-100 transition-all shadow-lg"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                    <div className="absolute bottom-0 left-0 right-0 p-2 bg-black/50 backdrop-blur-sm">
+                      <input 
+                        type="text" 
+                        placeholder="Keterangan..."
+                        value={item.caption}
+                        onChange={e => {
+                          const newPhotos = [...form.photos];
+                          newPhotos[idx].caption = e.target.value;
+                          setForm(prev => ({ ...prev, photos: newPhotos }));
+                        }}
+                        className="w-full bg-transparent border-none p-0 text-[9px] text-white placeholder:text-white/60 focus:ring-0 outline-none font-bold"
+                      />
+                    </div>
+                  </div>
+                ))}
+                
+                <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-orange-500 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/20 group">
+                  <Upload className="w-6 h-6 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pilih Foto</span>
+                  <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
+                </label>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-slate-100 dark:border-slate-800">
+              <button 
+                type="button" 
+                onClick={() => setShowAddForm(false)}
+                className="px-8 py-4 bg-slate-100 dark:bg-slate-800 text-slate-500 font-bold rounded-2xl text-[10px] uppercase tracking-widest hover:bg-slate-200 transition-all"
+              >
+                Batal
+              </button>
+              <button 
+                type="submit" 
+                disabled={isSaving || form.photos.length === 0}
+                className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
+              >
+                {isSaving ? <Spinner size="sm" color="white" /> : <Save className="w-4 h-4" />}
+                {isSaving ? 'Menyimpan...' : 'Simpan Dokumentasi'}
+              </button>
+            </div>
+          </form>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 gap-8">
       {tabData.dok.map((rep) => (

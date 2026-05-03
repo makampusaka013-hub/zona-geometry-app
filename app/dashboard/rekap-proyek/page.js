@@ -1320,7 +1320,20 @@ function ProyekContent() {
 
               {activeTab === 'dok' && hasProject && (
                 <ErrorBoundary>
-                  <DokTab {...{ activeTab, tabLoading, tabData, formatIdr }} />
+                  <DokTab {...{ 
+                    activeTab, 
+                    tabLoading, 
+                    tabData, 
+                    formatIdr, 
+                    projectId: selectedProject,
+                    projectStartDate,
+                    isOwner,
+                    isAdmin,
+                    isAdvance,
+                    isPro,
+                    userSlotRole,
+                    onRefresh: () => fetchTabData(activeTab, selectedProject, currentProjectObj)
+                  }} />
                 </ErrorBoundary>
               )}
 

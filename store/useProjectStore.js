@@ -109,6 +109,17 @@ const useProjectStore = create((set, get) => ({
         nextTabData.changes = changes || [];
       }
 
+      if (activeTab === 'dok') {
+        // Fetch daily reports along with their nested photos
+        const { data: reports } = await supabase
+          .from('daily_reports')
+          .select('*, project_photos(*)')
+          .eq('project_id', projectId)
+          .order('report_date', { ascending: false });
+        
+        nextTabData.dok = reports || [];
+      }
+
       set({ 
         tabData: nextTabData, 
         ahspCatalog: nextCatalog,
