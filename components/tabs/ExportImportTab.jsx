@@ -134,17 +134,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                 else if (name.includes('direksi')) key = 'direksi';
 
                 const valNum = parseFloat(p.val || 0);
-                progressMapByDay[day].labor[key] = isNaN(valNum) ? 0 : valNum;
+                const currentVal = progressMapByDay[day].labor[key] || 0;
+                progressMapByDay[day].labor[key] = currentVal + (isNaN(valNum) ? 0 : valNum);
               } else if (jenis === 'alat') {
                 progressMapByDay[day].equipment.push({ 
-                  name: p.entity_name || p.entity_key, 
+                  name: res?.uraian || p.entity_name || p.entity_key, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
                 });
               } else {
                 // Default to Bahan
                 progressMapByDay[day].materials.push({ 
-                  name: p.entity_name || p.entity_key, 
+                  name: res?.uraian || p.entity_name || p.entity_key, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
                 });
