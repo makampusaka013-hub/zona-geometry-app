@@ -256,12 +256,12 @@ function DashboardContent() {
         .order('updated_at', { ascending: false });
 
       setProjects(proj || []);
-      
+
       // 3. Logic Pemilihan Proyek (Prioritas: URL > Store > First Project)
       if (proj?.length > 0) {
         const urlId = searchParams.get('id');
         const storeId = useProjectStore.getState().selectedProject;
-        
+
         if (urlId && proj.some(p => p.id === urlId)) {
           setSelectedId(urlId);
           if (storeId !== urlId) setStoreSelectedProject(urlId);
@@ -278,16 +278,16 @@ function DashboardContent() {
     }
   }, [router, searchParams]);
 
-  useEffect(() => { 
+  useEffect(() => {
     loadData();
-    
+
     // [REAL-TIME SYNC] Listen for any changes to projects
     const channel = supabase.channel('dashboard-projects-sync')
       .on('postgres_changes', { event: '*', schema: 'public', table: 'projects' }, () => {
         loadData();
       })
       .subscribe();
-      
+
     return () => {
       supabase.removeChannel(channel);
     };
@@ -633,7 +633,7 @@ function DashboardContent() {
 
     const interval = sCurveFreq === 'weekly' ? 7 : (sCurveFreq === 'monthly' ? 30 : 1);
     const prefix = sCurveFreq === 'weekly' ? 'M' : (sCurveFreq === 'monthly' ? 'B' : 'H');
-    
+
     let rawGrouped = [];
 
     if (sCurveFreq === 'daily') {
@@ -655,12 +655,12 @@ function DashboardContent() {
         if (todayDayNum > lastInjectedDay && todayDayNum < last.day) {
           const tPoint = chartData.find(d => d.day === todayDayNum);
           if (tPoint) {
-            rawGrouped.push({ 
-              ...tPoint, 
-              name: 'HARI INI', 
+            rawGrouped.push({
+              ...tPoint,
+              name: 'HARI INI',
               isToday: true,
               // Untuk bar di titik selipan, kita biarkan 0 agar tidak merusak total akumulasi bar mingguan
-              dailyUpah: 0, dailyBahan: 0, dailyAlat: 0 
+              dailyUpah: 0, dailyBahan: 0, dailyAlat: 0
             });
             lastInjectedDay = todayDayNum;
           }
@@ -669,7 +669,7 @@ function DashboardContent() {
         const sumUpah = chunk.reduce((s, c) => s + (c.dailyUpah || 0), 0);
         const sumBahan = chunk.reduce((s, c) => s + (c.dailyBahan || 0), 0);
         const sumAlat = chunk.reduce((s, c) => s + (c.dailyAlat || 0), 0);
-        
+
         rawGrouped.push({
           ...last,
           name: last.day === todayDayNum ? 'HARI INI' : `${prefix}-${Math.floor(i / interval) + 1}`,
@@ -693,7 +693,7 @@ function DashboardContent() {
     return rawGrouped.map(point => {
       const isPastOrToday = point.day <= todayDayNum;
       const isFutureOrToday = point.day >= todayDayNum;
-      
+
       return {
         ...point,
         realisasiSolid: isPastOrToday ? point.realisasi : null,
@@ -1096,21 +1096,21 @@ function DashboardContent() {
           {projects.length > 0 && (
             <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
               <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">
-                {selProject?.code || 'TANPA-KODE'} 
+                {selProject?.code || 'TANPA-KODE'}
                 {selProject?.fiscal_year ? ` / ${selProject.fiscal_year}` : ''}
               </h4>
               <div className="text-xl font-black mb-6 line-clamp-2 leading-tight h-14">{selName}</div>
               <div className="space-y-4">
                 <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <Calendar className="w-4 h-4" /> 
+                  <Calendar className="w-4 h-4" />
                   <span className="text-xs font-bold">
-                    {selProject?.start_date 
+                    {selProject?.start_date
                       ? new Date(selProject.start_date).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })
                       : 'Tanggal belum diatur'}
                   </span>
                 </div>
                 <div className="flex items-center gap-3 bg-white/10 p-3 rounded-2xl">
-                  <MapPin className="w-4 h-4" /> 
+                  <MapPin className="w-4 h-4" />
                   <span className="text-xs font-bold truncate">{selProject?.location || 'Lokasi belum diatur'}</span>
                 </div>
               </div>
@@ -1165,7 +1165,7 @@ function DashboardContent() {
                 // Search for the data point that matches "today"
                 // If not found (e.g. today is beyond project end), use the last point
                 let todayPoint = chartData.find(d => d.day === todayDayNum);
-                
+
                 // Fallback: If exact today is missing, try the latest point that is <= today
                 if (!todayPoint) {
                   const pastPoints = chartData.filter(d => d.day <= todayDayNum);
