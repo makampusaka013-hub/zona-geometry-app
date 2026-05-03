@@ -168,6 +168,7 @@ function ProyekContent() {
     program_name: '', activity_name: '', work_name: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
     pptk_nip: '',
+    kontraktor_name: '', // Added
     start_date: new Date().toISOString().split('T')[0],
     version: 1
   });
@@ -290,6 +291,7 @@ function ProyekContent() {
         kadis_nip: currentProjectObj?.kadis_nip || '',
         kabid_name: currentProjectObj?.kabid_name || '',
         kabid_nip: currentProjectObj?.kabid_nip || '',
+        kontraktor_name: currentProjectObj?.kontraktor_name || '', // New Field
         start_date: currentProjectObj?.start_date || '',
         version: currentProjectObj?.version || 1
       });
@@ -300,6 +302,7 @@ function ProyekContent() {
         program_name: '', activity_name: '', work_name: '',
         ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
         konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
+        kontraktor_name: '', // New Field
         kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
         start_date: '',
         version: 1
@@ -362,6 +365,7 @@ function ProyekContent() {
       program_name: createForm.program_name,
       activity_name: createForm.activity_name,
       work_name: createForm.work_name,
+      kontraktor_name: createForm.kontraktor_name, // Added
       start_date: createForm.start_date || new Date().toISOString().split('T')[0],
       created_by: member?.user_id,
       updated_at: new Date().toISOString()
@@ -1676,6 +1680,15 @@ function ProyekContent() {
                     </div>
                     <div className="space-y-4">
                       <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama CV/PT Kontraktor</label>
+                        <input
+                          value={createForm.kontraktor_name}
+                          onChange={e => setCreateForm({ ...createForm, kontraktor_name: e.target.value })}
+                          placeholder="PT. / CV. ..."
+                          className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
+                      <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nomor Kontrak</label>
                         <input
                           value={createForm.contract_number}
@@ -1982,6 +1995,15 @@ function ProyekContent() {
 
                     {/* Kontraktor & Atasan */}
                     <div className="space-y-4">
+                      <div className="space-y-2">
+                        <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Perusahaan Kontraktor</label>
+                        <input
+                          value={identityForm.kontraktor_name}
+                          onChange={e => setIdentityForm({ ...identityForm, kontraktor_name: e.target.value })}
+                          placeholder="PT. / CV. ..."
+                          className="w-full px-5 py-3 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-xl text-xs font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                        />
+                      </div>
                       <div className="space-y-2">
                         <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Nama Direktur Kontraktor</label>
                         <input
