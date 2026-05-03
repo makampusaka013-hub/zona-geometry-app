@@ -27,6 +27,14 @@ function fmt(n) {
   return cleanVal.toLocaleString('id-ID', { maximumFractionDigits: 2 }); 
 }
 
+function parseNum(v) {
+  if (typeof v === 'number') return v;
+  if (!v) return 0;
+  // Convert Indonesian comma to dot and clean other chars
+  const n = parseFloat(String(v).replace(',', '.').replace(/[^0-9.-]+/g, ''));
+  return isNaN(n) ? 0 : n;
+}
+
 export default function ProgressTab({
   projectId,
   activeTab,
@@ -191,7 +199,10 @@ export default function ProgressTab({
         const k = `${q.entity_key}-${q.day_number}`;
         unique[k] = q;
       });
-      const payload = Object.values(unique);
+      const payload = Object.values(unique).map(item => ({
+        ...item,
+        val: parseNum(item.val)
+      }));
       saveQueue.current = [];
 
       const { error } = await supabase
