@@ -7,6 +7,9 @@ ADD COLUMN IF NOT EXISTS notes TEXT,
 ADD COLUMN IF NOT EXISTS weather_description TEXT,
 ADD COLUMN IF NOT EXISTS weather_index INTEGER DEFAULT 0;
 
+ALTER TABLE public.project_photos
+ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ DEFAULT NOW();
+
 -- 2. Data Migration: If old 'weather' column exists, copy to 'weather_description'
 DO $$
 BEGIN
