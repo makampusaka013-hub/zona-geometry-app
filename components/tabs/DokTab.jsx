@@ -58,16 +58,30 @@ export default function DokTab({
 
   if (tabLoading) return <Spinner />;
 
-
-  const handlePrintExcel = async () => {
+  const handleExportExcel = async () => {
     try {
-      const project = tabData.project || {};
-      await generateDokumentasiReport(project, tabData.dok, {
-        fileName: `Dokumentasi_${project.name || 'Proyek'}.xlsx`
+      setIsExportLoading(true);
+      
+      // Pastikan kita mengambil data proyek terbaru dari tabData
+      const projectData = tabData.project || {};
+      const documentationList = tabData.dok || [];
+
+      if (documentationList.length === 0) {
+        toast.error('Tidak ada data dokumentasi untuk diekspor.');
+        setIsExportLoading(false);
+        return;
+      }
+
+      await generateDokumentasiReport(projectData, documentationList, {
+        fileName: `Dokumentasi_${projectData.name || 'Proyek'}.xlsx`
       });
-    } catch (e) {
-      console.error('Gagal cetak excel:', e);
-      toast.error('Gagal mengekspor dokumentasi ke Excel.');
+      
+      toast.success('Laporan berhasil diunduh!');
+    } catch (err) {
+      console.error('Export failed:', err);
+      toast.error('Gagal membuat laporan Excel: ' + err.message);
+    } finally {
+      setIsExportLoading(false);
     }
   };
 
@@ -214,7 +228,7 @@ export default function DokTab({
             </button>
           )}
             <button
-              onClick={handlePrintExcel}
+              onClick={handleExportExcel}
               className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-600/30 transition-all text-sm font-medium"
             >
               <FileSpreadsheet className="w-4 h-4" />
