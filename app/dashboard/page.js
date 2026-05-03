@@ -621,7 +621,7 @@ function DashboardContent() {
   const processedChartData = useMemo(() => {
     if (!chartData.length) return [];
 
-    // 1. Hitung day_number hari ini relatif terhadap start_date proyek
+    // 1. Hitung day_number hari ini
     const start = selProject?.start_date ? new Date(selProject.start_date) : null;
     let todayDayNum = -1;
     if (start) {
@@ -633,38 +633,64 @@ function DashboardContent() {
 
     const interval = sCurveFreq === 'weekly' ? 7 : (sCurveFreq === 'monthly' ? 30 : 1);
     const prefix = sCurveFreq === 'weekly' ? 'M' : (sCurveFreq === 'monthly' ? 'B' : 'H');
+    
     let rawGrouped = [];
 
     if (sCurveFreq === 'daily') {
       rawGrouped = chartData;
     } else {
-      // Grouping logic (Weekly/Monthly)
+      // --- Grouping Logic (Weekly/Monthly) ---
+      // Start Point
       rawGrouped.push({ ...chartData[0], name: '0' });
+
       const dataToGroup = chartData.slice(1);
+      let lastInjectedDay = 0;
+
       for (let i = 0; i < dataToGroup.length; i += interval) {
         const chunk = dataToGroup.slice(i, i + interval);
         const last = chunk[chunk.length - 1];
+
+        // INJECTION: Jika 'Hari Ini' terlewati di antara titik grup ini, sisipkan titik 'Hari Ini'
+        // Ini krusial agar garis Solid -> Dashed menyambung tepat di garis Hari Ini
+        if (todayDayNum > lastInjectedDay && todayDayNum < last.day) {
+          const tPoint = chartData.find(d => d.day === todayDayNum);
+          if (tPoint) {
+            rawGrouped.push({ 
+              ...tPoint, 
+              name: 'HARI INI', 
+              isToday: true,
+              // Untuk bar di titik selipan, kita biarkan 0 agar tidak merusak total akumulasi bar mingguan
+              dailyUpah: 0, dailyBahan: 0, dailyAlat: 0 
+            });
+            lastInjectedDay = todayDayNum;
+          }
+        }
+
         const sumUpah = chunk.reduce((s, c) => s + (c.dailyUpah || 0), 0);
         const sumBahan = chunk.reduce((s, c) => s + (c.dailyBahan || 0), 0);
         const sumAlat = chunk.reduce((s, c) => s + (c.dailyAlat || 0), 0);
+        
         rawGrouped.push({
           ...last,
-          name: `${prefix}-${Math.floor(i / interval) + 1}`,
+          name: last.day === todayDayNum ? 'HARI INI' : `${prefix}-${Math.floor(i / interval) + 1}`,
           dailyUpah: sumUpah,
           dailyBahan: sumBahan,
-          dailyAlat: sumAlat
+          dailyAlat: sumAlat,
+          isToday: last.day === todayDayNum
         });
+        lastInjectedDay = last.day;
       }
+
+      // Ensure the absolute last point is represented
       const lastPoint = chartData[chartData.length - 1];
-      const lastGrouped = rawGrouped[rawGrouped.length - 1];
-      if (lastPoint && lastGrouped && lastGrouped.day !== lastPoint.day) {
+      const lastInList = rawGrouped[rawGrouped.length - 1];
+      if (lastPoint && lastInList && lastInList.day < lastPoint.day) {
         rawGrouped.push({ ...lastPoint, name: 'Selesai' });
       }
     }
 
     // 2. Split Realisasi menjadi Solid (Masa Lalu) dan Dashed (Masa Depan)
     return rawGrouped.map(point => {
-      // Titik transisi (Today) harus ada di kedua series agar garis tersambung
       const isPastOrToday = point.day <= todayDayNum;
       const isFutureOrToday = point.day >= todayDayNum;
       
