@@ -133,7 +133,7 @@ export default function ProgressTab({
             project_id: projectId,
             entity_type: row.type,
             entity_id: row.id,
-            entity_name: row.type === 'custom_labor' ? row.name : null,
+            entity_name: (row.type === 'custom_labor' || row.type === 'supervision_staff') ? row.name : null,
             entity_key: key,
             day_number: parseInt(day),
             val: Number(val),
