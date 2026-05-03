@@ -75,92 +75,88 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
   }
 
   async function handleExportReport() {
-    if (!project || !ahspLines || ahspLines.length === 0) {
-      toast.warning('Data RAB kosong.');
-      return;
-    }
+    handleStartExport(async (hImg) => {
+      if (!project || !ahspLines || ahspLines.length === 0) {
+        toast.warning('Data RAB kosong.');
+        return;
+      }
 
-    setLoadingReport(true);
-    try {
-      const [progressRes, reportsRes, resourcesRes] = await Promise.all([
-        supabase.from('project_progress_daily').select('*').eq('project_id', project.id),
-        supabase.from('daily_reports').select('*').eq('project_id', project.id),
-        supabase.from('view_project_resource_summary').select('*').eq('project_id', project.id)
-      ]);
+      setLoadingReport(true);
+      try {
+        const [progressRes, reportsRes, resourcesRes] = await Promise.all([
+          supabase.from('project_progress_daily').select('*').eq('project_id', project.id),
+          supabase.from('daily_reports').select('*').eq('project_id', project.id),
+          supabase.from('view_project_resource_summary').select('*').eq('project_id', project.id)
+        ]);
 
-      if (progressRes.error) throw progressRes.error;
+        if (progressRes.error) throw progressRes.error;
 
-      // Prepare Daily Progress Map for Excel VLOOKUP
-      const progressMapByDay = {};
-      
-      // 1. Group Volume Progress
-      if (progressRes.data) {
-        progressRes.data.forEach(p => {
-          const day = p.day_number;
-          if (!progressMapByDay[day]) progressMapByDay[day] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
-          
-          if (p.entity_type === 'item') {
-            progressMapByDay[day].progressMap[p.entity_id] = Number(p.val || 0);
-          } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
-            // Check if labor
-            const res = (resourcesRes.data || []).find(r => (r.kode_item || r.uraian) === p.entity_key);
-            if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor') {
-              const key = (p.entity_name || p.entity_key || '').toLowerCase().replace(/\s/g, '_');
-              progressMapByDay[day].labor[key] = Number(p.val || 0);
-            } else if (res?.jenis === 'bahan') {
-              progressMapByDay[day].materials.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
-            } else if (res?.jenis === 'alat') {
-              progressMapByDay[day].equipment.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+        // Prepare Daily Progress Map
+        const progressMapByDay = {};
+        
+        if (progressRes.data) {
+          progressRes.data.forEach(p => {
+            const day = p.day_number;
+            if (!progressMapByDay[day]) progressMapByDay[day] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
+            
+            if (p.entity_type === 'item') {
+              progressMapByDay[day].progressMap[p.entity_id] = Number(p.val || 0);
+            } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
+              const res = (resourcesRes.data || []).find(r => (r.kode_item || r.uraian) === p.entity_key);
+              if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor') {
+                const key = (p.entity_name || p.entity_key || '').toLowerCase().replace(/\s/g, '_');
+                progressMapByDay[day].labor[key] = Number(p.val || 0);
+              } else if (res?.jenis === 'bahan') {
+                progressMapByDay[day].materials.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+              } else if (res?.jenis === 'alat') {
+                progressMapByDay[day].equipment.push({ name: p.entity_name || p.entity_key, volume: p.val, unit: res.satuan });
+              }
             }
-          }
-        });
-      }
+          });
+        }
 
-      // 2. Group Weather & Metadata
-      if (reportsRes.data) {
-        reportsRes.data.forEach(r => {
-          // Find day number from report_date relative to project start
-          const start = new Date(project.start_date);
-          const current = new Date(r.report_date);
-          const dayNum = Math.floor((current - start) / (1000 * 60 * 60 * 24)) + 1;
-          
-          if (!progressMapByDay[dayNum]) progressMapByDay[dayNum] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
-          
-          progressMapByDay[dayNum].date = r.report_date;
-          progressMapByDay[dayNum].dayName = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(current);
-          progressMapByDay[dayNum].weather = {
-            index: r.weather_index,
-            condition: r.weather_description || '-',
-            situation: r.notes || '-'
-          };
-        });
-      }
+        if (reportsRes.data) {
+          reportsRes.data.forEach(r => {
+            const start = new Date(project.start_date);
+            const current = new Date(r.report_date);
+            const dayNum = Math.floor((current - start) / (1000 * 60 * 60 * 24)) + 1;
+            
+            if (!progressMapByDay[dayNum]) progressMapByDay[dayNum] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
+            
+            progressMapByDay[dayNum].date = r.report_date;
+            progressMapByDay[dayNum].dayName = new Intl.DateTimeFormat('id-ID', { weekday: 'long' }).format(current);
+            progressMapByDay[dayNum].weather = {
+              index: r.weather_index,
+              condition: r.weather_description || '-',
+              situation: r.notes || '-'
+            };
+          });
+        }
 
-      if (reportType === 'pdf') {
-        // PDF Export Logic
-        await generateProjectPDF(project, userMember, ahspLines, ['cover', 'RAB', 'REKAP'], {
-          startDate: dateRange.start,
-          endDate: dateRange.end,
-          paperSize,
-          headerImage,
-          fileName: `Laporan PDF - ${project.name}`
-        });
-      } else {
-        // Excel Export Logic (Multisheet: Harian + Mingguan + Bulanan)
-        await generateLaporanFormula(project, userMember, ahspLines, ['harian', 'mingguan', 'bulanan'], {
-          progressDataMap: progressMapByDay,
-          paperSize,
-          headerImage,
-          fileName: `Bundel Laporan Progres - ${project.name}`
-        });
-      }
+        if (reportType === 'pdf') {
+          await generateProjectPDF(project, userMember, ahspLines, ['cover', 'RAB', 'REKAP'], {
+            startDate: dateRange.start,
+            endDate: dateRange.end,
+            paperSize,
+            headerImage: hImg,
+            fileName: `Laporan PDF - ${project.name}`
+          });
+        } else {
+          await generateLaporanFormula(project, userMember, ahspLines, ['harian', 'mingguan', 'bulanan'], {
+            progressDataMap: progressMapByDay,
+            paperSize,
+            headerImage: hImg,
+            fileName: `Bundel Laporan Progres - ${project.name}`
+          });
+        }
 
-      toast.success(`Laporan ${reportType} berhasil diunduh.`);
-    } catch (err) {
-      toast.error('Gagal mengambil data progres: ' + err.message);
-    } finally {
-      setLoadingReport(false);
-    }
+        toast.success(`Laporan ${reportType} berhasil diunduh.`);
+      } catch (err) {
+        toast.error('Gagal mengambil data progres: ' + err.message);
+      } finally {
+        setLoadingReport(false);
+      }
+    }, 'report_bundle');
   }
 
   async function handleExportExcel() {
