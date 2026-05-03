@@ -106,18 +106,44 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
               const res = (resourcesRes.data || []).find(r => 
                 (r.kode_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
               );
-              if (res?.jenis === 'tenaga' || p.entity_type === 'custom_labor' || p.entity_key?.toLowerCase().includes('pekerja')) {
-                const key = (p.entity_name || p.entity_key || '').toLowerCase().replace(/\s/g, '_');
+              
+              // Robust Jenis Detection
+              const name = (p.entity_name || p.entity_key || '').toLowerCase();
+              const unit = (res?.satuan || '').toUpperCase();
+              const code = (res?.kode_item || '').toUpperCase();
+              const rawJ = (res?.jenis || '').toLowerCase();
+              
+              let jenis = 'bahan';
+              if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor|mekanik|sopir|driver|pimtek|leader|inspektor|direksi)\b/.test(name) || rawJ.includes('upah') || rawJ.includes('tenaga') || code.startsWith('A') || code.startsWith('L')) {
+                jenis = 'tenaga';
+              } else if (unit === 'JAM' || unit === 'SEWA' || /\b(excavator|vibro|stamper|mixer|truck|genset)\b/.test(name) || rawJ.includes('alat') || code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) {
+                jenis = 'alat';
+              }
+
+              if (p.entity_type === 'custom_labor' || jenis === 'tenaga') {
+                // Map to recognized excel keys
+                let key = name.replace(/\s/g, '_');
+                if (name.includes('mandor')) key = 'mandor';
+                else if (name.includes('kepala_tukang') || name.includes('kepala tukang')) key = 'kepala_tukang';
+                else if (name.includes('tukang')) key = 'tukang';
+                else if (name.includes('pekerja')) key = 'pekerja';
+                else if (name.includes('operator')) key = 'operator';
+                else if (name.includes('pimtek')) key = 'pimtek';
+                else if (name.includes('leader')) key = 'tl';
+                else if (name.includes('inspektor')) key = 'inspector';
+                else if (name.includes('direksi')) key = 'direksi';
+
                 const valNum = parseFloat(p.val || 0);
                 progressMapByDay[day].labor[key] = isNaN(valNum) ? 0 : valNum;
-              } else if (res?.jenis === 'bahan' || p.entity_type === 'resource') {
-                progressMapByDay[day].materials.push({ 
+              } else if (jenis === 'alat') {
+                progressMapByDay[day].equipment.push({ 
                   name: p.entity_name || p.entity_key, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
                 });
-              } else if (res?.jenis === 'alat') {
-                progressMapByDay[day].equipment.push({ 
+              } else {
+                // Default to Bahan
+                progressMapByDay[day].materials.push({ 
                   name: p.entity_name || p.entity_key, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
