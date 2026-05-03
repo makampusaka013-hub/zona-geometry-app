@@ -125,6 +125,8 @@ export default function DokTab({
             report_id: reportId,
             photo_url: publicUrl,
             caption: item.caption,
+            storage_type: 'supabase',
+            file_name: item.file.name,
             uploaded_at: new Date().toISOString()
           });
 
