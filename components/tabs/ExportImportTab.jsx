@@ -99,7 +99,7 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             const day = p.day_number;
             if (!progressMapByDay[day]) progressMapByDay[day] = { progressMap: {}, labor: {}, materials: [], equipment: [] };
             
-            if (p.entity_type === 'item') {
+            if (p.entity_type === 'item' || p.entity_type === 'ahsp_item') {
               progressMapByDay[day].progressMap[p.entity_id] = Number(p.val || 0);
             } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
               const res = (resourcesRes.data || []).find(r => (r.kode_item || r.uraian) === p.entity_key);
