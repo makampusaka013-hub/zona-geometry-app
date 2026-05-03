@@ -75,15 +75,12 @@ export default function ProgressTab({
         const mapped = {};
         const customs = new Set();
         progressRes.data.forEach(row => {
-          const key = row.entity_id || row.entity_name;
+          const key = row.entity_key || row.entity_id || row.entity_name;
           if (!mapped[key]) mapped[key] = {};
           mapped[key][row.day_number] = Number(row.val);
+          
           if (row.entity_type === 'custom_labor' && !row.entity_id) {
             customs.add(row.entity_name);
-          }
-          // Support loading supervision_staff as well
-          if (row.entity_type === 'supervision_staff') {
-            // key will be row.entity_id (like 'direksi_tl')
           }
         });
         setProgressData(mapped);
