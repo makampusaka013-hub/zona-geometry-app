@@ -386,15 +386,16 @@ function ProyekContent() {
   async function handleUpdateProjectIdentity(e) {
     if (e) e.preventDefault();
     
-    // Fix: projects is an OBJECT, not an array.
-    const proj = projects[selectedProject];
+    // REFINEMENT: Always get the absolute latest version from the STORE state 
+    // to avoid conflicts with auto-save that might have happened in the background.
+    const latestProj = useProjectStore.getState().projects[selectedProject];
     
     const { error } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
-      // Ensure we use the latest version from state
-      version: proj?.version || identityForm.version || 1,
+      // CRITICAL FIX: Use latestProj.version to prevent "Konflik Data" error
+      version: latestProj?.version || identityForm.version || 1,
       updated_at: new Date().toISOString()
     });
 
