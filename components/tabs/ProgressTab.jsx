@@ -21,7 +21,11 @@ import {
 import Spinner from '../Spinner';
 import ModernConfirmModal from '../ModernConfirmModal';
 
-function fmt(n) { return Number(n || 0).toLocaleString('id-ID', { maximumFractionDigits: 2 }); }
+function fmt(n) { 
+  const val = Number(n || 0);
+  const cleanVal = Math.abs(val) < 0.000001 ? 0 : val;
+  return cleanVal.toLocaleString('id-ID', { maximumFractionDigits: 2 }); 
+}
 
 export default function ProgressTab({
   projectId,
@@ -146,7 +150,9 @@ export default function ProgressTab({
   };
 
   const updateCell = (entityId, entityName, type, day, value) => {
-    const val = parseFloat(value) || 0;
+    // Handle comma as decimal separator
+    const sanitizedValue = value.replace(/,/g, '.');
+    const val = parseFloat(sanitizedValue) || 0;
     const key = entityId || entityName;
 
     setProgressData(prev => ({
@@ -474,13 +480,18 @@ export default function ProgressTab({
                       return (
                         <td key={day} className="px-1 py-4 text-center w-[55px]">
                           <input
-                            type="number"
-                            step="any"
-                            min="0"
-                            value={daily[day] || ''}
+                            type="text"
+                            inputMode="decimal"
+                            value={daily[day] !== undefined ? String(daily[day]).replace(/\./g, ',') : ''}
                             disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
-                            onChange={(e) => updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, e.target.value)}
-                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30 [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              // Allow only numbers, comma, and period
+                              if (/^[0-9,.]*$/.test(val)) {
+                                updateCell(row.id, row.type === 'custom_labor' ? row.name : null, row.type, day, val);
+                              }
+                            }}
+                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30"
                             placeholder="0"
                           />
                         </td>
