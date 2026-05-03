@@ -462,7 +462,7 @@ export default function ProgressTab({
                     <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">{fmt(totalReal)}</td>
                     <td className="px-3 py-4 text-right text-[10px] font-black w-[90px]">
                       <div className="flex flex-col items-end">
-                        <span className={diff < 0 ? 'text-red-500' : 'text-emerald-500'}>{fmt(diff)}</span>
+                        <span className={diff < -0.000001 ? 'text-red-500' : 'text-emerald-500'}>{fmt(diff)}</span>
                         {row.type === 'ahsp_item' && (
                           <div className="flex gap-1 mt-1">
                             {canVerify && row.status_approval === 'draft' && (
