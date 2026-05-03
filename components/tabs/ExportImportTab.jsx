@@ -247,11 +247,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'RAB', 'REKAP'], {
+        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'HARGA SATUAN', 'AHSP', 'HSP', 'RAB', 'REKAP', 'schedule'], {
           projectPrices,
           headerImage: hImg,
           paperSize,
-          isStandalone: true,
+          isStandalone: false,
           fileName: `RAB ${project.name || ''}`
         });
         toast.success('RAB Berhasil diunduh.');
@@ -288,11 +288,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
         (overrideRes.data || []).forEach(p => { if (p.harga_satuan > 0) mergedMap[p.kode_item] = p.harga_satuan; });
         const projectPrices = Object.entries(mergedMap).map(([kode_item, harga_satuan]) => ({ kode_item, harga_satuan }));
 
-        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'AHSP', 'HSP'], {
+        await generateProjectReport(project, userMember, enrichedLines, ['cover', 'HARGA SATUAN', 'AHSP', 'HSP'], {
           projectPrices,
           headerImage: hImg,
           paperSize,
-          isStandalone: true,
+          isStandalone: false,
           fileName: `AHSP & Harga Satuan Terpakai ${project.name || ''}`
         });
         toast.success('AHSP & Harga Terpakai berhasil diunduh.');
