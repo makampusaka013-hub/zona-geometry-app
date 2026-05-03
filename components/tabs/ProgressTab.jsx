@@ -291,6 +291,7 @@ export default function ProgressTab({
         target: r.total_volume || 0,
         type: 'resource'
       }));
+      
       const customs = (customRoles || []).map(name => ({
         id: null,
         name: name,
@@ -298,7 +299,15 @@ export default function ProgressTab({
         target: 0,
         type: 'custom_labor'
       }));
-      return [...baseLabor, ...customs];
+
+      // ADDED: Supervision Team (Permanent Manual Entry)
+      const supervisionStaff = [
+        { id: 'direksi_tl', name: 'Team Leader', unit: 'Org', target: 0, type: 'supervision_staff' },
+        { id: 'direksi_inspector', name: 'Inspektor', unit: 'Org', target: 0, type: 'supervision_staff' },
+        { id: 'direksi_dinas', name: 'Direksi Dinas', unit: 'Org', target: 0, type: 'supervision_staff' }
+      ];
+
+      return [...baseLabor, ...customs, ...supervisionStaff];
     }
   }, [viewMode, items, resources, customRoles]);
 
@@ -430,7 +439,7 @@ export default function ProgressTab({
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 dark:divide-slate-800/50">
-              {rows.map((row) => {
+              {rows.map((row, idx) => {
                 const key = row.id || row.name;
                 const isSelected = selectedRowId === key;
                 const daily = progressData[key] || {};
@@ -439,8 +448,22 @@ export default function ProgressTab({
                 const rowBgClass = isSelected ? 'bg-slate-100 dark:bg-slate-800' : 'bg-white dark:bg-[#020617]';
                 const babName = items.find(it => it.id === row.id)?.bab || '';
 
+                // Show Section Header for Supervision Team
+                const isFirstSupervision = row.type === 'supervision_staff' && (idx === 0 || rows[idx - 1].type !== 'supervision_staff');
+
                 return (
-                  <tr key={key} onClick={() => setSelectedRowId(isSelected ? null : key)} className={`${isSelected ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-[#020617]'} hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group`}>
+                  <React.Fragment key={key}>
+                    {isFirstSupervision && (
+                      <tr className="bg-slate-50 dark:bg-slate-900/80 border-y border-slate-200 dark:border-slate-800">
+                        <td colSpan={5 + daysPerPage} className="px-4 py-2">
+                          <div className="flex items-center gap-2">
+                            <Users className="w-3.5 h-3.5 text-indigo-500 dark:text-orange-500" />
+                            <span className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">Direksi & Pengawas (Manual)</span>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                    <tr onClick={() => setSelectedRowId(isSelected ? null : key)} className={`${isSelected ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-[#020617]'} hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group`}>
                     <td className={`sticky left-0 z-10 ${rowBgClass} px-4 py-4 border-r border-slate-100 dark:border-slate-800/50 w-[220px]`}>
                       <div className="flex items-center gap-2 mb-0.5">
                         {babName && <div className="text-[7px] text-indigo-600 dark:text-orange-400 font-black uppercase tracking-widest truncate max-w-[80px]">{babName}</div>}
@@ -498,6 +521,7 @@ export default function ProgressTab({
                       );
                     })}
                   </tr>
+                </React.Fragment>
                 );
               })}
             </tbody>

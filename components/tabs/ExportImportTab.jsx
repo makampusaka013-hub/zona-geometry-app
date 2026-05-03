@@ -102,6 +102,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             if (p.entity_type === 'item' || p.entity_type === 'ahsp_item') {
               const valNum = parseFloat(p.val || 0);
               progressMapByDay[day].progressMap[p.entity_id] = isNaN(valNum) ? 0 : valNum;
+            } else if (p.entity_type === 'supervision_staff') {
+              const name = (p.entity_name || p.entity_key || '').toLowerCase();
+              let key = 'direksi';
+              if (name.includes('leader') || p.entity_key === 'direksi_tl') key = 'tl';
+              else if (name.includes('inspektor') || p.entity_key === 'direksi_inspector') key = 'inspector';
+              else if (name.includes('dinas') || p.entity_key === 'direksi_dinas') key = 'direksi';
+              
+              progressMapByDay[day].labor[key] = parseFloat(p.val || 0);
             } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
               const res = (resourcesRes.data || []).find(r => 
                 (r.key_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
