@@ -22,6 +22,7 @@ import {
   Activity, BarChart2, Zap
 } from 'lucide-react';
 import { computeManpower, getSequencedSchedule } from '@/lib/manpower';
+import useProjectStore from '@/store/useProjectStore';
 
 function formatIdr(n) {
   const s = new Intl.NumberFormat('id-ID', {
@@ -142,6 +143,17 @@ function DashboardContent() {
   const statsVersionRef = useRef(0);
   const loadingDataRef = useRef(false);
 
+  // Global Store Sync
+  const { selectedProject: storeSelectedProject, setSelectedProject: setStoreSelectedProject } = useProjectStore();
+
+  const handleSelectProject = useCallback((id) => {
+    setSelectedId(id);
+    setStoreSelectedProject(id);
+    const params = new URLSearchParams(searchParams.toString());
+    params.set('id', id);
+    router.replace(`/dashboard?${params.toString()}`, { scroll: false });
+  }, [router, searchParams, setStoreSelectedProject]);
+
   useEffect(() => {
     const checkTheme = () => setIsDark(document.documentElement.classList.contains('dark'));
     checkTheme();
@@ -244,7 +256,22 @@ function DashboardContent() {
         .order('updated_at', { ascending: false });
 
       setProjects(proj || []);
-      if (proj?.length > 0) setSelectedId(proj[0].id);
+      
+      // 3. Logic Pemilihan Proyek (Prioritas: URL > Store > First Project)
+      if (proj?.length > 0) {
+        const urlId = searchParams.get('id');
+        const storeId = useProjectStore.getState().selectedProject;
+        
+        if (urlId && proj.some(p => p.id === urlId)) {
+          setSelectedId(urlId);
+          if (storeId !== urlId) setStoreSelectedProject(urlId);
+        } else if (storeId && proj.some(p => p.id === storeId)) {
+          setSelectedId(storeId);
+        } else {
+          setSelectedId(proj[0].id);
+          setStoreSelectedProject(proj[0].id);
+        }
+      }
       setLoading(false);
     } finally {
       loadingDataRef.current = false;
@@ -593,42 +620,61 @@ function DashboardContent() {
 
   const processedChartData = useMemo(() => {
     if (!chartData.length) return [];
-    if (sCurveFreq === 'daily') return chartData;
 
-    const interval = sCurveFreq === 'weekly' ? 7 : 30;
-    const prefix = sCurveFreq === 'weekly' ? 'M' : 'B';
-    const grouped = [];
-
-    // Always start with Point 0 (Start 0%)
-    grouped.push({ ...chartData[0], name: '0' });
-
-    // Group the rest (from H-1 onwards)
-    const dataToGroup = chartData.slice(1);
-    for (let i = 0; i < dataToGroup.length; i += interval) {
-      const chunk = dataToGroup.slice(i, i + interval);
-      const last = chunk[chunk.length - 1];
-      const sumUpah = chunk.reduce((s, c) => s + (c.dailyUpah || 0), 0);
-      const sumBahan = chunk.reduce((s, c) => s + (c.dailyBahan || 0), 0);
-      const sumAlat = chunk.reduce((s, c) => s + (c.dailyAlat || 0), 0);
-
-      grouped.push({
-        ...last,
-        name: `${prefix}-${Math.floor(i / interval) + 1}`,
-        dailyUpah: sumUpah,
-        dailyBahan: sumBahan,
-        dailyAlat: sumAlat
-      });
+    // 1. Hitung day_number hari ini relatif terhadap start_date proyek
+    const start = selProject?.start_date ? new Date(selProject.start_date) : null;
+    let todayDayNum = -1;
+    if (start) {
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      start.setHours(0, 0, 0, 0);
+      todayDayNum = Math.floor((today - start) / 86400000);
     }
 
-    // Ensure the absolute last point is represented (Finish 100%)
-    const lastPoint = chartData[chartData.length - 1];
-    const lastGrouped = grouped[grouped.length - 1];
-    if (lastPoint && lastGrouped && lastGrouped.day !== lastPoint.day) {
-      grouped.push({ ...lastPoint, name: 'Selesai' });
+    const interval = sCurveFreq === 'weekly' ? 7 : (sCurveFreq === 'monthly' ? 30 : 1);
+    const prefix = sCurveFreq === 'weekly' ? 'M' : (sCurveFreq === 'monthly' ? 'B' : 'H');
+    let rawGrouped = [];
+
+    if (sCurveFreq === 'daily') {
+      rawGrouped = chartData;
+    } else {
+      // Grouping logic (Weekly/Monthly)
+      rawGrouped.push({ ...chartData[0], name: '0' });
+      const dataToGroup = chartData.slice(1);
+      for (let i = 0; i < dataToGroup.length; i += interval) {
+        const chunk = dataToGroup.slice(i, i + interval);
+        const last = chunk[chunk.length - 1];
+        const sumUpah = chunk.reduce((s, c) => s + (c.dailyUpah || 0), 0);
+        const sumBahan = chunk.reduce((s, c) => s + (c.dailyBahan || 0), 0);
+        const sumAlat = chunk.reduce((s, c) => s + (c.dailyAlat || 0), 0);
+        rawGrouped.push({
+          ...last,
+          name: `${prefix}-${Math.floor(i / interval) + 1}`,
+          dailyUpah: sumUpah,
+          dailyBahan: sumBahan,
+          dailyAlat: sumAlat
+        });
+      }
+      const lastPoint = chartData[chartData.length - 1];
+      const lastGrouped = rawGrouped[rawGrouped.length - 1];
+      if (lastPoint && lastGrouped && lastGrouped.day !== lastPoint.day) {
+        rawGrouped.push({ ...lastPoint, name: 'Selesai' });
+      }
     }
 
-    return grouped;
-  }, [chartData, sCurveFreq]);
+    // 2. Split Realisasi menjadi Solid (Masa Lalu) dan Dashed (Masa Depan)
+    return rawGrouped.map(point => {
+      // Titik transisi (Today) harus ada di kedua series agar garis tersambung
+      const isPastOrToday = point.day <= todayDayNum;
+      const isFutureOrToday = point.day >= todayDayNum;
+      
+      return {
+        ...point,
+        realisasiSolid: isPastOrToday ? point.realisasi : null,
+        realisasiDashed: isFutureOrToday ? point.realisasi : null
+      };
+    });
+  }, [chartData, sCurveFreq, selProject?.start_date]);
 
   const todayPointName = useMemo(() => {
     if (!selProject?.start_date) return null;
@@ -911,7 +957,7 @@ function DashboardContent() {
                             return dt.toLocaleDateString('id-ID', { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' });
                           }}
                           formatter={(v, name, props) => {
-                            if (name === 'realisasi') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
+                            if (name === 'realisasiSolid' || name === 'realisasiDashed') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.realisasiRp)})`, '📈 Realisasi (Kumulatif)'];
                             if (name === 'rencana') return [`${v.toFixed(2)}% (Rp ${formatIdrFull(props.payload.rencanaRp)})`, '📉 Rencana (Kumulatif)'];
                             return [formatIdrFull(v), name === 'dailyUpah' ? '👷 Tenaga Kerja (Terencana)' : name === 'dailyBahan' ? '🧱 Bahan (Terencana)' : '⚙️ Alat (Terencana)'];
                           }}
@@ -923,7 +969,8 @@ function DashboardContent() {
                         <Bar yAxisId="right" dataKey="dailyAlat" stackId="a" fill={isDark ? '#065f46' : '#34d399'} radius={[4, 4, 0, 0]} opacity={0.6} barSize={sCurveFreq === 'daily' ? 8 : 24} />
 
                         {/* Cumulative Lines (% on Left Axis) */}
-                        <Area yAxisId="left" type="monotone" dataKey="realisasi" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
+                        <Area yAxisId="left" type="monotone" dataKey="realisasiSolid" stroke="var(--chart-realisasi)" strokeWidth={4} fillOpacity={1} fill="url(#colorRealisasi)" />
+                        <Area yAxisId="left" type="monotone" dataKey="realisasiDashed" stroke="var(--chart-realisasi)" strokeWidth={4} strokeDasharray="5 5" fillOpacity={0.2} fill="url(#colorRealisasi)" />
                         <Area yAxisId="left" type="monotone" dataKey="rencana" stroke={isDark ? '#94a3b8' : '#64748b'} strokeWidth={3} strokeDasharray="5 5" fill="none" />
 
                         {sCurveToday && todayPointName && (
@@ -1061,7 +1108,7 @@ function DashboardContent() {
                 </div>
               ) : (
                 projects.map(p => (
-                  <button key={p.id} onClick={() => setSelectedId(p.id)}
+                  <button key={p.id} onClick={() => handleSelectProject(p.id)}
                     className={`w-full text-left px-4 py-3 rounded-2xl border transition-all ${selectedId === p.id ? 'bg-indigo-50 border-indigo-200 text-indigo-600 dark:bg-orange-500/10 dark:text-orange-400' : 'bg-transparent border-slate-100 dark:border-slate-800 text-slate-500 hover:bg-slate-50'}`}>
                     <div className="flex items-center justify-between gap-2">
                       <div className="text-[11px] font-bold truncate">{p.name || 'Proyek Tanpa Nama'}</div>
