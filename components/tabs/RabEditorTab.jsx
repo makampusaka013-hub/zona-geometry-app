@@ -279,8 +279,8 @@ function RabSectionTable({
             <tr className="text-[9px] font-black uppercase text-slate-500 dark:text-slate-400 tracking-tighter border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 bg-opacity-95 backdrop-blur-sm">
               <th className="px-1 py-2 text-left w-[2%]">#</th>
               <th className="px-1 py-2 text-left w-[8%]">ANALISA</th>
-              <th className="px-1 py-2 text-left w-[48%]">URAIAN PEKERJAAN</th>
-              <th className="px-1 py-2 text-center w-[4%]">SAT</th>
+              <th className="px-1 py-2 text-left w-[44%]">URAIAN PEKERJAAN</th>
+              <th className="px-1 py-2 text-center w-[8%]">SAT</th>
               <th className="px-1 py-2 text-center w-[5%]">PROFIT</th>
               <th className="px-1 py-2 text-right w-[5%]">VOL</th>
               <th className="px-1 py-2 text-right w-[13%]">HARGA</th>
