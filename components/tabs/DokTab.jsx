@@ -280,7 +280,7 @@ export default function DokTab({
                 disabled={isSaving || form.photos.length === 0}
                 className="px-10 py-4 bg-indigo-600 hover:bg-indigo-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] shadow-xl shadow-indigo-500/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-3"
               >
-                {isSaving ? <Spinner size="sm" color="white" /> : <Save className="w-4 h-4" />}
+                {isSaving ? <Spinner size="sm" /> : <Save className="w-4 h-4" />}
                 {isSaving ? 'Menyimpan...' : 'Simpan Dokumentasi'}
               </button>
             </div>
