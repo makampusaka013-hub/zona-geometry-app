@@ -138,18 +138,28 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                 const currentVal = progressMapByDay[day].labor[key] || 0;
                 progressMapByDay[day].labor[key] = currentVal + (isNaN(valNum) ? 0 : valNum);
               } else if (jenis === 'alat') {
-                progressMapByDay[day].equipment.push({ 
-                  name: displayName, 
-                  volume: p.val, 
-                  unit: res?.satuan || '-' 
-                });
+                const existing = progressMapByDay[day].equipment.find(e => e.name === displayName);
+                if (existing) {
+                  existing.volume = (parseFloat(existing.volume) || 0) + (isNaN(valNum) ? 0 : valNum);
+                } else {
+                  progressMapByDay[day].equipment.push({ 
+                    name: displayName, 
+                    volume: p.val, 
+                    unit: res?.satuan || '-' 
+                  });
+                }
               } else {
                 // Default to Bahan (for A* and B*)
-                progressMapByDay[day].materials.push({ 
-                  name: displayName, 
-                  volume: p.val, 
-                  unit: res?.satuan || '-' 
-                });
+                const existing = progressMapByDay[day].materials.find(m => m.name === displayName);
+                if (existing) {
+                  existing.volume = (parseFloat(existing.volume) || 0) + (isNaN(valNum) ? 0 : valNum);
+                } else {
+                  progressMapByDay[day].materials.push({ 
+                    name: displayName, 
+                    volume: p.val, 
+                    unit: res?.satuan || '-' 
+                  });
+                }
               }
             }
           });
