@@ -131,10 +131,16 @@ export default function DokTab({
 
         if (googleToken) {
           try {
-            // A. Gunakan Google Drive
-            const rootFolderId = await getOrCreateFolder('Zona Geometry Documentation');
-            const projectFolderId = await getOrCreateFolder(tabData.project?.name || `Proyek_${projectId}`, rootFolderId);
-            driveFileId = await uploadFileToDrive(item.file, projectFolderId);
+            // A. Gunakan Google Drive dengan folder terstruktur
+            const rootFolderId = await getOrCreateFolder('Data Zona Geometry');
+            const dokFolderId = await getOrCreateFolder('Data Dokumentasi', rootFolderId);
+            const projectFolderId = await getOrCreateFolder(tabData.project?.name || `Proyek_${projectId}`, dokFolderId);
+            
+            // Beri nama file dengan Tanggal agar rapi
+            const formattedDate = form.date; // YYYY-MM-DD
+            const customFileName = `${formattedDate}_${item.file.name}`;
+            
+            driveFileId = await uploadFileToDrive(item.file, projectFolderId, customFileName);
             storageType = 'drive';
           } catch (driveErr) {
             console.error('Gagal upload ke Drive, mencadangkan ke Supabase...', driveErr);
