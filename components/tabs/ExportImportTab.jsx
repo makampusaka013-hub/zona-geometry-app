@@ -102,31 +102,29 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             if (p.entity_type === 'item' || p.entity_type === 'ahsp_item') {
               const valNum = parseFloat(p.val || 0);
               progressMapByDay[day].progressMap[p.entity_id] = isNaN(valNum) ? 0 : valNum;
-            } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
-              const res = (resourcesRes.data || []).find(r => 
-                (r.kode_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
-              );
-              
               // Robust Jenis Detection
               const name = (p.entity_name || p.entity_key || '').toLowerCase();
+              const code = (res?.kode_item || p.entity_key || '').toUpperCase();
               const unit = (res?.satuan || '').toUpperCase();
-              const code = (res?.kode_item || '').toUpperCase();
               const rawJ = (res?.jenis || '').toLowerCase();
               
               let jenis = 'bahan';
-              if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor|mekanik|sopir|driver|pimtek|leader|inspektor|direksi)\b/.test(name) || rawJ.includes('upah') || rawJ.includes('tenaga') || code.startsWith('A') || code.startsWith('L')) {
+              // Force detection by common codes: L. (Labor), A. (Analisa/Upah)
+              if (unit === 'OH' || unit === 'ORG' || code.startsWith('L.') || code.startsWith('A.') || /\b(pekerja|tukang|mandor|mekanik|sopir|driver|pimtek|leader|inspektor|direksi)\b/.test(name) || rawJ.includes('upah') || rawJ.includes('tenaga')) {
                 jenis = 'tenaga';
               } else if (unit === 'JAM' || unit === 'SEWA' || /\b(excavator|vibro|stamper|mixer|truck|genset)\b/.test(name) || rawJ.includes('alat') || code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) {
                 jenis = 'alat';
               }
 
+              const displayName = res?.uraian || p.entity_name || p.entity_key;
+
               if (p.entity_type === 'custom_labor' || jenis === 'tenaga') {
                 // Map to recognized excel keys
                 let key = name.replace(/\s/g, '_');
-                if (name.includes('mandor')) key = 'mandor';
-                else if (name.includes('kepala_tukang') || name.includes('kepala tukang')) key = 'kepala_tukang';
-                else if (name.includes('tukang')) key = 'tukang';
-                else if (name.includes('pekerja')) key = 'pekerja';
+                if (name.includes('mandor') || code.includes('L.02B')) key = 'mandor';
+                else if (name.includes('kepala_tukang') || name.includes('kepala tukang') || code.includes('A.7.9')) key = 'kepala_tukang';
+                else if (name.includes('tukang') || code.includes('A.7.5')) key = 'tukang';
+                else if (name.includes('pekerja') || code.includes('L.01')) key = 'pekerja';
                 else if (name.includes('operator')) key = 'operator';
                 else if (name.includes('pimtek')) key = 'pimtek';
                 else if (name.includes('leader')) key = 'tl';
@@ -138,14 +136,14 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
                 progressMapByDay[day].labor[key] = currentVal + (isNaN(valNum) ? 0 : valNum);
               } else if (jenis === 'alat') {
                 progressMapByDay[day].equipment.push({ 
-                  name: res?.uraian || p.entity_name || p.entity_key, 
+                  name: displayName, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
                 });
               } else {
                 // Default to Bahan
                 progressMapByDay[day].materials.push({ 
-                  name: res?.uraian || p.entity_name || p.entity_key, 
+                  name: displayName, 
                   volume: p.val, 
                   unit: res?.satuan || '-' 
                 });
