@@ -104,11 +104,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
               progressMapByDay[day].progressMap[p.entity_id] = isNaN(valNum) ? 0 : valNum;
             } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
               const res = (resourcesRes.data || []).find(r => 
-                (r.kode_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
+                (r.key_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
               );
 
               // Strict Classification Logic by User Rules
-              const code = (res?.kode_item || p.entity_key || '').toUpperCase();
+              const code = (res?.key_item || p.entity_key || '').toUpperCase();
               const name = (p.entity_name || p.entity_key || '').toLowerCase();
               const displayName = res?.uraian || p.entity_name || p.entity_key;
               const valNum = parseFloat(p.val || 0);
