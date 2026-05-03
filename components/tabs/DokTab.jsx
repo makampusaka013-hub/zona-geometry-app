@@ -1,7 +1,8 @@
 import React from 'react';
 import Image from 'next/image';
 import Spinner from '../Spinner';
-import { Camera, MapPin, Box } from 'lucide-react';
+import { Camera, MapPin, Box, FileSpreadsheet } from 'lucide-react';
+import { generateDokumentasiReport } from '@/lib/dokumentasi_excel';
 
 export default function DokTab({ activeTab, tabLoading, tabData }) {
   if (activeTab !== 'dok') return null;
@@ -19,8 +20,32 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
     );
   }
 
+  const handlePrintExcel = async () => {
+    try {
+      const project = tabData.project || {};
+      await generateDokumentasiReport(project, tabData.dok, {
+        fileName: `Dokumentasi_${project.name || 'Proyek'}.xlsx`
+      });
+    } catch (e) {
+      console.error('Gagal cetak excel:', e);
+      alert('Gagal mengekspor dokumentasi ke Excel.');
+    }
+  };
+
   return (
-    <div className="grid grid-cols-1 gap-8">
+    <div className="flex flex-col gap-8">
+      {/* Header Actions */}
+      <div className="flex justify-end px-2">
+        <button 
+          onClick={handlePrintExcel}
+          className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
+        >
+          <FileSpreadsheet className="w-4 h-4" />
+          Ekspor Dokumentasi (Excel)
+        </button>
+      </div>
+
+      <div className="grid grid-cols-1 gap-8">
       {tabData.dok.map((rep) => (
         <div key={rep.id} className="bg-white dark:bg-[#1e293b] rounded-3xl overflow-hidden shadow-xl border border-slate-100 dark:border-slate-700">
           <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#020617]/50 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -74,6 +99,7 @@ export default function DokTab({ activeTab, tabLoading, tabData }) {
           </div>
         </div>
       ))}
+      </div>
     </div>
   );
 }
