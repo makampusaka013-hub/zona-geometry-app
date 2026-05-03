@@ -250,8 +250,14 @@ export default function DokTab({
                 ))}
                 
                 <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-orange-500 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/20 group">
+                  <Camera className="w-6 h-6 text-slate-300 group-hover:text-indigo-500 transition-colors" />
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Ambil Foto</span>
+                  <input type="file" accept="image/*" capture="environment" className="hidden" onChange={handleFileChange} />
+                </label>
+
+                <label className="aspect-square rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 hover:border-indigo-500 dark:hover:border-orange-500 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all hover:bg-indigo-50 dark:hover:bg-indigo-950/20 group">
                   <Upload className="w-6 h-6 text-slate-300 group-hover:text-indigo-500 transition-colors" />
-                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pilih Foto</span>
+                  <span className="text-[8px] font-black text-slate-400 uppercase tracking-widest">Pilih File</span>
                   <input type="file" multiple accept="image/*" className="hidden" onChange={handleFileChange} />
                 </label>
               </div>
