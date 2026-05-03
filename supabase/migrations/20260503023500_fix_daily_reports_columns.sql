@@ -5,10 +5,18 @@
 ALTER TABLE public.daily_reports 
 ADD COLUMN IF NOT EXISTS notes TEXT,
 ADD COLUMN IF NOT EXISTS weather_description TEXT,
-ADD COLUMN IF NOT EXISTS weather_index INTEGER DEFAULT 0;
+ADD COLUMN IF NOT EXISTS weather_index INTEGER DEFAULT 0,
+ADD COLUMN IF NOT EXISTS created_by UUID DEFAULT auth.uid(),
+ADD COLUMN IF NOT EXISTS user_id UUID DEFAULT auth.uid();
+
+ALTER TABLE public.daily_reports ALTER COLUMN created_by SET DEFAULT auth.uid();
+ALTER TABLE public.daily_reports ALTER COLUMN user_id SET DEFAULT auth.uid();
 
 ALTER TABLE public.project_photos
-ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ DEFAULT NOW();
+ADD COLUMN IF NOT EXISTS uploaded_at TIMESTAMPTZ DEFAULT NOW(),
+ADD COLUMN IF NOT EXISTS created_by UUID DEFAULT auth.uid();
+
+ALTER TABLE public.project_photos ALTER COLUMN created_by SET DEFAULT auth.uid();
 
 -- 2. Data Migration: If old 'weather' column exists, copy to 'weather_description'
 DO $$
