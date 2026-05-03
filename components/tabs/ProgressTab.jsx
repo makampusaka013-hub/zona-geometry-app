@@ -481,11 +481,17 @@ export default function ProgressTab({
                       <div className="font-bold text-slate-800 dark:text-white text-[11px] truncate leading-tight" title={row.name}>{row.name}</div>
                     </td>
                     <td className="px-2 py-4 text-center text-[10px] font-bold text-slate-500 w-[50px]">{row.unit}</td>
-                    <td className="px-3 py-4 text-right text-[10px] font-mono font-bold text-slate-400 w-[80px]">{fmt(row.target)}</td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">{fmt(totalReal)}</td>
+                    <td className="px-3 py-4 text-right text-[10px] font-mono font-bold text-slate-400 w-[80px]">
+                      {row.type === 'supervision_staff' ? '-' : fmt(row.target)}
+                    </td>
+                    <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">
+                      {fmt(totalReal)}
+                    </td>
                     <td className="px-3 py-4 text-right text-[10px] font-black w-[90px]">
                       <div className="flex flex-col items-end">
-                        <span className={diff < -0.000001 ? 'text-red-500' : 'text-emerald-500'}>{fmt(diff)}</span>
+                        <span className={row.type === 'supervision_staff' ? 'text-slate-300' : (diff < -0.000001 ? 'text-red-500' : 'text-emerald-500')}>
+                          {row.type === 'supervision_staff' ? '-' : fmt(diff)}
+                        </span>
                         {row.type === 'ahsp_item' && (
                           <div className="flex gap-1 mt-1">
                             {canVerify && row.status_approval === 'draft' && (
