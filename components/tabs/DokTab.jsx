@@ -34,16 +34,6 @@ export default function DokTab({
 
   if (tabLoading) return <Spinner />;
 
-  if (!tabData?.dok || tabData.dok.length === 0) {
-    return (
-      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
-        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-          BELUM ADA DOKUMENTASI FOTO
-        </h3>
-      </div>
-    );
-  }
 
   const handlePrintExcel = async () => {
     try {
@@ -287,9 +277,17 @@ export default function DokTab({
           </form>
         </div>
       )}
-
-      <div className="grid grid-cols-1 gap-8">
-      {tabData.dok.map((rep) => (
+      
+      {(!tabData?.dok || tabData.dok.length === 0) ? (
+        <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
+          <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
+          <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
+            BELUM ADA DOKUMENTASI FOTO
+          </h3>
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 gap-8">
+        {tabData.dok.map((rep) => (
         <div key={rep.id} className="bg-white dark:bg-[#1e293b] rounded-3xl overflow-hidden shadow-xl border border-slate-100 dark:border-slate-700">
           <div className="px-6 py-4 bg-slate-50/80 dark:bg-[#020617]/50 border-b border-slate-100 dark:border-slate-700 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
             <div className="flex items-center gap-3">
@@ -341,8 +339,9 @@ export default function DokTab({
             </div>
           </div>
         </div>
-      ))}
-      </div>
+        ))}
+        </div>
+      )}
     </div>
   );
 }

@@ -455,7 +455,7 @@ function ProyekContent() {
     };
 
     if (isModeNormal) {
-      return filterRbac(TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'export'].includes(t.id)));
+      return filterRbac(TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'dok', 'export'].includes(t.id)));
     }
 
     // RBAC: Filter berdasarkan peran di proyek (userSlotRole) atau Admin/Advance/Pro
@@ -467,8 +467,8 @@ function ProyekContent() {
         case 'pengecek':
           base = TABS.filter(t => ['daftar', 'proyek', 'progress', 'terpakai', 'dok', 'export'].includes(t.id)); break;
         default:
-          // Default untuk user tanpa peran spesifik: Tampilkan menu dasar
-          base = TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'export'].includes(t.id));
+          // Default untuk user tanpa peran spesifik: Tampilkan menu dasar + Dokumentasi
+          base = TABS.filter(t => ['daftar', 'proyek', 'terpakai', 'dok', 'export'].includes(t.id));
       }
     }
     return filterRbac(base);
