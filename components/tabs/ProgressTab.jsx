@@ -171,6 +171,9 @@ export default function ProgressTab({
     setSavingStatus('saving');
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
 
+    // Remove existing item for same day/entity to avoid duplicates in queue
+    saveQueue.current = saveQueue.current.filter(i => !(i.entity_key === key && i.day_number === day && i.entity_type === type));
+    
     saveQueue.current.push({
       project_id: projectId,
       entity_type: type,
