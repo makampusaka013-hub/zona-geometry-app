@@ -102,6 +102,11 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
             if (p.entity_type === 'item' || p.entity_type === 'ahsp_item') {
               const valNum = parseFloat(p.val || 0);
               progressMapByDay[day].progressMap[p.entity_id] = isNaN(valNum) ? 0 : valNum;
+            } else if (p.entity_type === 'custom_labor' || p.entity_type === 'resource') {
+              const res = (resourcesRes.data || []).find(r => 
+                (r.kode_item === p.entity_key) || (r.uraian === p.entity_key) || (r.uraian === p.entity_name)
+              );
+
               // Robust Jenis Detection
               const name = (p.entity_name || p.entity_key || '').toLowerCase();
               const code = (res?.kode_item || p.entity_key || '').toUpperCase();
