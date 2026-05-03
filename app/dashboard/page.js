@@ -106,9 +106,9 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
       {/* Background Watermark */}
       <Icon className={`absolute -right-6 -bottom-6 w-32 h-32 ${c.watermark} -rotate-12 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-0`} />
 
-      <div className="relative z-10 flex items-center gap-4">
+      <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center gap-4 text-center md:text-left">
         {/* Animated Icon Box */}
-        <div className={`p-4 rounded-2xl ${c.box} transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg dark:group-hover:shadow-[0_0_20px_rgba(0,0,0,0.2)]`}>
+        <div className={`w-16 h-16 flex items-center justify-center rounded-2xl ${c.box} transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg dark:group-hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] shrink-0`}>
           <Icon className="w-8 h-8" />
         </div>
 
@@ -117,7 +117,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
           <div className={`text-2xl font-black ${c.text} font-mono tracking-tighter drop-shadow-sm`}>
             {value}
           </div>
-          <div className={`flex items-center gap-1.5 mt-2 text-[10px] font-black ${c.trend} uppercase tracking-tight opacity-80 dark:opacity-70`}>
+          <div className={`flex items-center justify-center md:justify-start gap-1.5 mt-2 text-[10px] font-black ${c.trend} uppercase tracking-tight opacity-80 dark:opacity-70`}>
             <TrendingUp className="w-3 h-3" />
             {sub}
           </div>
