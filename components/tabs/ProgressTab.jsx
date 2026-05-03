@@ -75,7 +75,11 @@ export default function ProgressTab({
         const mapped = {};
         const customs = new Set();
         progressRes.data.forEach(row => {
-          const key = row.entity_key || row.entity_id || row.entity_name;
+          // Use name for supervision/custom if ID is not a number/UUID
+          const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
+            ? row.entity_name 
+            : (row.entity_id || row.entity_name);
+            
           if (!mapped[key]) mapped[key] = {};
           mapped[key][row.day_number] = Number(row.val);
           
@@ -303,9 +307,9 @@ export default function ProgressTab({
 
       // ADDED: Supervision Team (Permanent Manual Entry)
       const supervisionStaff = [
-        { id: 'direksi_tl', name: 'Team Leader', unit: 'Org', target: 0, type: 'supervision_staff' },
-        { id: 'direksi_inspector', name: 'Inspektor', unit: 'Org', target: 0, type: 'supervision_staff' },
-        { id: 'direksi_dinas', name: 'Direksi Dinas', unit: 'Org', target: 0, type: 'supervision_staff' }
+        { id: null, name: 'Team Leader', unit: 'Org', target: 0, type: 'supervision_staff' },
+        { id: null, name: 'Inspektor', unit: 'Org', target: 0, type: 'supervision_staff' },
+        { id: null, name: 'Direksi Dinas', unit: 'Org', target: 0, type: 'supervision_staff' }
       ];
 
       return [...baseLabor, ...customs, ...supervisionStaff];
@@ -518,8 +522,9 @@ export default function ProgressTab({
                               const val = e.target.value;
                               // Allow only numbers, comma, and period
                               if (/^[0-9,.]*$/.test(val)) {
-                                const entityName = row.type === 'supervision_staff' ? row.name : (row.type === 'custom_labor' ? row.name : null);
-                                updateCell(row.id, entityName, row.type, day, val);
+                                const entityId = row.id;
+                                const entityName = row.name;
+                                updateCell(entityId, entityName, row.type, day, val);
                               }
                             }}
                             className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30"
