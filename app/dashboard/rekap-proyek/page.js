@@ -390,11 +390,11 @@ function ProyekContent() {
     // to avoid conflicts with auto-save that might have happened in the background.
     const latestProj = useProjectStore.getState().projects[selectedProject];
     
-    const { error } = await saveProjectIdentity(selectedProject, {
+    const { error, data } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
-      // CRITICAL FIX: Use latestProj.version to prevent "Konflik Data" error
+      // FIX 2: Use latestProj.version to prevent "Konflik Data" error
       version: latestProj?.version || identityForm.version || 1,
       updated_at: new Date().toISOString()
     });
@@ -402,6 +402,15 @@ function ProyekContent() {
     if (error) {
       toast.error('Gagal memperbarui identitas proyek: ' + error.message);
     } else {
+      // FIX 1: Sync store state immediately with latest data (including new version)
+      if (data) {
+        useProjectStore.setState(state => ({
+          projects: {
+            ...state.projects,
+            [selectedProject]: { ...state.projects[selectedProject], ...data }
+          }
+        }));
+      }
       setIsIdentityModalOpen(false);
       toast.success('Identitas proyek berhasil diperbarui.');
     }
