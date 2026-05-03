@@ -5,6 +5,7 @@ import { Camera, MapPin, Box, FileSpreadsheet, Plus, X, Upload, Trash2, Calendar
 import { generateDokumentasiReport } from '@/lib/dokumentasi_excel';
 import { supabase } from '@/lib/supabase';
 import { toast } from '@/lib/toast';
+import { loadGoogleScripts, loginToGoogle, getOrCreateFolder, uploadFileToDrive } from '@/lib/google_drive';
 
 export default function DokTab({ 
   activeTab, 
@@ -27,6 +28,29 @@ export default function DokTab({
     notes: '',
     photos: [] // { file, preview, caption }
   });
+  const [googleToken, setGoogleToken] = React.useState(null);
+  const [isDriveLoading, setIsDriveLoading] = React.useState(false);
+
+  // Load Google Scripts on Mount
+  React.useEffect(() => {
+    loadGoogleScripts().then(() => {
+      console.log('Google Scripts Loaded');
+    });
+  }, []);
+
+  const handleConnectDrive = async () => {
+    try {
+      setIsDriveLoading(true);
+      const token = await loginToGoogle();
+      setGoogleToken(token);
+      toast.success('Google Drive terhubung!');
+    } catch (err) {
+      console.error('Gagal hubung Drive:', err);
+      toast.error('Gagal menghubungkan Google Drive.');
+    } finally {
+      setIsDriveLoading(false);
+    }
+  };
 
   const canEdit = isOwner || isAdmin || isAdvance || isPro || userSlotRole === 'pembuat';
 
@@ -99,38 +123,56 @@ export default function DokTab({
         reportId = newReport.id;
       }
 
-      // 2. Upload Foto ke Storage dan Simpan ke DB
+      // 2. Upload Foto
       for (const item of form.photos) {
-        const fileName = `${Date.now()}_${item.file.name}`;
-        const filePath = `${projectId}/${form.date}/${fileName}`;
+        let storageType = 'supabase';
+        let driveFileId = null;
+        let publicUrl = null;
 
-        const { error: uploadErr } = await supabase.storage
-          .from('project-photos')
-          .upload(filePath, item.file);
-
-        if (uploadErr) {
-          console.warn('Gagal upload ke storage, mencoba fallback...', uploadErr);
-          // Jika bucket belum ada atau error, kita skip upload storage 
-          // tapi biasanya admin harus set up bucket dulu
-          throw uploadErr;
+        if (googleToken) {
+          try {
+            // A. Gunakan Google Drive
+            const rootFolderId = await getOrCreateFolder('Zona Geometry Documentation');
+            const projectFolderId = await getOrCreateFolder(tabData.project?.name || `Proyek_${projectId}`, rootFolderId);
+            driveFileId = await uploadFileToDrive(item.file, projectFolderId);
+            storageType = 'drive';
+          } catch (driveErr) {
+            console.error('Gagal upload ke Drive, mencadangkan ke Supabase...', driveErr);
+            // Fallback ke Supabase jika Drive gagal di tengah jalan
+          }
         }
 
-        const { data: { publicUrl } } = supabase.storage
-          .from('project-photos')
-          .getPublicUrl(filePath);
+        if (storageType === 'supabase') {
+          // B. Gunakan Supabase Storage (Hanya jika Drive tidak aktif)
+          const fileName = `${Date.now()}_${item.file.name}`;
+          const filePath = `${projectId}/${form.date}/${fileName}`;
 
+          const { error: uploadErr } = await supabase.storage
+            .from('project-photos')
+            .upload(filePath, item.file);
+
+          if (!uploadErr) {
+            const { data: { publicUrl: url } } = supabase.storage
+              .from('project-photos')
+              .getPublicUrl(filePath);
+            publicUrl = url;
+          }
+        }
+
+        // 3. Simpan Referensi ke Database
         const { error: photoErr } = await supabase
           .from('project_photos')
           .insert({
             report_id: reportId,
             photo_url: publicUrl,
             caption: item.caption,
-            storage_type: 'supabase',
+            storage_type: storageType,
+            drive_file_id: driveFileId,
             file_name: item.file.name,
             uploaded_at: new Date().toISOString()
           });
 
-        if (photoErr) throw photoErr;
+        if (photoErr) console.error('Gagal simpan info foto:', photoErr);
       }
 
       toast.success('Dokumentasi berhasil disimpan!');
@@ -165,13 +207,29 @@ export default function DokTab({
               {showAddForm ? 'Batal' : 'Tambah Dokumentasi'}
             </button>
           )}
-          <button 
-            onClick={handlePrintExcel}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl font-black text-[10px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95"
-          >
-            <FileSpreadsheet className="w-4 h-4" />
-            Ekspor (Excel)
-          </button>
+            <button
+              onClick={handlePrintExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-emerald-600/20 text-emerald-400 border border-emerald-500/30 rounded-xl hover:bg-emerald-600/30 transition-all text-sm font-medium"
+            >
+              <FileSpreadsheet className="w-4 h-4" />
+              <span>Ekspor Excel</span>
+            </button>
+
+            {!googleToken ? (
+              <button
+                onClick={handleConnectDrive}
+                disabled={isDriveLoading}
+                className="flex items-center gap-2 px-4 py-2 bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-xl hover:bg-blue-600/30 transition-all text-sm font-medium"
+              >
+                <Image src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="G" width={16} height={16} />
+                <span>{isDriveLoading ? 'Menghubungkan...' : 'Hubungkan Drive'}</span>
+              </button>
+            ) : (
+              <div className="flex items-center gap-2 px-4 py-2 bg-blue-600/10 text-blue-400 border border-blue-500/10 rounded-xl text-sm font-medium opacity-60">
+                <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
+                <span>Drive Aktif</span>
+              </div>
+            )}
         </div>
       </div>
 
