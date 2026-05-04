@@ -277,26 +277,14 @@ export default function ProgressTab({
 
     // Helper for Resources (Material, Labor, Alat)
     const getResItems = (targetJenis) => {
+      // Mapping dari targetJenis (frontend) ke jenis_komponen (database)
+      // targetJenis: material, labor, equipment
+      // jenis_komponen: bahan, tenaga, alat
+      const dbJenis = targetJenis === 'material' ? 'bahan' : targetJenis === 'labor' ? 'tenaga' : 'alat';
+
       return (resources || []).filter(r => {
-        const code = (r.key_item || r.kode_item || '').trim().toUpperCase();
-        const unit = (r.satuan || '').trim().toUpperCase();
-        const name = (r.uraian || '').toLowerCase();
-
-        // 1. Deteksi berdasarkan Kode (Prefix)
-        let detected = 'bahan';
-        if (code.startsWith('A') || code.startsWith('B')) detected = 'material';
-        else if (code.startsWith('L')) detected = 'labor';
-        else if (code.startsWith('M')) detected = 'equipment';
-        else {
-          // 2. Fallback berdasarkan Satuan
-          if (unit === 'OH' || unit === 'ORG') detected = 'labor';
-          else if (unit === 'JAM' || unit === 'SEWA') detected = 'equipment';
-          // 3. Fallback berdasarkan Nama
-          else if (name.includes('tukang') || name.includes('mandor') || name.includes('pekerja')) detected = 'labor';
-          else if (name.includes('alat berat') || name.includes('mixer') || name.includes('excavator')) detected = 'equipment';
-        }
-
-        return detected === targetJenis;
+        const itemJenis = (r.jenis_komponen || '').toLowerCase();
+        return itemJenis === dbJenis;
       }).map(r => ({
         id: r.key_item || r.kode_item,
         name: r.uraian,
