@@ -503,12 +503,12 @@ export default function ProgressTab({
                     <td className="px-3 py-4 text-right text-[10px] font-mono font-bold text-slate-400 w-[80px]">
                       {row.type === 'supervision_staff' ? '-' : fmt(row.target)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">
+                    <td className="px-3 py-4 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 w-[80px]">
                       {fmt(totalReal)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black w-[90px]">
+                    <td className="px-3 py-4 text-right text-[10px] font-bold w-[90px]">
                       <div className="flex flex-col items-end">
-                        <span className={row.type === 'supervision_staff' ? 'text-slate-300' : (diff < -0.000001 ? 'text-red-500' : 'text-emerald-500')}>
+                        <span className={row.type === 'supervision_staff' ? 'text-slate-400' : (diff < -0.000001 ? 'text-red-500/80' : 'text-emerald-500/80')}>
                           {row.type === 'supervision_staff' ? '-' : fmt(diff)}
                         </span>
                         {row.type === 'ahsp_item' && (
@@ -530,7 +530,7 @@ export default function ProgressTab({
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={daily[day] !== undefined ? String(daily[day]).replace(/\./g, ',') : ''}
+                            value={daily[day] ? String(daily[day]).replace(/\./g, ',') : ''}
                             disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => {
                               const val = e.target.value;
@@ -541,7 +541,7 @@ export default function ProgressTab({
                                 updateCell(entityId, entityName, row.type, day, val);
                               }
                             }}
-                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30"
+                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-400 dark:text-slate-500 focus:text-indigo-600 dark:focus:text-orange-400 disabled:opacity-30"
                             placeholder="0"
                           />
                         </td>
