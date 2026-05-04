@@ -527,15 +527,6 @@ function ProyekContent() {
     initStore();
   }, [initStore]);
 
-  // Load available locations
-  useEffect(() => {
-    async function fetchLocations() {
-      const { data } = await supabase.from('locations').select('*').order('name');
-      if (data) setLocations(data);
-    }
-    fetchLocations();
-  }, []);
-
   // Efek untuk menangani aksi dari URL (contoh: ?action=new)
   useEffect(() => {
     const action = searchParams?.get('action');
