@@ -133,12 +133,26 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
                 details = details.details;
               }
 
-              const sortedDetails = Array.isArray(details) ? [...details].sort((a, b) => {
+              // Agregasi detail agar tidak ada komponen yang dobel (misal Pasir muncul 2x)
+              const aggregatedDetails = [];
+              const detailMap = {};
+              
+              const rawDetails = Array.isArray(details) ? details : [];
+              rawDetails.forEach(d => {
+                const key = d.kode_item || d.kode || d.uraian;
+                if (!detailMap[key]) {
+                  detailMap[key] = { ...d, koefisien: 0 };
+                  aggregatedDetails.push(detailMap[key]);
+                }
+                detailMap[key].koefisien += Number(d.koefisien || 0);
+              });
+
+              const sortedDetails = aggregatedDetails.sort((a, b) => {
                 const order = { 'upah': 0, 'tenaga': 0, 'bahan': 1, 'alat': 2 };
                 const ja = (a.jenis_komponen || a.jenis || '').toLowerCase();
                 const jb = (b.jenis_komponen || b.jenis || '').toLowerCase();
                 return (order[ja] ?? 99) - (order[jb] ?? 99);
-              }) : [];
+              });
 
               return (
                 <Fragment key={rowId}>
