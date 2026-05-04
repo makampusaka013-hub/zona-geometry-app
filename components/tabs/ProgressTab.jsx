@@ -283,25 +283,6 @@ export default function ProgressTab({
 
     return [];
   }, [viewMode, items, resources]);
-      
-      const customs = (customRoles || []).map(name => ({
-        id: null,
-        name: name,
-        unit: 'OH',
-        target: 0,
-        type: 'custom_labor'
-      }));
-
-      // ADDED: Supervision Team (Permanent Manual Entry)
-      const supervisionStaff = [
-        { id: null, name: 'Team Leader', unit: 'Org', target: 0, type: 'supervision_staff' },
-        { id: null, name: 'Inspektor', unit: 'Org', target: 0, type: 'supervision_staff' },
-        { id: null, name: 'Direksi Dinas', unit: 'Org', target: 0, type: 'supervision_staff' }
-      ];
-
-      return [...baseLabor, ...customs, ...supervisionStaff];
-    }
-  }, [viewMode, items, resources, customRoles]);
 
   const getDateLabel = (dayIdx) => {
     if (!projectStartDate) return null;
