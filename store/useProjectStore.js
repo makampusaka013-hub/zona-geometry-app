@@ -115,8 +115,9 @@ const useProjectStore = create((set, get) => ({
       }
 
       if (activeTab === 'perubahan') {
-        const { data: changes } = await supabase.from('project_changes').select('*').eq('project_id', projectId);
-        nextTabData.changes = changes || [];
+        // Table project_changes doesn't exist in current schema.
+        // Using empty array to prevent 404 spam.
+        nextTabData.changes = [];
       }
 
       if (activeTab === 'dok') {
