@@ -1908,6 +1908,18 @@ function ProyekContent() {
                             className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
+                            Pagu (HSP)
+                          </label>
+                          <input
+                            type="number"
+                            value={identityForm.hsp_value}
+                            onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                      </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (Manual)</label>
@@ -1927,17 +1939,6 @@ function ProyekContent() {
                         </div>
                       </div>
                       <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
-                            Pagu (HSP)
-                          </label>
-                          <input
-                            type="number"
-                            value={identityForm.hsp_value}
-                            onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                          />
-                        </div>
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                             Wilayah / Regional <span className="text-rose-500">*</span>
@@ -2097,7 +2098,6 @@ function ProyekContent() {
                     </div>
                   </div>
                 </div>
-              </div>
 
               <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4 items-center">
                 <button 
