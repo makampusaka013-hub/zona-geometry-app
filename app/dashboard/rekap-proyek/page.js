@@ -447,7 +447,7 @@ function ProyekContent() {
     if (proj) {
       fetchTabData(activeTab, selectedProject, proj);
     }
-  }, [activeTab, selectedProject, storeLoading, fetchTabData, projects]);
+  }, [activeTab, selectedProject, storeLoading, fetchTabData]);
 
   // Ambil data personil saat modal share dibuka
   const fetchMembersForProject = useCallback(async (projectId) => {

@@ -104,7 +104,11 @@ export default function ProgressTab({
         reportsRes.data.forEach(r => {
           const d = new Date(r.report_date);
           const start = new Date(projectStartDate);
+          if (isNaN(d.getTime()) || isNaN(start.getTime())) return;
+
           const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
+          if (isNaN(diff)) return;
+
           reportMap[diff] = {
             weather_index: r.weather_index,
             weather_description: r.weather_description
