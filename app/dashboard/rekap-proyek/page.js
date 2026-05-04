@@ -119,6 +119,8 @@ function ProyekContent() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   
   const onlineUsers = useProjectPresence(selectedProject, member);
+  // useRabRealtime is already called inside components that need it, 
+  // but if we need it globally, we must ensure it doesn't loop.
   useRabRealtime(selectedProject, member?.user_id);
 
   const [selectedBab, setSelectedBab] = useState('all');
@@ -252,17 +254,8 @@ function ProyekContent() {
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
+  }, [searchParams, selectedProject, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
-  // ── Deep Data Sync: Pemicu Fetch Tab saat Proyek/Tab berubah ──
-  useEffect(() => {
-    if (!selectedProject || storeLoading || activeTab === 'daftar') return;
-    
-    const proj = projects[selectedProject];
-    if (proj) {
-      fetchTabData(activeTab, selectedProject, proj);
-    }
-  }, [selectedProject, activeTab, storeLoading]);
 
   const lastModalOpen = useRef(false);
 
@@ -441,15 +434,21 @@ function ProyekContent() {
   }
 
   // Unified data fetch for current tab
+  const lastFetchRef = useRef({ tab: null, id: null });
   useEffect(() => {
     if (!selectedProject || storeLoading) return;
     
-    // Always fetch if we have a valid project selected
+    // Only fetch if tab or project changed to prevent infinite loops
+    if (lastFetchRef.current.tab === activeTab && lastFetchRef.current.id === selectedProject) {
+      return;
+    }
+
     const proj = projects[selectedProject];
     if (proj) {
+      lastFetchRef.current = { tab: activeTab, id: selectedProject };
       fetchTabData(activeTab, selectedProject, proj);
     }
-  }, [activeTab, selectedProject, storeLoading, fetchTabData]);
+  }, [activeTab, selectedProject, storeLoading, fetchTabData, projects]);
 
   // Ambil data personil saat modal share dibuka
   const fetchMembersForProject = useCallback(async (projectId) => {

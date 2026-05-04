@@ -105,10 +105,15 @@ const useProjectStore = create((set, get) => ({
       };
       const nextCatalog = { ...get().ahspCatalog, ...(masterDetails || {}) };
 
-      if ((activeTab === 'proyek' || activeTab === 'progress' || activeTab === 'terpakai') && (!masterDetails || Object.keys(masterDetails).length === 0)) {
-        const catalogRes = await fetchAllAhspCatalog();
-        if (catalogRes.data) {
-          catalogRes.data.forEach(item => {
+      // OPTIMIZATION: Only fetch catalog for MISSING AHSPs in the project, never the whole catalog.
+      const missingIds = (lines || [])
+        .filter(l => l.master_ahsp_id && !nextCatalog[l.master_ahsp_id])
+        .map(l => l.master_ahsp_id);
+
+      if (missingIds.length > 0) {
+        const { data: missingDetails } = await fetchAhspDetailsInBulk(missingIds);
+        if (missingDetails) {
+          missingDetails.forEach(item => {
             nextCatalog[item.master_ahsp_id] = item.details || [];
           });
         }
