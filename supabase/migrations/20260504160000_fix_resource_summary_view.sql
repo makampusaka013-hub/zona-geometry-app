@@ -65,24 +65,21 @@ SELECT
     WHEN upper(left(trim(kode_item_dasar), 1)) = 'L' THEN 'tenaga'
     WHEN upper(left(trim(kode_item_dasar), 1)) IN ('A','B') THEN 'bahan'
     WHEN upper(left(trim(kode_item_dasar), 1)) = 'M' THEN 'alat'
-    ELSE 'bahan'
-  END                                        AS jenis_komponen,
-  MAX(harga_efektif)                         AS harga_snapshot,
-  MAX(tkdn_pct)                              AS tkdn_percent,
-  item_id,
-  faktor_konversi,
-  SUM(volume * koefisien)                                                  AS total_volume_terpakai,
-  SUM(volume * koefisien * harga_efektif)                                  AS kontribusi_nilai,
-  SUM(volume * koefisien * harga_efektif * (COALESCE(tkdn_pct,0)/100.0))  AS nilai_tkdn
-FROM resolved
-WHERE uraian_ahsp IS NOT NULL
-GROUP BY
-  project_id, bab_pekerjaan, uraian_ahsp, satuan_uraian, jenis_komponen, item_id, faktor_konversi;
+  uraian_ahsp    AS uraian,
+  key_item,
+  satuan_uraian  AS satuan,
+  jenis_komponen,
+  harga_snapshot,
+  tkdn_percent,
+  total_volume,
+  kontribusi_nilai,
+  nilai_tkdn
+FROM aggregated;
 
 GRANT SELECT ON public.view_project_resource_summary TO authenticated;
 
 
--- Fix RPC: return total_volume_terpakai
+-- Fix RPC: return total_volume
 DROP FUNCTION IF EXISTS public.get_project_resource_aggregation(uuid);
 
 CREATE OR REPLACE FUNCTION public.get_project_resource_aggregation(p_project_id uuid)
@@ -91,7 +88,7 @@ RETURNS TABLE(
   key_item              text,
   satuan                text,
   jenis_komponen        text,
-  total_volume_terpakai numeric,
+  total_volume          numeric,
   kontribusi_nilai      numeric,
   nilai_tkdn            numeric
 )
@@ -104,7 +101,7 @@ AS $$
     key_item,
     satuan,
     jenis_komponen,
-    SUM(total_volume_terpakai) AS total_volume_terpakai,
+    SUM(total_volume) AS total_volume,
     SUM(kontribusi_nilai)      AS kontribusi_nilai,
     SUM(nilai_tkdn)            AS nilai_tkdn
   FROM public.view_project_resource_summary
