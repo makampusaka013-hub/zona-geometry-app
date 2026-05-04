@@ -811,6 +811,7 @@ function ProyekContent() {
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
                     onClick={() => setActiveTab(tab.id)}
+                    title={tab.label}
                     className={`p-2 rounded-xl transition-all duration-300 ${activeTab === tab.id
                       ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105'
                       : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400'
@@ -828,35 +829,37 @@ function ProyekContent() {
             </div>
 
             {/* ── Grup Filter (Aktivitas & Bab) Terintegrasi ke Header ── */}
-            <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                <Package className="w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={selectedProject || ''}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setSelectedProject(val);
-                  }}
-                  className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
-                >
-                  {isCreating && !selectedProject && (
-                    <option value="" className="dark:bg-slate-800 dark:text-orange-400 font-bold">
-                      PROYEK BARU: {identityForm.name || 'DRAFT'}
-                    </option>
-                  )}
-                  <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
-                  {Object.values(projects || {}).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
-                </select>
-              </div>
+            {activeTab !== 'daftar' && (
+              <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <Package className="w-3.5 h-3.5 text-slate-400" />
+                  <select
+                    value={selectedProject || ''}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setSelectedProject(val);
+                    }}
+                    className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
+                  >
+                    {isCreating && !selectedProject && (
+                      <option value="" className="dark:bg-slate-800 dark:text-orange-400 font-bold">
+                        PROYEK BARU: {identityForm.name || 'DRAFT'}
+                      </option>
+                    )}
+                    <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
+                    {Object.values(projects || {}).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
+                  </select>
+                </div>
 
-              <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
-                <select value={selectedBab} onChange={e => setSelectedBab(e.target.value)} className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[120px] truncate">
-                  <option value="all" className="dark:bg-slate-800 dark:text-white">Semua Bab</option>
-                  {babOptions.map(bab => <option key={bab} value={bab} className="dark:bg-slate-800 dark:text-white">{bab}</option>)}
-                </select>
+                <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
+                  <select value={selectedBab} onChange={e => setSelectedBab(e.target.value)} className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[120px] truncate">
+                    <option value="all" className="dark:bg-slate-800 dark:text-white">Semua Bab</option>
+                    {babOptions.map(bab => <option key={bab} value={bab} className="dark:bg-slate-800 dark:text-white">{bab}</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
 
