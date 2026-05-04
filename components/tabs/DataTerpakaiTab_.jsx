@@ -30,13 +30,22 @@ export default function DataTerpakaiTab({
       const name = (item.uraian || '').toLowerCase();
 
       let j = rawJ;
-      // Heuristic fallback if type is missing or ambiguous
-      if (!rawJ || rawJ === 'bahan_upah_alat' || rawJ === 'upah') {
-        if (code.startsWith('A') || code.startsWith('B')) {
-          j = 'bahan';
-        } else if (code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang') || name.includes('mandor')) {
+      // 1. Prioritas Kode (A/B = Bahan, L = Tenaga, M/E/C = Alat)
+      if (code.startsWith('A') || code.startsWith('B')) {
+        j = 'bahan';
+      } else if (code.startsWith('L')) {
+        j = 'tenaga';
+      } else if (code.startsWith('M') || code.startsWith('E') || code.startsWith('C')) {
+        j = 'alat';
+      } else {
+        // Fallback Heuristic
+        if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor)\b/.test(name)) {
           j = 'tenaga';
-        } else if (code.startsWith('M') || unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+        } else if (unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+          j = 'alat';
+        } else if (rawJ.includes('upah') || rawJ.includes('tenaga')) {
+          j = 'tenaga';
+        } else if (rawJ.includes('alat')) {
           j = 'alat';
         } else {
           j = 'bahan';
@@ -234,7 +243,9 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
   const isOverrideActive = item.source_table === 'master_harga_custom';
 
   const [harga, setHarga] = useState(String(Math.round(item.harga_snapshot || 0)));
-  const [tkdn, setTkdn] = useState(String(Number(item.tkdn_percent || 0).toFixed(2)));
+  // Hitung tkdn_percent dari nilai_tkdn/kontribusi_nilai sebagai sumber utama
+  const computedTkdn = item.tkdn_percent || (item.kontribusi_nilai > 0 ? (item.nilai_tkdn / item.kontribusi_nilai * 100) : 0);
+  const [tkdn, setTkdn] = useState(String(Number(computedTkdn || 0).toFixed(2)));
   const [saving, setSaving] = useState(false);
   const [resetting, setResetting] = useState(false);
 
@@ -380,7 +391,7 @@ function OverrideModal({ item, formatIdr, onClose, onSaved }) {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-xs text-slate-400 font-semibold">TKDN PUPR:</span>
-              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{Number(item.tkdn_percent || 0).toFixed(2)}%</span>
+              <span className="text-xs font-black text-emerald-600 dark:text-emerald-400 font-mono">{Number(item.tkdn_percent || (item.kontribusi_nilai > 0 ? (item.nilai_tkdn / item.kontribusi_nilai * 100) : 0) || 0).toFixed(2)}%</span>
             </div>
             {isOverrideActive && (
               <div className="flex items-center gap-1.5 pt-1">
@@ -549,12 +560,12 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-700 dark:text-slate-200">
-                        {Number(item.total_volume_terpakai || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}
+                        {Number(item.total_volume || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}
                       </td>
                       <td className={`px-6 py-4 text-right font-mono text-xs font-bold ${isOverridden ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {formatIdr(item.harga_snapshot)}
                       </td>
-                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{Number(item.tkdn_percent || 0).toFixed(2)}%</td>
+                      <td className="px-6 py-4 text-right font-mono text-xs font-bold text-emerald-600 dark:text-emerald-400">{Number(item.tkdn_percent || (item.kontribusi_nilai > 0 ? (item.nilai_tkdn / item.kontribusi_nilai * 100) : 0) || 0).toFixed(2)}%</td>
                       <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-900 dark:text-white">{formatIdr(item.kontribusi_nilai)}</td>
                       <td className="px-6 py-4 text-center">
                         {!readOnly ? (

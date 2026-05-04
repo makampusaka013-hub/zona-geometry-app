@@ -59,7 +59,8 @@ export default function ProgressTab({
   isPro,
   currentUserId
 }) {
-  const [progressData, setProgressData] = useState({}); // { [entity_id|name]: { [day]: val } }
+  const [progressData, setProgressData] = useState({}); // { [key]: { [day]: val } } - akumulasi semua user
+  const [myProgressData, setMyProgressData] = useState({}); // { [key]: { [day]: val } } - hanya milik currentUser
   const [dailyReports, setDailyReports] = useState({}); // { [day]: { weather_index, weather_description } }
   const [customRoles, setCustomRoles] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
@@ -73,46 +74,66 @@ export default function ProgressTab({
   useEffect(() => {
     if (activeTab !== 'progress' || !projectId) return;
     async function loadProgress() {
-      setLoadingProgress(true);
-      const [progressRes, reportsRes] = await Promise.all([
-        supabase.from('project_progress_daily').select('*').eq('project_id', projectId).eq('created_by', currentUserId),
-        supabase.from('daily_reports').select('*').eq('project_id', projectId)
-      ]);
+      try {
+        setLoadingProgress(true);
+        const [progressRes, reportsRes] = await Promise.all([
+          // Ambil semua progress proyek (dari semua user) - bukan hanya milik currentUser
+          supabase.from('project_progress_daily').select('*').eq('project_id', projectId),
+          supabase.from('daily_reports').select('*').eq('project_id', projectId)
+        ]);
 
-      if (!progressRes.error && progressRes.data) {
-        const mapped = {};
-        const customs = new Set();
-        progressRes.data.forEach(row => {
-          // Use name for supervision/custom if ID is not a number/UUID
-          const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
-            ? row.entity_name 
-            : (row.entity_id || row.entity_name);
-            
-          if (!mapped[key]) mapped[key] = {};
-          mapped[key][row.day_number] = Number(row.val);
-          
-          if (row.entity_type === 'custom_labor' && !row.entity_id) {
-            customs.add(row.entity_name);
-          }
-        });
-        setProgressData(mapped);
-        setCustomRoles(Array.from(customs));
-      }
+        if (!progressRes.error && progressRes.data) {
+          const mapped = {};
+          const myEdits = {}; // Track entri milik currentUser untuk keperluan edit
+          const customs = new Set();
 
-      if (!reportsRes.error && reportsRes.data) {
-        const reportMap = {};
-        reportsRes.data.forEach(r => {
-          const d = new Date(r.report_date);
-          const start = new Date(projectStartDate);
-          const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
-          reportMap[diff] = {
-            weather_index: r.weather_index,
-            weather_description: r.weather_description
-          };
-        });
-        setDailyReports(reportMap);
+          progressRes.data.forEach(row => {
+            const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
+              ? row.entity_name 
+              : (row.entity_id || row.entity_name);
+
+            // Akumulasi (SUM) dari semua kontributor
+            if (!mapped[key]) mapped[key] = {};
+            mapped[key][row.day_number] = (mapped[key][row.day_number] || 0) + Number(row.val);
+
+            // Simpan data milik currentUser secara terpisah untuk keperluan save/edit
+            if (row.created_by === currentUserId) {
+              if (!myEdits[key]) myEdits[key] = {};
+              myEdits[key][row.day_number] = Number(row.val);
+            }
+
+            if (row.entity_type === 'custom_labor' && !row.entity_id) {
+              customs.add(row.entity_name);
+            }
+          });
+
+          setProgressData(mapped);
+          setMyProgressData(myEdits);
+          setCustomRoles(Array.from(customs));
+        }
+
+        if (!reportsRes.error && reportsRes.data) {
+          const reportMap = {};
+          reportsRes.data.forEach(r => {
+            const d = new Date(r.report_date);
+            const start = new Date(projectStartDate);
+            if (isNaN(d.getTime()) || isNaN(start.getTime())) return;
+
+            const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (isNaN(diff)) return;
+
+            reportMap[diff] = {
+              weather_index: r.weather_index,
+              weather_description: r.weather_description
+            };
+          });
+          setDailyReports(reportMap);
+        }
+      } catch (err) {
+        console.error('Failed to load progress data:', err);
+      } finally {
+        setLoadingProgress(false);
       }
-      setLoadingProgress(false);
     }
     loadProgress();
   }, [activeTab, projectId, currentUserId, projectStartDate]);
@@ -124,7 +145,8 @@ export default function ProgressTab({
     setSavingStatus('saving');
     try {
       const payload = [];
-      Object.entries(progressData).forEach(([key, days]) => {
+      // Simpan hanya data milik currentUser (bukan akumulasi)
+      Object.entries(myProgressData).forEach(([key, days]) => {
         const row = rows.find(r => (r.id || r.name) === key);
         if (!row) return;
 
@@ -168,20 +190,28 @@ export default function ProgressTab({
     const val = parseFloat(sanitizedValue) || 0;
     const key = entityId || entityName;
 
+    // Update myProgressData (entri milik currentUser)
+    const prevMyVal = myProgressData[key]?.[day] || 0;
+    const delta = val - prevMyVal;
+
+    setMyProgressData(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), [day]: val }
+    }));
+
+    // Update progressData (akumulasi semua user) dengan mengganti kontribusi lama dgn baru
     setProgressData(prev => ({
       ...prev,
       [key]: {
         ...(prev[key] || {}),
-        [day]: val
+        [day]: Math.max(0, (prev[key]?.[day] || 0) + delta)
       }
     }));
 
     setSavingStatus('saving');
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
 
-    // Remove existing item for same day/entity to avoid duplicates in queue
     saveQueue.current = saveQueue.current.filter(i => !(i.entity_key === key && i.day_number === day && i.entity_type === type));
-    
     saveQueue.current.push({
       project_id: projectId,
       entity_type: type,
@@ -259,31 +289,25 @@ export default function ProgressTab({
 
     // Heuristic Helper for Resources
     const getJenis = (r) => {
-      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
       const code = (r.kode_item || r.key_item || '').trim().toUpperCase();
-      const unit = (r.satuan || '').toUpperCase();
       const name = (r.uraian || '').toLowerCase();
+      const unit = (r.satuan || '').toUpperCase();
+      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
 
-      // 1. Prioritas Satuan (Signal paling kuat)
-      if (unit === 'OH' || unit === 'ORG') return 'upah';
-      if (unit === 'JAM' || unit === 'SEWA') return 'alat';
+      // 1. Prioritas Kode (Sesuai Permintaan User: A/B = Material, L = Tenaga, M/E/C = Alat)
+      if (code.startsWith('A') || code.startsWith('B')) return 'bahan';
+      if (code.startsWith('L')) return 'upah';
+      if (code.startsWith('M') || code.startsWith('E') || code.startsWith('C')) return 'alat';
 
-      // 2. Keyword Nama
-      if (/\b(pekerja|tukang|mandor|mekanik|sopir|driver)\b/.test(name)) return 'upah';
-      if (/\b(sewa|excavator|vibro|stamper|mixer|crane|truck|pompa|genset|bulldozer|grader)\b/.test(name)) return 'alat';
-
-      // 3. Jenis Explicit
+      // 2. Fallback Heuristic jika kode tidak ada (NO-REF)
+      if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor)\b/.test(name)) return 'upah';
+      if (unit === 'JAM' || unit === 'SEWA' || /\b(sewa|excavator|vibro|mixer)\b/.test(name)) return 'alat';
+      
+      // 3. Fallback Jenis Explicit
       if (rawJ.includes('upah') || rawJ.includes('tenaga')) return 'upah';
       if (rawJ.includes('alat')) return 'alat';
-      if (rawJ.includes('bahan') || rawJ.includes('material')) return 'bahan';
 
-      // 4. Kode Prefiks (A=Tenaga, B=Bahan, C/E/M=Alat, L=Labor)
-      if (code.startsWith('A')) return 'upah';
-      if (code.startsWith('L')) return 'upah';
-      if (code.startsWith('B')) return 'bahan';
-      if (code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) return 'alat';
-
-      return 'bahan'; // Fallback
+      return 'bahan'; 
     };
 
     if (viewMode === 'material') {
@@ -345,15 +369,29 @@ export default function ProgressTab({
   };
 
   if (activeTab !== 'progress') return null;
-  if (tabLoading || loadingProgress) return <Spinner />;
+  if (tabLoading) return <Spinner />;
+
+  // CRITICAL: If project is not fully loaded or missing basic info
+  if (!projectStartDate) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-60 text-center px-10">
+        <Calendar className="w-20 h-20 mb-6 text-slate-300" strokeWidth={1} />
+        <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Tanggal Mulai Proyek Belum Diatur</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed uppercase font-bold">
+          Silakan atur tanggal mulai proyek di tab "Daftar" atau "Identitas" terlebih dahulu agar kalender progress dapat dihitung.
+        </p>
+      </div>
+    );
+  }
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
-        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-          BELUM ADA ITEM PEKERJAAN
-        </h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-60 text-center px-10">
+        <Package className="w-20 h-20 mb-6 text-slate-300" strokeWidth={1} />
+        <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Belum Ada Item Pekerjaan</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed uppercase font-bold">
+          Proyek ini belum memiliki item pekerjaan di RAB. Silakan tambahkan item pekerjaan di tab "RAB Editor" terlebih dahulu.
+        </p>
       </div>
     );
   }
@@ -503,12 +541,12 @@ export default function ProgressTab({
                     <td className="px-3 py-4 text-right text-[10px] font-mono font-bold text-slate-400 w-[80px]">
                       {row.type === 'supervision_staff' ? '-' : fmt(row.target)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">
+                    <td className="px-3 py-4 text-right text-[10px] font-bold text-slate-500 dark:text-slate-400 w-[80px]">
                       {fmt(totalReal)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black w-[90px]">
+                    <td className="px-3 py-4 text-right text-[10px] font-bold w-[90px]">
                       <div className="flex flex-col items-end">
-                        <span className={row.type === 'supervision_staff' ? 'text-slate-300' : (diff < -0.000001 ? 'text-red-500' : 'text-emerald-500')}>
+                        <span className={row.type === 'supervision_staff' ? 'text-slate-400' : (diff < -0.000001 ? 'text-red-500/80' : 'text-emerald-500/80')}>
                           {row.type === 'supervision_staff' ? '-' : fmt(diff)}
                         </span>
                         {row.type === 'ahsp_item' && (
@@ -525,23 +563,22 @@ export default function ProgressTab({
                     </td>
                     {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
                       const day = viewStartIndex + idx + 1;
+                      // Input menampilkan nilai milik currentUser (bukan akumulasi)
+                      const myVal = myProgressData[key]?.[day];
                       return (
                         <td key={day} className="px-1 py-4 text-center w-[55px]">
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={daily[day] !== undefined ? String(daily[day]).replace(/\./g, ',') : ''}
+                            value={myVal ? String(myVal).replace(/\./g, ',') : ''}
                             disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => {
                               const val = e.target.value;
-                              // Allow only numbers, comma, and period
                               if (/^[0-9,.]*$/.test(val)) {
-                                const entityId = row.id;
-                                const entityName = row.name;
-                                updateCell(entityId, entityName, row.type, day, val);
+                                updateCell(row.id, row.name, row.type, day, val);
                               }
                             }}
-                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-800 dark:text-white disabled:opacity-30"
+                            className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-400 dark:text-slate-500 focus:text-indigo-600 dark:focus:text-orange-400 disabled:opacity-30"
                             placeholder="0"
                           />
                         </td>
