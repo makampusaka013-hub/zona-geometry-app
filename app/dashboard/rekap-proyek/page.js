@@ -153,7 +153,7 @@ function ProyekContent() {
   const [isCreating, setIsCreating] = useState(false);
   
   const [identityForm, setIdentityForm] = useState({
-    name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
+    name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, planned_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
@@ -164,7 +164,7 @@ function ProyekContent() {
   
   const [createForm, setCreateForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
-    contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
+    contract_number: '', hsp_value: 0, manual_duration: 0, planned_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
     pptk_nip: '',
@@ -276,6 +276,7 @@ function ProyekContent() {
         contract_number: currentProjectObj?.contract_number || '',
         hsp_value: currentProjectObj?.hsp_value || 0,
         manual_duration: currentProjectObj?.manual_duration || 0,
+        planned_duration: currentProjectObj?.planned_duration || 0,
         ppn_percent: currentProjectObj?.ppn_percent ?? 12,
         program_name: currentProjectObj?.program_name || '',
         activity_name: currentProjectObj?.activity_name || '',
@@ -309,6 +310,7 @@ function ProyekContent() {
         kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
         start_date: '',
         manual_duration: 0,
+        planned_duration: 0,
         version: 1
       });
     }
@@ -366,6 +368,7 @@ function ProyekContent() {
       contract_number: createForm.contract_number,
       hsp_value: parseFloat(createForm.hsp_value) || 0,
       manual_duration: parseInt(createForm.manual_duration) || 0,
+      planned_duration: 0,
       ppn_percent: parseFloat(createForm.ppn_percent) || 12,
       program_name: createForm.program_name,
       activity_name: createForm.activity_name,
@@ -399,6 +402,7 @@ function ProyekContent() {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
       manual_duration: parseInt(identityForm.manual_duration) || 0,
+      planned_duration: manpowerSummary.projectTotalDays || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
       // FIX 2: Use latestProj.version to prevent "Konflik Data" error
       version: latestProj?.version || identityForm.version || 1,
@@ -1131,7 +1135,10 @@ function ProyekContent() {
                           <td className="px-6 py-6 text-center font-mono font-black text-slate-700 dark:text-slate-300 text-[11px]">{formatIdr(rounded)}</td>
                           <td className="px-6 py-6 text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{p.manual_duration || 0} / {p.realization_days || 0} Hari</span>
+                              <div className="flex flex-col items-center leading-tight">
+                                <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">KTR: {p.manual_duration || 0} Hari</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">RNC: {p.planned_duration || 0} Hari</span>
+                              </div>
                               <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.manual_duration > 0 ? Math.min(100, ((p.realization_days || 0) / p.manual_duration) * 100) : 0}%` }} />
                               </div>
@@ -1901,6 +1908,25 @@ function ProyekContent() {
                             className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                           />
                         </div>
+                      <div className="grid grid-cols-2 gap-4">
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (Manual)</label>
+                          <input
+                            type="number"
+                            value={identityForm.manual_duration}
+                            onChange={e => setIdentityForm({ ...identityForm, manual_duration: e.target.value })}
+                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Rencana (Otomatis)</label>
+                          <div className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold dark:text-slate-400 flex items-center justify-between">
+                            <span>{manpowerSummary.projectTotalDays || 0} Hari</span>
+                            <span className="text-[8px] px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded-full uppercase tracking-tighter">Gantt Chart</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                             Pagu (HSP)
@@ -1909,17 +1935,6 @@ function ProyekContent() {
                             type="number"
                             value={identityForm.hsp_value}
                             onChange={e => setIdentityForm({ ...identityForm, hsp_value: e.target.value })}
-                            className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
-                          />
-                        </div>
-                      </div>
-                      <div className="grid grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
-                          <input
-                            type="number"
-                            value={identityForm.manual_duration}
-                            onChange={e => setIdentityForm({ ...identityForm, manual_duration: e.target.value })}
                             className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                           />
                         </div>
