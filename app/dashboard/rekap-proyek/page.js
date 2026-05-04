@@ -98,14 +98,16 @@ function ProyekContent() {
   const pathname = usePathname();
   
   // Connect to Global Store (Single Source of Truth)
-  const { 
-    member, projects, selectedProject, locations, isLoading: storeLoading,
-    initStore, setSelectedProject, setProjects, saveProjectIdentity, handleDeleteProject: storeHandleDeleteProject
-  } = useProjectStore();
+  const member = useProjectStore(s => s.member);
+  const projects = useProjectStore(s => s.projects);
+  const selectedProject = useProjectStore(s => s.selectedProject);
+  const locations = useProjectStore(s => s.locations);
+  const storeLoading = useProjectStore(s => s.isLoading);
+  const initStore = useProjectStore(s => s.initStore);
+  const setSelectedProject = useProjectStore(s => s.setSelectedProject);
+  const saveProjectIdentity = useProjectStore(s => s.saveProjectIdentity);
+  const storeHandleDeleteProject = useProjectStore(s => s.handleDeleteProject);
 
-  // Tab Data & Catalog are technically in useRabStore/useUIStore or local state
-  // If they were intended to be in ProjectStore, we must ensure they are defined.
-  // For now, we add safety guards to all destructured items.
   const tabData = useProjectStore(s => s.tabData) || { schedule: { lines: [] }, ahsp: [], harga: [] };
   const tabLoading = useProjectStore(s => s.tabLoading) || false;
   const ahspCatalog = useProjectStore(s => s.ahspCatalog) || {};
@@ -117,6 +119,8 @@ function ProyekContent() {
   const [isCheckingAuth, setIsCheckingAuth] = useState(false);
   
   const onlineUsers = useProjectPresence(selectedProject, member);
+  // useRabRealtime is already called inside components that need it, 
+  // but if we need it globally, we must ensure it doesn't loop.
   useRabRealtime(selectedProject, member?.user_id);
 
   const [selectedBab, setSelectedBab] = useState('all');
@@ -153,7 +157,7 @@ function ProyekContent() {
   const [isCreating, setIsCreating] = useState(false);
   
   const [identityForm, setIdentityForm] = useState({
-    name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
+    name: '', code: '', location: '', location_id: '', fiscal_year: '', contract_number: '', hsp_value: 0, manual_duration: 0, planned_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
     konsultan_name: '', konsultan_supervisor: '', kontraktor_director: '',
@@ -164,7 +168,7 @@ function ProyekContent() {
   
   const [createForm, setCreateForm] = useState({
     name: '', code: '', location: '', location_id: '', fiscal_year: new Date().getFullYear().toString(),
-    contract_number: '', hsp_value: 0, manual_duration: 0, ppn_percent: 12,
+    contract_number: '', hsp_value: 0, manual_duration: 0, planned_duration: 0, ppn_percent: 12,
     program_name: '', activity_name: '', work_name: '',
     kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
     pptk_nip: '',
@@ -250,68 +254,74 @@ function ProyekContent() {
       params.set('id', selectedProject);
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     }
-  }, [searchParams, selectedProject, projects, pathname, router, isCreating, storeLoading, setSelectedProject]);
+  }, [searchParams, selectedProject, pathname, router, isCreating, storeLoading, setSelectedProject]);
 
-  // ── Deep Data Sync: Pemicu Fetch Tab saat Proyek/Tab berubah ──
-  useEffect(() => {
-    if (!selectedProject || storeLoading || activeTab === 'daftar') return;
-    
-    const proj = projects[selectedProject];
-    if (proj) {
-      fetchTabData(activeTab, selectedProject, proj);
-    }
-  }, [selectedProject, activeTab, storeLoading]);
+
+  const lastModalOpen = useRef(false);
 
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
     if (storeLoading) return;
 
-    if (currentProjectObj) {
-      setIdentityForm({
-        name: currentProjectObj?.name || '',
-        code: currentProjectObj?.code || '',
-        location: currentProjectObj?.location || '',
-        location_id: currentProjectObj?.location_id || '',
-        fiscal_year: currentProjectObj?.fiscal_year || '',
-        contract_number: currentProjectObj?.contract_number || '',
-        hsp_value: currentProjectObj?.hsp_value || 0,
-        manual_duration: currentProjectObj?.manual_duration || 0,
-        ppn_percent: currentProjectObj?.ppn_percent ?? 12,
-        program_name: currentProjectObj?.program_name || '',
-        activity_name: currentProjectObj?.activity_name || '',
-        work_name: currentProjectObj?.work_name || '',
-        ppk_name: currentProjectObj?.ppk_name || '',
-        ppk_nip: currentProjectObj?.ppk_nip || '',
-        pptk_name: currentProjectObj?.pptk_name || '',
-        pptk_nip: currentProjectObj?.pptk_nip || '',
-        konsultan_name: currentProjectObj?.konsultan_name || '',
-        konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
-        konsultan_title: currentProjectObj?.konsultan_title || '', // Added
-        kontraktor_director: currentProjectObj?.kontraktor_director || '',
-        kontraktor_title: currentProjectObj?.kontraktor_title || '', // Added
-        kadis_name: currentProjectObj?.kadis_name || '',
-        kadis_nip: currentProjectObj?.kadis_nip || '',
-        kabid_name: currentProjectObj?.kabid_name || '',
-        kabid_nip: currentProjectObj?.kabid_nip || '',
-        kontraktor_name: currentProjectObj?.kontraktor_name || '',
-        start_date: currentProjectObj?.start_date || '',
-        version: currentProjectObj?.version || 1
-      });
-    } else if (!selectedProject) {
-      setIdentityForm({
-        name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
-        contract_number: '', hsp_value: 0, ppn_percent: 12,
-        program_name: '', activity_name: '', work_name: '',
-        ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
-        konsultan_name: '', konsultan_supervisor: '', konsultan_title: '',
-        kontraktor_director: '', kontraktor_title: '',
-        kontraktor_name: '',
-        kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
-        start_date: '',
-        version: 1
-      });
+    // REFINEMENT: Hanya sinkronisasi jika:
+    // 1. Modal baru saja dibuka (justOpened)
+    // 2. Modal sedang tertutup (agar data selalu siap)
+    const justOpened = isIdentityModalOpen && !lastModalOpen.current;
+    const isClosed = !isIdentityModalOpen;
+
+    if (justOpened || isClosed) {
+      if (currentProjectObj) {
+        setIdentityForm({
+          name: currentProjectObj?.name || '',
+          code: currentProjectObj?.code || '',
+          location: currentProjectObj?.location || '',
+          location_id: currentProjectObj?.location_id || '',
+          fiscal_year: currentProjectObj?.fiscal_year || '',
+          contract_number: currentProjectObj?.contract_number || '',
+          hsp_value: currentProjectObj?.hsp_value || 0,
+          manual_duration: currentProjectObj?.manual_duration || 0,
+          planned_duration: currentProjectObj?.planned_duration || 0,
+          ppn_percent: currentProjectObj?.ppn_percent ?? 12,
+          program_name: currentProjectObj?.program_name || '',
+          activity_name: currentProjectObj?.activity_name || '',
+          work_name: currentProjectObj?.work_name || '',
+          ppk_name: currentProjectObj?.ppk_name || '',
+          ppk_nip: currentProjectObj?.ppk_nip || '',
+          pptk_name: currentProjectObj?.pptk_name || '',
+          pptk_nip: currentProjectObj?.pptk_nip || '',
+          konsultan_name: currentProjectObj?.konsultan_name || '',
+          konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
+          konsultan_title: currentProjectObj?.konsultan_title || '',
+          kontraktor_director: currentProjectObj?.kontraktor_director || '',
+          kontraktor_title: currentProjectObj?.kontraktor_title || '',
+          kadis_name: currentProjectObj?.kadis_name || '',
+          kadis_nip: currentProjectObj?.kadis_nip || '',
+          kabid_name: currentProjectObj?.kabid_name || '',
+          kabid_nip: currentProjectObj?.kabid_nip || '',
+          kontraktor_name: currentProjectObj?.kontraktor_name || '',
+          start_date: currentProjectObj?.start_date || '',
+          version: currentProjectObj?.version || 1
+        });
+      } else if (!selectedProject) {
+        setIdentityForm({
+          name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
+          contract_number: '', hsp_value: 0, ppn_percent: 12,
+          program_name: '', activity_name: '', work_name: '',
+          ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
+          konsultan_name: '', konsultan_supervisor: '', konsultan_title: '',
+          kontraktor_director: '', kontraktor_title: '',
+          kontraktor_name: '',
+          kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
+          start_date: '',
+          manual_duration: 0,
+          planned_duration: 0,
+          version: 1
+        });
+      }
     }
-  }, [currentProjectObj, storeLoading, selectedProject]);
+    
+    lastModalOpen.current = isIdentityModalOpen;
+  }, [currentProjectObj, storeLoading, selectedProject, isIdentityModalOpen]);
 
   // ── Sync Labor Settings State ──
   useEffect(() => {
@@ -364,6 +374,8 @@ function ProyekContent() {
       fiscal_year: createForm.fiscal_year,
       contract_number: createForm.contract_number,
       hsp_value: parseFloat(createForm.hsp_value) || 0,
+      manual_duration: parseInt(createForm.manual_duration) || 0,
+      planned_duration: 0,
       ppn_percent: parseFloat(createForm.ppn_percent) || 12,
       program_name: createForm.program_name,
       activity_name: createForm.activity_name,
@@ -396,6 +408,8 @@ function ProyekContent() {
     const { error, data } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
+      manual_duration: parseInt(identityForm.manual_duration) || 0,
+      planned_duration: manpowerSummary.projectTotalDays || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
       // FIX 2: Use latestProj.version to prevent "Konflik Data" error
       version: latestProj?.version || identityForm.version || 1,
@@ -420,12 +434,18 @@ function ProyekContent() {
   }
 
   // Unified data fetch for current tab
+  const lastFetchRef = useRef({ tab: null, id: null });
   useEffect(() => {
     if (!selectedProject || storeLoading) return;
     
-    // Always fetch if we have a valid project selected
+    // Only fetch if tab or project changed to prevent infinite loops
+    if (lastFetchRef.current.tab === activeTab && lastFetchRef.current.id === selectedProject) {
+      return;
+    }
+
     const proj = projects[selectedProject];
     if (proj) {
+      lastFetchRef.current = { tab: activeTab, id: selectedProject };
       fetchTabData(activeTab, selectedProject, proj);
     }
   }, [activeTab, selectedProject, storeLoading, fetchTabData, projects]);
@@ -559,10 +579,6 @@ function ProyekContent() {
     }
   }, [selectedProject, projects, member?.user_id]);
 
-  useEffect(() => {
-    if (!selectedProject || activeTab === 'daftar') return;
-    fetchTabData(activeTab, selectedProject, currentProjectObj);
-  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, fetchTabData, currentProjectObj]);
 
   async function updateProjectStartDate(val) {
     if (!selectedProject) return;
@@ -681,16 +697,17 @@ function ProyekContent() {
     const totalUpah = manpowerItems.reduce((s, r) => s + r.total_upah, 0);
     const totalWorkers = manpowerItems.reduce((s, r) => s + r.pekerja, 0);
     let projectTotalDays = 0;
-    if (sequencedSchedule?.length > 0) {
-      const starts = (sequencedSchedule || []).map(r => r.seq_start).filter(Boolean);
-      const ends = (sequencedSchedule || []).map(r => r.seq_end).filter(Boolean);
-      if (starts.length && ends.length) {
-        const minStart = new Date(Math.min(...starts.map(s => new Date(s))));
-        const maxEnd = new Date(Math.max(...ends.map(e => new Date(e))));
-        projectTotalDays = Math.ceil((maxEnd - minStart) / 86400000) + 1;
+    if (sequencedSchedule && sequencedSchedule.length > 0) {
+      const validStarts = sequencedSchedule.map(r => r.seq_start).filter(s => s && !isNaN(new Date(s).getTime()));
+      const validEnds = sequencedSchedule.map(r => r.seq_end).filter(e => e && !isNaN(new Date(e).getTime()));
+      
+      if (validStarts.length > 0 && validEnds.length > 0) {
+        const minStartTs = Math.min(...validStarts.map(s => new Date(s).getTime()));
+        const maxEndTs = Math.max(...validEnds.map(e => new Date(e).getTime()));
+        projectTotalDays = Math.ceil((maxEndTs - minStartTs) / 86400000) + 1;
       }
     }
-    return { total, maxDurasi, totalUpah, totalWorkers, projectTotalDays };
+    return { total, maxDurasi, totalUpah, totalWorkers, projectTotalDays: projectTotalDays || 0 };
   }, [manpowerItems, sequencedSchedule]);
 
   const scheduleGanttData = useMemo(() => {
@@ -789,7 +806,7 @@ function ProyekContent() {
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="w-full flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-hide snap-x flex-nowrap">
+            <div className="w-full flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
               {visibleTabs.map(tab => (
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
@@ -801,45 +818,46 @@ function ProyekContent() {
                   >
                     <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  {/* Custom Tooltip (Below Icon) */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
+                  {/* Modern Minimalist Tooltip */}
+                  <div className="absolute top-[115%] left-1/2 -translate-x-1/2 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-white text-[8px] font-black uppercase tracking-[0.15em] rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] shadow-xl ring-1 ring-slate-200 dark:ring-white/10">
                     {tab.label}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900 dark:border-b-slate-800" />
                   </div>
                 </div>
               ))}
             </div>
 
             {/* ── Grup Filter (Aktivitas & Bab) Terintegrasi ke Header ── */}
-            <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
-              <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                <Package className="w-3.5 h-3.5 text-slate-400" />
-                <select
-                  value={selectedProject || ''}
-                  onChange={e => {
-                    const val = e.target.value;
-                    setSelectedProject(val);
-                  }}
-                  className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
-                >
-                  {isCreating && !selectedProject && (
-                    <option value="" className="dark:bg-slate-800 dark:text-orange-400 font-bold">
-                      PROYEK BARU: {identityForm.name || 'DRAFT'}
-                    </option>
-                  )}
-                  <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
-                  {Object.values(projects || {}).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
-                </select>
-              </div>
+            {activeTab !== 'daftar' && (
+              <div className="hidden lg:flex items-center gap-3 ml-4 pl-4 border-l border-slate-200 dark:border-slate-800">
+                <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <Package className="w-3.5 h-3.5 text-slate-400" />
+                  <select
+                    value={selectedProject || ''}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setSelectedProject(val);
+                    }}
+                    className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[150px] truncate"
+                  >
+                    {isCreating && !selectedProject && (
+                      <option value="" className="dark:bg-slate-800 dark:text-orange-400 font-bold">
+                        PROYEK BARU: {identityForm.name || 'DRAFT'}
+                      </option>
+                    )}
+                    <option value="" disabled className="dark:bg-slate-800 dark:text-white">Pilih Proyek...</option>
+                    {Object.values(projects || {}).map(p => <option key={p.id} value={p.id} className="dark:bg-slate-800 dark:text-white">{p.name || p.activity_name || 'Proyek'}</option>)}
+                  </select>
+                </div>
 
-              <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
-                <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
-                <select value={selectedBab} onChange={e => setSelectedBab(e.target.value)} className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[120px] truncate">
-                  <option value="all" className="dark:bg-slate-800 dark:text-white">Semua Bab</option>
-                  {babOptions.map(bab => <option key={bab} value={bab} className="dark:bg-slate-800 dark:text-white">{bab}</option>)}
-                </select>
+                <div className="flex items-center gap-2 bg-slate-100/30 dark:bg-slate-800/20 px-3 py-1.5 rounded-xl border border-dashed border-slate-200 dark:border-slate-700">
+                  <LayoutGrid className="w-3.5 h-3.5 text-slate-400" />
+                  <select value={selectedBab} onChange={e => setSelectedBab(e.target.value)} className="text-[10px] font-black bg-transparent border-0 text-slate-600 dark:text-slate-300 p-0 cursor-pointer focus:ring-0 max-w-[120px] truncate">
+                    <option value="all" className="dark:bg-slate-800 dark:text-white">Semua Bab</option>
+                    {babOptions.map(bab => <option key={bab} value={bab} className="dark:bg-slate-800 dark:text-white">{bab}</option>)}
+                  </select>
+                </div>
               </div>
-            </div>
+            )}
           </div>
           <div className="flex items-center gap-2 flex-wrap">
 
@@ -1040,8 +1058,10 @@ function ProyekContent() {
               className="flex flex-col items-end pl-4 border-l border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-70 transition-opacity"
               onClick={() => setShowCalendar(true)}
             >
-              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Durasi</span>
-              <span className="text-[10px] font-black text-slate-900 dark:text-white">{projectMetrics.duration || manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span></span>
+              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Durasi (KTR / RNC)</span>
+              <span className="text-[10px] font-black text-slate-900 dark:text-white">
+                {projectMetrics.duration || 0} / {manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span>
+              </span>
             </div>
 
             <button
@@ -1119,7 +1139,10 @@ function ProyekContent() {
                           <td className="px-6 py-6 text-center font-mono font-black text-slate-700 dark:text-slate-300 text-[11px]">{formatIdr(rounded)}</td>
                           <td className="px-6 py-6 text-center">
                             <div className="flex flex-col items-center gap-1">
-                              <span className="text-[10px] font-black text-slate-900 dark:text-white uppercase tracking-widest">{p.manual_duration || 0} / {p.realization_days || 0} Hari</span>
+                              <div className="flex flex-col items-center leading-tight">
+                                <span className="text-[9px] font-black text-slate-900 dark:text-white uppercase tracking-widest">KTR: {p.manual_duration || 0} Hari</span>
+                                <span className="text-[8px] font-bold text-slate-400 uppercase tracking-tighter">RNC: {p.planned_duration || 0} Hari</span>
+                              </div>
                               <div className="w-16 h-1 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
                                 <div className="h-full bg-emerald-500 rounded-full" style={{ width: `${p.manual_duration > 0 ? Math.min(100, ((p.realization_days || 0) / p.manual_duration) * 100) : 0}%` }} />
                               </div>
@@ -1736,7 +1759,7 @@ function ProyekContent() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (KTR)</label>
                           <input
                             type="number"
                             value={createForm.manual_duration}
@@ -1903,7 +1926,7 @@ function ProyekContent() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (KTR)</label>
                           <input
                             type="number"
                             value={identityForm.manual_duration}
@@ -1911,6 +1934,15 @@ function ProyekContent() {
                             className="w-full px-5 py-4 bg-slate-50 dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold focus:ring-2 ring-indigo-500 outline-none transition-all dark:text-white"
                           />
                         </div>
+                        <div className="space-y-2">
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Rencana (RNC)</label>
+                          <div className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold dark:text-slate-400 flex items-center justify-between">
+                            <span>{manpowerSummary.projectTotalDays || 0} Hari</span>
+                            <span className="text-[8px] px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded-full uppercase tracking-tighter">Gantt Chart</span>
+                          </div>
+                        </div>
+                      </div>
+                      <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
                           <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">
                             Wilayah / Regional <span className="text-rose-500">*</span>

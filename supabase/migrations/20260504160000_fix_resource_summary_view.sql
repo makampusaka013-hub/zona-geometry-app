@@ -55,7 +55,7 @@ aggregated AS (
     CASE
       WHEN upper(left(trim(kode_item_dasar), 1)) IN ('A', 'B') THEN 'bahan'
       WHEN upper(left(trim(kode_item_dasar), 1)) = 'L' THEN 'tenaga'
-      WHEN upper(left(trim(kode_item_dasar), 1)) IN ('M', 'E', 'C') THEN 'alat'
+      WHEN upper(left(trim(kode_item_dasar), 1)) = 'M' THEN 'alat'
       ELSE 'bahan'
     END AS jenis_komponen,
     MIN(kode_item) AS key_item,
