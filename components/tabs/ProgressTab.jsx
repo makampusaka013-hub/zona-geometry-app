@@ -248,7 +248,11 @@ export default function ProgressTab({
   const rows = useMemo(() => {
     if (viewMode === 'volume') {
       return items
-        .filter(it => it.master_ahsp_id || it.kode_ahsp) // Filter out raw resources
+        .filter(it => {
+          const code = (it.master_ahsp?.kode_ahsp || it.kode_ahsp || '').trim().toUpperCase();
+          const isResource = /^[ABLM]/.test(code);
+          return (it.master_ahsp_id || it.kode_ahsp) && !isResource;
+        })
         .map(it => ({
           id: it.id,
           name: it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian,
@@ -259,59 +263,26 @@ export default function ProgressTab({
         }));
     }
 
-    // Heuristic Helper for Resources
-    const getJenis = (r) => {
-      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
-      const code = (r.kode_item || r.key_item || '').trim().toUpperCase();
-      const unit = (r.satuan || '').toUpperCase();
-      const name = (r.uraian || '').toLowerCase();
-
-      // 1. Prioritas Satuan (Signal paling kuat)
-      if (unit === 'OH' || unit === 'ORG') return 'upah';
-      if (unit === 'JAM' || unit === 'SEWA') return 'alat';
-
-      // 2. Keyword Nama
-      if (/\b(pekerja|tukang|mandor|mekanik|sopir|driver)\b/.test(name)) return 'upah';
-      if (/\b(sewa|excavator|vibro|stamper|mixer|crane|truck|pompa|genset|bulldozer|grader)\b/.test(name)) return 'alat';
-
-      // 3. Jenis Explicit
-      if (rawJ.includes('upah') || rawJ.includes('tenaga')) return 'upah';
-      if (rawJ.includes('alat')) return 'alat';
-      if (rawJ.includes('bahan') || rawJ.includes('material')) return 'bahan';
-
-      // 4. Kode Prefiks (A=Tenaga, B=Bahan, C/E/M=Alat, L=Labor)
-      if (code.startsWith('A')) return 'upah';
-      if (code.startsWith('L')) return 'upah';
-      if (code.startsWith('B')) return 'bahan';
-      if (code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) return 'alat';
-
-      return 'bahan'; // Fallback
+    // Helper for Resources (Material, Labor, Alat)
+    const getResItems = (prefixes) => {
+      return (resources || []).filter(r => {
+        const code = (r.key_item || r.kode_item || '').trim().toUpperCase();
+        return prefixes.some(p => code.startsWith(p));
+      }).map(r => ({
+        id: r.key_item || r.kode_item,
+        name: r.uraian,
+        unit: r.satuan,
+        target: Number(r.total_volume || 0),
+        type: 'resource'
+      }));
     };
 
-    if (viewMode === 'material') {
-      return (resources || []).filter(r => getJenis(r) === 'bahan').map(r => ({
-        id: r.kode_item || r.uraian,
-        name: r.uraian,
-        unit: r.satuan,
-        target: r.total_volume || 0,
-        type: 'resource'
-      }));
-    } else if (viewMode === 'alat') {
-      return (resources || []).filter(r => getJenis(r) === 'alat').map(r => ({
-        id: r.kode_item || r.uraian,
-        name: r.uraian,
-        unit: r.satuan,
-        target: r.total_volume || 0,
-        type: 'resource'
-      }));
-    } else {
-      const baseLabor = (resources || []).filter(r => getJenis(r) === 'upah').map(r => ({
-        id: r.kode_item || r.uraian,
-        name: r.uraian,
-        unit: r.satuan,
-        target: r.total_volume || 0,
-        type: 'resource'
-      }));
+    if (viewMode === 'material') return getResItems(['A', 'B']);
+    if (viewMode === 'labor') return getResItems(['L']);
+    if (viewMode === 'equipment') return getResItems(['M']);
+
+    return [];
+  }, [viewMode, items, resources]);
       
       const customs = (customRoles || []).map(name => ({
         id: null,
