@@ -59,7 +59,7 @@ SELECT
   project_id,
   bab_pekerjaan,
   uraian_ahsp                                AS uraian,
-  COALESCE(kode_item, kode_item_dasar)       AS key_item,
+  MAX(kode_item)                             AS key_item,
   satuan_uraian                              AS satuan,
   CASE
     WHEN upper(left(trim(kode_item_dasar), 1)) = 'L' THEN 'tenaga'
@@ -67,8 +67,8 @@ SELECT
     WHEN upper(left(trim(kode_item_dasar), 1)) = 'M' THEN 'alat'
     ELSE 'bahan'
   END                                        AS jenis_komponen,
-  harga_efektif                              AS harga_snapshot,
-  COALESCE(tkdn_pct, 0)                      AS tkdn_percent,
+  MAX(harga_efektif)                         AS harga_snapshot,
+  MAX(tkdn_pct)                              AS tkdn_percent,
   item_id,
   faktor_konversi,
   SUM(volume * koefisien)                                                  AS total_volume_terpakai,
@@ -77,9 +77,7 @@ SELECT
 FROM resolved
 WHERE uraian_ahsp IS NOT NULL
 GROUP BY
-  project_id, bab_pekerjaan, uraian_ahsp,
-  kode_item_dasar, kode_item, satuan_uraian,
-  harga_efektif, tkdn_pct, item_id, faktor_konversi;
+  project_id, bab_pekerjaan, uraian_ahsp, satuan_uraian, jenis_komponen, item_id, faktor_konversi;
 
 GRANT SELECT ON public.view_project_resource_summary TO authenticated;
 
