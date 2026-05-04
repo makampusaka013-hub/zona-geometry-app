@@ -139,7 +139,8 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
               
               const rawDetails = Array.isArray(details) ? details : [];
               rawDetails.forEach(d => {
-                const key = d.kode_item || d.kode || d.uraian;
+                // Gunakan detail_id sebagai key utama untuk mencegah duplikasi baris analisis yang sama
+                const key = d.detail_id || d.kode_item || d.kode || d.uraian;
                 if (!detailMap[key]) {
                   detailMap[key] = { ...d, koefisien: 0 };
                   aggregatedDetails.push(detailMap[key]);
