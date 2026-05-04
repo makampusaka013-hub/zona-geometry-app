@@ -277,10 +277,13 @@ export default function ProgressTab({
 
     // Helper for Resources (Material, Labor, Alat)
     const getResItems = (prefixes) => {
-      return (resources || []).filter(r => {
+      const filtered = (resources || []).filter(r => {
         const code = (r.key_item || r.kode_item || '').trim().toUpperCase();
+        // Cek apakah kode berawalan salah satu dari prefix (misal 'L' untuk Tenaga)
         return prefixes.some(p => code.startsWith(p));
-      }).map(r => ({
+      });
+      
+      return filtered.map(r => ({
         id: r.key_item || r.kode_item,
         name: r.uraian,
         unit: r.satuan,
