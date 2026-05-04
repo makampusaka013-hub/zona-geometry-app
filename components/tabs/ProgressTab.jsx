@@ -249,7 +249,7 @@ export default function ProgressTab({
     if (viewMode === 'volume') {
       return items.map(it => ({
         id: it.id,
-        name: it.uraian_custom || it.uraian,
+        name: it.uraian_custom || it.master_ahsp?.uraian || it.master_ahsp?.nama_ahsp || it.uraian,
         unit: it.satuan,
         target: Number(it.volume),
         type: 'ahsp_item',
@@ -442,7 +442,7 @@ export default function ProgressTab({
           <table className="text-sm border-separate border-spacing-0 table-fixed min-w-full">
             <thead className="sticky top-0 z-50">
               <tr className="bg-slate-100 dark:bg-slate-900 text-[9px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 shadow-sm">
-                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-left w-[220px] border-b border-slate-200 dark:border-slate-800">Item</th>
+                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-left w-[220px] border-b border-slate-200 dark:border-slate-800 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">ITEM PEKERJAAN</th>
                 <th className="px-2 py-4 text-center w-[50px] border-b border-slate-200 dark:border-slate-800">Sat</th>
                 <th className="px-3 py-4 text-right w-[80px] border-b border-slate-200 dark:border-slate-800">Target</th>
                 <th className="px-3 py-4 text-right w-[80px] border-b border-slate-200 dark:border-slate-800">Real</th>
