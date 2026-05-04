@@ -249,18 +249,30 @@ export default function ProgressTab({
     if (viewMode === 'volume') {
       return items
         .filter(it => {
+          // Hanya tampilkan item pekerjaan utama (AHSP)
+          // Jika kode item berawalan A, B, L, M, maka itu adalah resource (BAHAN/UPAH/ALAT).
           const code = (it.master_ahsp?.kode_ahsp || it.kode_ahsp || '').trim().toUpperCase();
-          const isResource = /^[ABLM]/.test(code);
+          
+          // Resource biasanya punya kode seperti A.1.1 atau B.2.3
+          const isResource = /^[ABLM][\.\s\d]/.test(code) || /^[ABLM]$/.test(code);
+          
+          // AHSP biasanya kodenya lebih panjang atau tidak ada di daftar resource prefix
           return (it.master_ahsp_id || it.kode_ahsp) && !isResource;
         })
-        .map(it => ({
-          id: it.id,
-          name: it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian,
-          unit: it.satuan,
-          target: Number(it.volume),
-          type: 'ahsp_item',
-          status_approval: it.status_approval
-        }));
+        .map(it => {
+          // Cari nama terbaik
+          const masterName = it.master_ahsp?.nama_pekerjaan || it.master_ahsp?.uraian || '';
+          const finalName = it.uraian_custom || masterName || it.uraian;
+          
+          return {
+            id: it.id,
+            name: finalName,
+            unit: it.satuan,
+            target: Number(it.volume),
+            type: 'ahsp_item',
+            status_approval: it.status_approval
+          };
+        });
     }
 
     // Helper for Resources (Material, Labor, Alat)
