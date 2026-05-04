@@ -249,7 +249,7 @@ export default function ProgressTab({
     if (viewMode === 'volume') {
       return items.map(it => ({
         id: it.id,
-        name: it.uraian_custom || it.master_ahsp?.nama_ahsp || it.uraian,
+        name: it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian,
         unit: it.satuan,
         target: Number(it.volume),
         type: 'ahsp_item',
