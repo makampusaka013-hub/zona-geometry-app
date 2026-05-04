@@ -83,8 +83,18 @@ const useProjectStore = create((set, get) => ({
     if (!projectId || activeTab === 'daftar') return;
     set({ tabLoading: true });
     try {
-      const { lines, masterPrices, masterDetails, resources, tkdnSummary } = await fetchRabData(projectId);
+      const { project, lines, masterPrices, masterDetails, resources, tkdnSummary } = await fetchRabData(projectId);
       
+      // Update fresh project metadata in the normalized list
+      if (project) {
+        set((state) => ({
+          projects: {
+            ...state.projects,
+            [projectId]: { ...state.projects[projectId], ...project }
+          }
+        }));
+      }
+
       const nextTabData = { 
         ...get().tabData, 
         rab: lines || [], 
