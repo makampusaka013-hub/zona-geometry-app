@@ -188,11 +188,20 @@ const useProjectStore = create((set, get) => ({
       const finalPayload = { 
         ...currentProj,
         ...payload, 
-        // Use payload version if provided, otherwise fallback to the most recent store version
         version: payload.version || currentProj?.version || 1 
       };
+
+      // Filter out joined data or read-only fields that PostgREST will reject
+      const cleanPayload = {};
+      const ignoreFields = ['ahsp_lines', 'members', 'created_at', 'updated_at', 'total_kontrak', 'realization_days'];
       
-      const { data, error } = await upsertProject(projectId, finalPayload);
+      Object.keys(finalPayload).forEach(key => {
+        if (!ignoreFields.includes(key)) {
+          cleanPayload[key] = finalPayload[key];
+        }
+      });
+      
+      const { data, error } = await upsertProject(projectId, cleanPayload);
       if (error) throw error;
       
       if (projectId) {
