@@ -59,7 +59,8 @@ export default function ProgressTab({
   isPro,
   currentUserId
 }) {
-  const [progressData, setProgressData] = useState({}); // { [entity_id|name]: { [day]: val } }
+  const [progressData, setProgressData] = useState({}); // { [key]: { [day]: val } } - akumulasi semua user
+  const [myProgressData, setMyProgressData] = useState({}); // { [key]: { [day]: val } } - hanya milik currentUser
   const [dailyReports, setDailyReports] = useState({}); // { [day]: { weather_index, weather_description } }
   const [customRoles, setCustomRoles] = useState([]);
   const [loadingProgress, setLoadingProgress] = useState(false);
@@ -76,27 +77,38 @@ export default function ProgressTab({
       try {
         setLoadingProgress(true);
         const [progressRes, reportsRes] = await Promise.all([
-          supabase.from('project_progress_daily').select('*').eq('project_id', projectId).eq('created_by', currentUserId),
+          // Ambil semua progress proyek (dari semua user) - bukan hanya milik currentUser
+          supabase.from('project_progress_daily').select('*').eq('project_id', projectId),
           supabase.from('daily_reports').select('*').eq('project_id', projectId)
         ]);
 
         if (!progressRes.error && progressRes.data) {
           const mapped = {};
+          const myEdits = {}; // Track entri milik currentUser untuk keperluan edit
           const customs = new Set();
+
           progressRes.data.forEach(row => {
-            // Use name for supervision/custom if ID is not a number/UUID
             const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
               ? row.entity_name 
               : (row.entity_id || row.entity_name);
-              
+
+            // Akumulasi (SUM) dari semua kontributor
             if (!mapped[key]) mapped[key] = {};
-            mapped[key][row.day_number] = Number(row.val);
-            
+            mapped[key][row.day_number] = (mapped[key][row.day_number] || 0) + Number(row.val);
+
+            // Simpan data milik currentUser secara terpisah untuk keperluan save/edit
+            if (row.created_by === currentUserId) {
+              if (!myEdits[key]) myEdits[key] = {};
+              myEdits[key][row.day_number] = Number(row.val);
+            }
+
             if (row.entity_type === 'custom_labor' && !row.entity_id) {
               customs.add(row.entity_name);
             }
           });
+
           setProgressData(mapped);
+          setMyProgressData(myEdits);
           setCustomRoles(Array.from(customs));
         }
 
@@ -133,7 +145,8 @@ export default function ProgressTab({
     setSavingStatus('saving');
     try {
       const payload = [];
-      Object.entries(progressData).forEach(([key, days]) => {
+      // Simpan hanya data milik currentUser (bukan akumulasi)
+      Object.entries(myProgressData).forEach(([key, days]) => {
         const row = rows.find(r => (r.id || r.name) === key);
         if (!row) return;
 
@@ -177,20 +190,28 @@ export default function ProgressTab({
     const val = parseFloat(sanitizedValue) || 0;
     const key = entityId || entityName;
 
+    // Update myProgressData (entri milik currentUser)
+    const prevMyVal = myProgressData[key]?.[day] || 0;
+    const delta = val - prevMyVal;
+
+    setMyProgressData(prev => ({
+      ...prev,
+      [key]: { ...(prev[key] || {}), [day]: val }
+    }));
+
+    // Update progressData (akumulasi semua user) dengan mengganti kontribusi lama dgn baru
     setProgressData(prev => ({
       ...prev,
       [key]: {
         ...(prev[key] || {}),
-        [day]: val
+        [day]: Math.max(0, (prev[key]?.[day] || 0) + delta)
       }
     }));
 
     setSavingStatus('saving');
     if (saveTimeout.current) clearTimeout(saveTimeout.current);
 
-    // Remove existing item for same day/entity to avoid duplicates in queue
     saveQueue.current = saveQueue.current.filter(i => !(i.entity_key === key && i.day_number === day && i.entity_type === type));
-    
     saveQueue.current.push({
       project_id: projectId,
       entity_type: type,
@@ -548,20 +569,19 @@ export default function ProgressTab({
                     </td>
                     {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
                       const day = viewStartIndex + idx + 1;
+                      // Input menampilkan nilai milik currentUser (bukan akumulasi)
+                      const myVal = myProgressData[key]?.[day];
                       return (
                         <td key={day} className="px-1 py-4 text-center w-[55px]">
                           <input
                             type="text"
                             inputMode="decimal"
-                            value={daily[day] ? String(daily[day]).replace(/\./g, ',') : ''}
+                            value={myVal ? String(myVal).replace(/\./g, ',') : ''}
                             disabled={row.status_approval === 'verified' || row.status_approval === 'final' || ((!isAdmin && !isOwner && !isAdvance && !isPro && userSlotRole !== 'pembuat') || userSlotRole === 'pengecek')}
                             onChange={(e) => {
                               const val = e.target.value;
-                              // Allow only numbers, comma, and period
                               if (/^[0-9,.]*$/.test(val)) {
-                                const entityId = row.id;
-                                const entityName = row.name;
-                                updateCell(entityId, entityName, row.type, day, val);
+                                updateCell(row.id, row.name, row.type, day, val);
                               }
                             }}
                             className="w-full h-7 text-center text-[11px] font-black bg-slate-50 dark:bg-slate-900/40 border border-slate-200 dark:border-slate-800 rounded-lg focus:ring-1 focus:ring-indigo-500 transition-all outline-none text-slate-400 dark:text-slate-500 focus:text-indigo-600 dark:focus:text-orange-400 disabled:opacity-30"
