@@ -249,15 +249,15 @@ export default function ProgressTab({
     if (viewMode === 'volume') {
       return items
         .filter(it => {
-          // Hanya tampilkan item pekerjaan utama (AHSP)
+          // Hanya tampilkan item pekerjaan utama (RAB)
           // Jika kode item berawalan A, B, L, M, maka itu adalah resource (BAHAN/UPAH/ALAT).
           const code = (it.master_ahsp?.kode_ahsp || it.kode_ahsp || '').trim().toUpperCase();
           
           // Resource biasanya punya kode seperti A.1.1 atau B.2.3
+          // Jika item tidak punya kode tapi ada di tabel RAB, kita tampilkan (seperti P3K).
           const isResource = /^[ABLM][\.\s\d]/.test(code) || /^[ABLM]$/.test(code);
           
-          // AHSP biasanya kodenya lebih panjang atau tidak ada di daftar resource prefix
-          return (it.master_ahsp_id || it.kode_ahsp) && !isResource;
+          return !isResource; // Tampilkan semua yang BUKAN resource
         })
         .map(it => {
           // Cari nama terbaik
@@ -290,8 +290,8 @@ export default function ProgressTab({
     };
 
     if (viewMode === 'material') return getResItems(['A', 'B']);
-    if (viewMode === 'labor') return getResItems(['L']);
-    if (viewMode === 'equipment') return getResItems(['M']);
+    if (viewMode === 'labor' || viewMode === 'upah') return getResItems(['L']);
+    if (viewMode === 'equipment' || viewMode === 'alat') return getResItems(['M']);
 
     return [];
   }, [viewMode, items, resources]);

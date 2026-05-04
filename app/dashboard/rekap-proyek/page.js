@@ -947,7 +947,7 @@ function ProyekContent() {
                     { id: 'volume', icon: TrendingUp, label: 'Progress Volume' },
                     { id: 'material', icon: Package, label: 'Material' },
                     { id: 'labor', icon: Users, label: 'Tenaga Kerja' },
-                    { id: 'alat', icon: Package, label: 'Alat' }
+                    { id: 'equipment', icon: Package, label: 'Alat' }
                   ].map(btn => (
                     <button
                       key={btn.id}
