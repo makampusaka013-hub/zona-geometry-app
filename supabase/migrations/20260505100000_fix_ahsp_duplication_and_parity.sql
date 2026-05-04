@@ -6,7 +6,7 @@ DROP VIEW IF EXISTS public.view_project_resource_summary CASCADE;
 DROP VIEW IF EXISTS public.view_katalog_ahsp_gabungan CASCADE;
 DROP VIEW IF EXISTS public.view_katalog_ahsp_lengkap CASCADE;
 
--- 2. REBUILD VIEW_KATALOG_AHSP_LENGKAP
+-- -- 2. REBUILD VIEW_KATALOG_AHSP_LENGKAP
 -- We use DISTINCT ON to ensure each AHSP Detail ID matches exactly one price source.
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_lengkap 
   WITH (security_invoker = true)
@@ -62,6 +62,7 @@ price_resolution AS (
       mhd_auto.kode_item,
       b.ahsp_kode
     ) AS detail_kode_item,
+    COALESCE(mhd_ov.satuan, mhd_mk.satuan, mhd_auto.satuan, '') AS price_satuan,
     CASE
       WHEN uapo.harga_langsung IS NOT NULL     THEN 'override-langsung'
       WHEN uapo.harga_item_id IS NOT NULL      THEN 'override-custom'
@@ -99,8 +100,13 @@ price_resolution AS (
 computed AS (
   SELECT
     pr.*,
-    (pr.harga_toko / pr.detail_faktor) * COALESCE(pr.koefisien, 0) AS subtotal,
-    ((pr.harga_toko / pr.detail_faktor) * COALESCE(pr.koefisien, 0)) * (pr.detail_tkdn / 100.0) AS nilai_tkdn,
+    -- Smart Conversion: Jangan bagi faktor jika satuan harga sudah sama dengan satuan detail (mencegah double conversion 0.26)
+    CASE 
+      WHEN lower(trim(pr.detail_satuan)) = lower(trim(pr.price_satuan)) THEN pr.harga_toko
+      ELSE (pr.harga_toko / pr.detail_faktor)
+    END AS harga_efektif,
+    (CASE WHEN lower(trim(pr.detail_satuan)) = lower(trim(pr.price_satuan)) THEN pr.harga_toko ELSE (pr.harga_toko / pr.detail_faktor) END * COALESCE(pr.koefisien, 0)) AS subtotal,
+    (CASE WHEN lower(trim(pr.detail_satuan)) = lower(trim(pr.price_satuan)) THEN pr.harga_toko ELSE (pr.harga_toko / pr.detail_faktor) END * COALESCE(pr.koefisien, 0)) * (pr.detail_tkdn / 100.0) AS nilai_tkdn,
     CASE
       WHEN upper(substring(trim(COALESCE(pr.detail_kode_item, '')), 1, 1)) = 'L' THEN 'upah'
       WHEN upper(substring(trim(COALESCE(pr.detail_kode_item, '')), 1, 1)) IN ('A','B') THEN 'bahan'
@@ -137,7 +143,7 @@ SELECT
       'kode_item',       detail_kode_item,
       'satuan',          detail_satuan,
       'koefisien',       koefisien,
-      'harga_konversi',  (harga_toko / detail_faktor),
+      'harga_konversi',  harga_efektif,
       'jenis_komponen',  jenis_komponen,
       'subtotal',        subtotal,
       'tkdn',            detail_tkdn,
@@ -218,6 +224,7 @@ resolved AS (
     b.*,
     COALESCE(mhd_loc.kode_item, mhd_any.kode_item, b.kode_item_dasar) AS kode_item,
     COALESCE(mhd_loc.harga_satuan, mhd_any.harga_satuan, 0) AS harga_toko,
+    COALESCE(mhd_loc.satuan, mhd_any.satuan, '') AS price_satuan,
     COALESCE(mhd_loc.tkdn_percent, mhd_any.tkdn_percent, 0) AS tkdn_pct
   FROM base b
   LEFT JOIN public.master_harga_dasar mhd_loc
@@ -241,14 +248,19 @@ aggregated AS (
       ELSE 'bahan'
     END AS jenis_komponen,
     kode_item AS key_item,
-    (harga_toko / detail_faktor) AS harga_snapshot,
+    CASE 
+      WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN harga_toko
+      ELSE (harga_toko / detail_faktor)
+    END AS harga_snapshot,
     tkdn_pct AS tkdn_percent,
     SUM(volume * koefisien)                                                  AS total_volume,
-    SUM(volume * koefisien * (harga_toko / detail_faktor))                   AS kontribusi_nilai,
-    SUM(volume * koefisien * (harga_toko / detail_faktor) * (tkdn_pct / 100.0)) AS nilai_tkdn
+    SUM(volume * koefisien * (CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN harga_toko ELSE (harga_toko / detail_faktor) END)) AS kontribusi_nilai,
+    SUM(volume * koefisien * (CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN harga_toko ELSE (harga_toko / detail_faktor) END) * (tkdn_pct / 100.0)) AS nilai_tkdn
   FROM resolved
   GROUP BY
-    project_id, bab_pekerjaan, uraian_ahsp, satuan_uraian, jenis_komponen, kode_item, (harga_toko / detail_faktor), tkdn_pct
+    project_id, bab_pekerjaan, uraian_ahsp, satuan_uraian, jenis_komponen, kode_item, 
+    CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN harga_toko ELSE (harga_toko / detail_faktor) END, 
+    tkdn_pct
 )
 SELECT
   project_id,
@@ -329,7 +341,8 @@ BEGIN
       ob.*,
       COALESCE(uapo.harga_langsung, mhc_glob.harga_satuan, mhd_mk.harga_satuan, mhd_auto.harga_satuan, 0::numeric) as harga_toko,
       COALESCE(uapo.tkdn_langsung, mhc_glob.tkdn_percent, mhd_mk.tkdn_percent, mhd_auto.tkdn_percent, 0::numeric) as tkdn_val,
-      COALESCE(mhc_glob.kode_item, mhd_mk.kode_item, mhd_auto.kode_item, ob.ahsp_kode) as item_kode
+      COALESCE(mhc_glob.kode_item, mhd_mk.kode_item, mhd_auto.kode_item, ob.ahsp_kode) as item_kode,
+      COALESCE(mhd_mk.satuan, mhd_auto.satuan, '') as price_satuan
     FROM official_base ob
     LEFT JOIN public.user_ahsp_price_override uapo ON uapo.ahsp_detail_id = ob.detail_id AND uapo.user_id = v_user_id
     LEFT JOIN public.master_konversi mk ON mk.uraian_ahsp = ob.detail_uraian AND (mk.satuan_ahsp IS NOT DISTINCT FROM ob.detail_satuan)
@@ -347,15 +360,15 @@ BEGIN
       MAX(r.kategori_pekerjaan) as kat,
       MAX(r.jenis_pekerjaan) as jen,
       MAX(r.overhead_profit) as prof,
-      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) = 'L' THEN (r.harga_toko/r.detail_faktor)*r.koefisien ELSE 0 END) as upah,
-      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) IN ('A','B') THEN (r.harga_toko/r.detail_faktor)*r.koefisien ELSE 0 END) as bahan,
-      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) = 'M' THEN (r.harga_toko/r.detail_faktor)*r.koefisien ELSE 0 END) as alat,
-      SUM((r.harga_toko/r.detail_faktor)*r.koefisien) as subtotal,
-      SUM((r.harga_toko/r.detail_faktor)*r.koefisien * (r.tkdn_val/100.0)) as tkdn_sum,
+      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) = 'L' THEN (CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien ELSE 0 END) as upah,
+      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) IN ('A','B') THEN (CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien ELSE 0 END) as bahan,
+      SUM(CASE WHEN upper(left(trim(r.item_kode),1)) = 'M' THEN (CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien ELSE 0 END) as alat,
+      SUM((CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien) as subtotal,
+      SUM((CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien * (r.tkdn_val/100.0)) as tkdn_sum,
       jsonb_agg(jsonb_build_object(
         'uraian', r.detail_uraian, 'detail_id', r.detail_id, 'kode_item', r.item_kode,
-        'satuan', r.detail_satuan, 'koefisien', r.koefisien, 'harga_konversi', (r.harga_toko/r.detail_faktor),
-        'subtotal', (r.harga_toko/r.detail_faktor)*r.koefisien, 'tkdn', r.tkdn_val,
+        'satuan', r.detail_satuan, 'koefisien', r.koefisien, 'harga_konversi', (CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END),
+        'subtotal', (CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien, 'tkdn', r.tkdn_val,
         'jenis_komponen', CASE 
            WHEN upper(left(trim(r.item_kode),1)) = 'L' THEN 'upah'
            WHEN upper(left(trim(r.item_kode),1)) IN ('A','B') THEN 'bahan'
@@ -363,7 +376,7 @@ BEGIN
            ELSE 'bahan'
         END
       )) FILTER (WHERE r.detail_uraian IS NOT NULL) as details_json,
-      BOOL_AND((r.harga_toko/r.detail_faktor)*r.koefisien > 0) as complete
+      BOOL_AND((CASE WHEN lower(trim(r.detail_satuan)) = lower(trim(r.price_satuan)) THEN r.harga_toko ELSE (r.harga_toko/r.detail_faktor) END)*r.koefisien > 0) as complete
     FROM official_resolved r
     GROUP BY r.m_id, r.kode_ahsp
   ),
