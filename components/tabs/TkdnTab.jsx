@@ -20,7 +20,7 @@ export default function TkdnTab({ activeTab, tabLoading, tabData, formatIdr }) {
     );
   }
 
-  const tkdnData = tabData?.tkdn || { total_nilai: 0, total_nilai_tkdn: 0, total_tkdn_pct: 0, byJenis: {} };
+  const tkdnData = tabData?.tkdn || { total_nilai: 0, total_tkdn_nilai: 0, total_tkdn_pct: 0, byJenis: {} };
 
   return (
     <div className="flex flex-col gap-0 w-full h-full">
