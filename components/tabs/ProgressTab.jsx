@@ -354,15 +354,29 @@ export default function ProgressTab({
   };
 
   if (activeTab !== 'progress') return null;
-  if (tabLoading || loadingProgress) return <Spinner />;
+  if (tabLoading) return <Spinner />;
+
+  // CRITICAL: If project is not fully loaded or missing basic info
+  if (!projectStartDate) {
+    return (
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-60 text-center px-10">
+        <Calendar className="w-20 h-20 mb-6 text-slate-300" strokeWidth={1} />
+        <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Tanggal Mulai Proyek Belum Diatur</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed uppercase font-bold">
+          Silakan atur tanggal mulai proyek di tab "Daftar" atau "Identitas" terlebih dahulu agar kalender progress dapat dihitung.
+        </p>
+      </div>
+    );
+  }
 
   if (!items || items.length === 0) {
     return (
-      <div className="flex flex-col items-center justify-center py-40 w-full opacity-40 dark:opacity-20 pointer-events-none select-none">
-        <Box className="w-24 h-24 mb-6 text-slate-500 dark:text-slate-400" strokeWidth={1} />
-        <h3 className="text-[11px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em] text-center">
-          BELUM ADA ITEM PEKERJAAN
-        </h3>
+      <div className="flex flex-col items-center justify-center py-40 w-full opacity-60 text-center px-10">
+        <Package className="w-20 h-20 mb-6 text-slate-300" strokeWidth={1} />
+        <h3 className="text-sm font-black text-slate-500 uppercase tracking-widest mb-2">Belum Ada Item Pekerjaan</h3>
+        <p className="text-xs text-slate-400 max-w-md mx-auto leading-relaxed uppercase font-bold">
+          Proyek ini belum memiliki item pekerjaan di RAB. Silakan tambahkan item pekerjaan di tab "RAB Editor" terlebih dahulu.
+        </p>
       </div>
     );
   }

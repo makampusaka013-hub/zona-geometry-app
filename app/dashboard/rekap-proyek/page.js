@@ -579,10 +579,6 @@ function ProyekContent() {
     }
   }, [selectedProject, projects, member?.user_id]);
 
-  useEffect(() => {
-    if (!selectedProject || activeTab === 'daftar') return;
-    fetchTabData(activeTab, selectedProject, currentProjectObj);
-  }, [selectedProject, activeTab, selectedBab, subTabProyek, perubahanSubTab, terpakaiSubTab, fetchTabData, currentProjectObj]);
 
   async function updateProjectStartDate(val) {
     if (!selectedProject) return;
