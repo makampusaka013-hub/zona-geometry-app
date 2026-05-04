@@ -2098,6 +2098,7 @@ function ProyekContent() {
                     </div>
                   </div>
                 </div>
+              </div>
 
               <div className="p-8 bg-slate-50 dark:bg-slate-900/80 border-t border-slate-100 dark:border-slate-800 shrink-0 flex flex-col sm:flex-row gap-4 items-center">
                 <button 
