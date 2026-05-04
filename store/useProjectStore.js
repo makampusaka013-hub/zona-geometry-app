@@ -176,6 +176,7 @@ const useProjectStore = create((set, get) => ({
       const currentProj = get().projects[projectId];
       
       const finalPayload = { 
+        ...currentProj,
         ...payload, 
         // Use payload version if provided, otherwise fallback to the most recent store version
         version: payload.version || currentProj?.version || 1 

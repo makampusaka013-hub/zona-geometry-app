@@ -308,6 +308,7 @@ function ProyekContent() {
         kontraktor_name: '',
         kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
         start_date: '',
+        manual_duration: 0,
         version: 1
       });
     }
@@ -364,6 +365,7 @@ function ProyekContent() {
       fiscal_year: createForm.fiscal_year,
       contract_number: createForm.contract_number,
       hsp_value: parseFloat(createForm.hsp_value) || 0,
+      manual_duration: parseInt(createForm.manual_duration) || 0,
       ppn_percent: parseFloat(createForm.ppn_percent) || 12,
       program_name: createForm.program_name,
       activity_name: createForm.activity_name,
@@ -396,6 +398,7 @@ function ProyekContent() {
     const { error, data } = await saveProjectIdentity(selectedProject, {
       ...identityForm,
       hsp_value: parseFloat(identityForm.hsp_value) || 0,
+      manual_duration: parseInt(identityForm.manual_duration) || 0,
       ppn_percent: parseFloat(identityForm.ppn_percent) || 12,
       // FIX 2: Use latestProj.version to prevent "Konflik Data" error
       version: latestProj?.version || identityForm.version || 1,
