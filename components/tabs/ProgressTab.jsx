@@ -247,14 +247,16 @@ export default function ProgressTab({
 
   const rows = useMemo(() => {
     if (viewMode === 'volume') {
-      return items.map(it => ({
-        id: it.id,
-        name: it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian,
-        unit: it.satuan,
-        target: Number(it.volume),
-        type: 'ahsp_item',
-        status_approval: it.status_approval
-      }));
+      return items
+        .filter(it => it.master_ahsp_id || it.kode_ahsp) // Filter out raw resources
+        .map(it => ({
+          id: it.id,
+          name: it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian,
+          unit: it.satuan,
+          target: Number(it.volume),
+          type: 'ahsp_item',
+          status_approval: it.status_approval
+        }));
     }
 
     // Heuristic Helper for Resources
