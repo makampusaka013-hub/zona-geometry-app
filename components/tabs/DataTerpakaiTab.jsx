@@ -16,7 +16,17 @@ export default function DataTerpakaiTab({
   ahspCatalog = {},
   readOnly = false
 }) {
-  const ahspRows = tabData?.ahsp || [];
+  // Pastikan baris AHSP unik berdasarkan ID agar tidak dobel
+  const ahspRows = useMemo(() => {
+    const raw = tabData?.ahsp || [];
+    const seen = new Set();
+    return raw.filter(item => {
+      if (!item.id) return true;
+      if (seen.has(item.id)) return false;
+      seen.add(item.id);
+      return true;
+    });
+  }, [tabData?.ahsp]);
   const hargaRows = tabData?.harga || [];
 
   const filteredHargaRows = useMemo(() => {
@@ -111,17 +121,24 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
           </thead>
           <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
             {rows.map((item, i) => {
-              const rowId = item.id || i;
+              const rowId = item.id || `temp-${i}`;
               const isExpanded = expandedId === rowId;
-              const details = ahspCatalog[item.master_ahsp_id] || item.analisa_custom || [];
               
-              // Sort details like in catalog
-              const sortedDetails = [...details].sort((a, b) => {
+              // Prioritas rincian: Katalog AHSP (Resmi) -> Analisa Custom (RAB)
+              // Sesuai permintaan user: "ambil saja dari katalog ahsp dan cocokan dengan rab"
+              let details = (ahspCatalog && item.master_ahsp_id && ahspCatalog[item.master_ahsp_id]) ? ahspCatalog[item.master_ahsp_id] : (item.analisa_custom || []);
+              
+              // Jika details adalah objek (bukan array), coba cari field 'details' di dalamnya
+              if (details && !Array.isArray(details) && details.details) {
+                details = details.details;
+              }
+
+              const sortedDetails = Array.isArray(details) ? [...details].sort((a, b) => {
                 const order = { 'upah': 0, 'tenaga': 0, 'bahan': 1, 'alat': 2 };
                 const ja = (a.jenis_komponen || a.jenis || '').toLowerCase();
                 const jb = (b.jenis_komponen || b.jenis || '').toLowerCase();
                 return (order[ja] ?? 99) - (order[jb] ?? 99);
-              });
+              }) : [];
 
               return (
                 <Fragment key={rowId}>
@@ -132,7 +149,7 @@ function AhspSubView({ rows, formatIdr, ahspCatalog, hargaRows }) {
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-2 mb-1">
                         <div className="text-[10px] text-indigo-600 dark:text-orange-400 font-black font-mono">
-                          {item.master_ahsp?.kode_ahsp || `AHSP ${i + 1}`}
+                          {item.master_ahsp?.kode_ahsp || item.kode_ahsp || `AHSP ${i + 1}`}
                         </div>
                         <span className={`text-[8px] px-1.5 py-0.5 rounded border font-black transition-all ${isExpanded ? 'bg-indigo-600 text-white border-indigo-600' : 'bg-indigo-50 dark:bg-slate-800 text-indigo-400 dark:text-slate-500 border-indigo-100 dark:border-slate-700'}`}>
                           {isExpanded ? 'TUTUP DETAIL' : 'LIHAT DETAIL'}
