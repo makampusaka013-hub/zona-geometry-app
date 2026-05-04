@@ -551,7 +551,7 @@ function HargaSubView({ rows, formatIdr, onRefresh, readOnly }) {
                         </span>
                       </td>
                       <td className="px-6 py-4 text-right font-mono text-xs font-black text-slate-700 dark:text-slate-200">
-                        {Number(item.total_volume_terpakai || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}
+                        {Number(item.total_volume || 0).toLocaleString('id-ID', { maximumFractionDigits: 4 })}
                       </td>
                       <td className={`px-6 py-4 text-right font-mono text-xs font-bold ${isOverridden ? 'text-orange-600 dark:text-orange-400' : 'text-slate-500 dark:text-slate-400'}`}>
                         {formatIdr(item.harga_snapshot)}
