@@ -806,12 +806,11 @@ function ProyekContent() {
             </h1>
 
             {/* ── Deretan Ikon Navigasi Tab ── */}
-            <div className="w-full flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-700 overflow-x-auto scrollbar-hide snap-x flex-nowrap">
+            <div className="w-full flex items-center gap-1.5 ml-0 lg:ml-4 bg-slate-100/50 dark:bg-slate-800/50 p-1 rounded-2xl border border-slate-200 dark:border-slate-700">
               {visibleTabs.map(tab => (
                 <div key={tab.id} className="relative group flex-shrink-0">
                   <button
                     onClick={() => setActiveTab(tab.id)}
-                    title={tab.label}
                     className={`p-2 rounded-xl transition-all duration-300 ${activeTab === tab.id
                       ? 'bg-indigo-600 dark:bg-orange-600 text-white shadow-lg scale-105'
                       : 'text-slate-400 hover:text-indigo-600 dark:hover:text-orange-400'
@@ -819,10 +818,9 @@ function ProyekContent() {
                   >
                     <tab.icon className="w-4 h-4 sm:w-5 sm:h-5" />
                   </button>
-                  {/* Custom Tooltip (Below Icon) */}
-                  <div className="absolute top-full left-1/2 -translate-x-1/2 mt-2 px-2 py-1 bg-slate-900 dark:bg-slate-800 text-white text-[9px] font-black uppercase tracking-widest rounded-lg opacity-0 group-hover:opacity-100 transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-2xl border border-slate-700/50">
+                  {/* Modern Minimalist Tooltip */}
+                  <div className="absolute top-[115%] left-1/2 -translate-x-1/2 px-2.5 py-1 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md text-slate-900 dark:text-white text-[8px] font-black uppercase tracking-[0.15em] rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300 pointer-events-none whitespace-nowrap z-[100] shadow-xl ring-1 ring-slate-200 dark:ring-white/10">
                     {tab.label}
-                    <div className="absolute bottom-full left-1/2 -translate-x-1/2 border-4 border-transparent border-b-slate-900 dark:border-b-slate-800" />
                   </div>
                 </div>
               ))}
