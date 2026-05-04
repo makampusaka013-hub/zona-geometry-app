@@ -289,31 +289,25 @@ export default function ProgressTab({
 
     // Heuristic Helper for Resources
     const getJenis = (r) => {
-      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
       const code = (r.kode_item || r.key_item || '').trim().toUpperCase();
-      const unit = (r.satuan || '').toUpperCase();
       const name = (r.uraian || '').toLowerCase();
+      const unit = (r.satuan || '').toUpperCase();
+      const rawJ = (r.jenis || r.jenis_komponen || '').toLowerCase();
 
-      // 1. Prioritas Satuan (Signal paling kuat)
-      if (unit === 'OH' || unit === 'ORG') return 'upah';
-      if (unit === 'JAM' || unit === 'SEWA') return 'alat';
+      // 1. Prioritas Kode (Sesuai Permintaan User: A/B = Material, L = Tenaga, M/E/C = Alat)
+      if (code.startsWith('A') || code.startsWith('B')) return 'bahan';
+      if (code.startsWith('L')) return 'upah';
+      if (code.startsWith('M') || code.startsWith('E') || code.startsWith('C')) return 'alat';
 
-      // 2. Keyword Nama
-      if (/\b(pekerja|tukang|mandor|mekanik|sopir|driver)\b/.test(name)) return 'upah';
-      if (/\b(sewa|excavator|vibro|stamper|mixer|crane|truck|pompa|genset|bulldozer|grader)\b/.test(name)) return 'alat';
-
-      // 3. Jenis Explicit
+      // 2. Fallback Heuristic jika kode tidak ada (NO-REF)
+      if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor)\b/.test(name)) return 'upah';
+      if (unit === 'JAM' || unit === 'SEWA' || /\b(sewa|excavator|vibro|mixer)\b/.test(name)) return 'alat';
+      
+      // 3. Fallback Jenis Explicit
       if (rawJ.includes('upah') || rawJ.includes('tenaga')) return 'upah';
       if (rawJ.includes('alat')) return 'alat';
-      if (rawJ.includes('bahan') || rawJ.includes('material')) return 'bahan';
 
-      // 4. Kode Prefiks (A=Tenaga, B=Bahan, C/E/M=Alat, L=Labor)
-      if (code.startsWith('A')) return 'upah';
-      if (code.startsWith('L')) return 'upah';
-      if (code.startsWith('B')) return 'bahan';
-      if (code.startsWith('C') || code.startsWith('M') || code.startsWith('E')) return 'alat';
-
-      return 'bahan'; // Fallback
+      return 'bahan'; 
     };
 
     if (viewMode === 'material') {

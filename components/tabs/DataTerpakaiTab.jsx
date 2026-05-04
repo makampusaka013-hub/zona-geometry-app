@@ -30,13 +30,22 @@ export default function DataTerpakaiTab({
       const name = (item.uraian || '').toLowerCase();
 
       let j = rawJ;
-      // Heuristic fallback if type is missing or ambiguous
-      if (!rawJ || rawJ === 'bahan_upah_alat' || rawJ === 'upah') {
-        if (code.startsWith('A') || code.startsWith('B')) {
-          j = 'bahan';
-        } else if (code.startsWith('L') || unit === 'OH' || unit === 'ORG' || /\bpekerja\b/.test(name) || name.includes('tukang') || name.includes('mandor')) {
+      // 1. Prioritas Kode (A/B = Bahan, L = Tenaga, M/E/C = Alat)
+      if (code.startsWith('A') || code.startsWith('B')) {
+        j = 'bahan';
+      } else if (code.startsWith('L')) {
+        j = 'tenaga';
+      } else if (code.startsWith('M') || code.startsWith('E') || code.startsWith('C')) {
+        j = 'alat';
+      } else {
+        // Fallback Heuristic
+        if (unit === 'OH' || unit === 'ORG' || /\b(pekerja|tukang|mandor)\b/.test(name)) {
           j = 'tenaga';
-        } else if (code.startsWith('M') || unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+        } else if (unit === 'JAM' || unit === 'SEWA' || name.includes('alat berat')) {
+          j = 'alat';
+        } else if (rawJ.includes('upah') || rawJ.includes('tenaga')) {
+          j = 'tenaga';
+        } else if (rawJ.includes('alat')) {
           j = 'alat';
         } else {
           j = 'bahan';
