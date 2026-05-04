@@ -262,59 +262,71 @@ function ProyekContent() {
     }
   }, [selectedProject, activeTab, storeLoading]);
 
+  const lastModalOpen = useRef(false);
+
   // Sinkronisasi Form Identitas saat proyek dipilih
   useEffect(() => {
     if (storeLoading) return;
 
-    if (currentProjectObj) {
-      setIdentityForm({
-        name: currentProjectObj?.name || '',
-        code: currentProjectObj?.code || '',
-        location: currentProjectObj?.location || '',
-        location_id: currentProjectObj?.location_id || '',
-        fiscal_year: currentProjectObj?.fiscal_year || '',
-        contract_number: currentProjectObj?.contract_number || '',
-        hsp_value: currentProjectObj?.hsp_value || 0,
-        manual_duration: currentProjectObj?.manual_duration || 0,
-        planned_duration: currentProjectObj?.planned_duration || 0,
-        ppn_percent: currentProjectObj?.ppn_percent ?? 12,
-        program_name: currentProjectObj?.program_name || '',
-        activity_name: currentProjectObj?.activity_name || '',
-        work_name: currentProjectObj?.work_name || '',
-        ppk_name: currentProjectObj?.ppk_name || '',
-        ppk_nip: currentProjectObj?.ppk_nip || '',
-        pptk_name: currentProjectObj?.pptk_name || '',
-        pptk_nip: currentProjectObj?.pptk_nip || '',
-        konsultan_name: currentProjectObj?.konsultan_name || '',
-        konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
-        konsultan_title: currentProjectObj?.konsultan_title || '', // Added
-        kontraktor_director: currentProjectObj?.kontraktor_director || '',
-        kontraktor_title: currentProjectObj?.kontraktor_title || '', // Added
-        kadis_name: currentProjectObj?.kadis_name || '',
-        kadis_nip: currentProjectObj?.kadis_nip || '',
-        kabid_name: currentProjectObj?.kabid_name || '',
-        kabid_nip: currentProjectObj?.kabid_nip || '',
-        kontraktor_name: currentProjectObj?.kontraktor_name || '',
-        start_date: currentProjectObj?.start_date || '',
-        version: currentProjectObj?.version || 1
-      });
-    } else if (!selectedProject) {
-      setIdentityForm({
-        name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
-        contract_number: '', hsp_value: 0, ppn_percent: 12,
-        program_name: '', activity_name: '', work_name: '',
-        ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
-        konsultan_name: '', konsultan_supervisor: '', konsultan_title: '',
-        kontraktor_director: '', kontraktor_title: '',
-        kontraktor_name: '',
-        kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
-        start_date: '',
-        manual_duration: 0,
-        planned_duration: 0,
-        version: 1
-      });
+    // REFINEMENT: Hanya sinkronisasi jika:
+    // 1. Modal baru saja dibuka (justOpened)
+    // 2. Modal sedang tertutup (agar data selalu siap)
+    const justOpened = isIdentityModalOpen && !lastModalOpen.current;
+    const isClosed = !isIdentityModalOpen;
+
+    if (justOpened || isClosed) {
+      if (currentProjectObj) {
+        setIdentityForm({
+          name: currentProjectObj?.name || '',
+          code: currentProjectObj?.code || '',
+          location: currentProjectObj?.location || '',
+          location_id: currentProjectObj?.location_id || '',
+          fiscal_year: currentProjectObj?.fiscal_year || '',
+          contract_number: currentProjectObj?.contract_number || '',
+          hsp_value: currentProjectObj?.hsp_value || 0,
+          manual_duration: currentProjectObj?.manual_duration || 0,
+          planned_duration: currentProjectObj?.planned_duration || 0,
+          ppn_percent: currentProjectObj?.ppn_percent ?? 12,
+          program_name: currentProjectObj?.program_name || '',
+          activity_name: currentProjectObj?.activity_name || '',
+          work_name: currentProjectObj?.work_name || '',
+          ppk_name: currentProjectObj?.ppk_name || '',
+          ppk_nip: currentProjectObj?.ppk_nip || '',
+          pptk_name: currentProjectObj?.pptk_name || '',
+          pptk_nip: currentProjectObj?.pptk_nip || '',
+          konsultan_name: currentProjectObj?.konsultan_name || '',
+          konsultan_supervisor: currentProjectObj?.konsultan_supervisor || '',
+          konsultan_title: currentProjectObj?.konsultan_title || '',
+          kontraktor_director: currentProjectObj?.kontraktor_director || '',
+          kontraktor_title: currentProjectObj?.kontraktor_title || '',
+          kadis_name: currentProjectObj?.kadis_name || '',
+          kadis_nip: currentProjectObj?.kadis_nip || '',
+          kabid_name: currentProjectObj?.kabid_name || '',
+          kabid_nip: currentProjectObj?.kabid_nip || '',
+          kontraktor_name: currentProjectObj?.kontraktor_name || '',
+          start_date: currentProjectObj?.start_date || '',
+          version: currentProjectObj?.version || 1
+        });
+      } else if (!selectedProject) {
+        setIdentityForm({
+          name: '', code: '', location: '', fiscal_year: new Date().getFullYear().toString(),
+          contract_number: '', hsp_value: 0, ppn_percent: 12,
+          program_name: '', activity_name: '', work_name: '',
+          ppk_name: '', ppk_nip: '', pptk_name: '', pptk_nip: '',
+          konsultan_name: '', konsultan_supervisor: '', konsultan_title: '',
+          kontraktor_director: '', kontraktor_title: '',
+          kontraktor_name: '',
+          kadis_name: '', kadis_nip: '', kabid_name: '', kabid_nip: '',
+          start_date: '',
+          manual_duration: 0,
+          planned_duration: 0,
+          version: 1
+        });
+      }
     }
-  }, [currentProjectObj, storeLoading, selectedProject]);
+    
+    lastModalOpen.current = isIdentityModalOpen;
+  }, [currentProjectObj, storeLoading, selectedProject, isIdentityModalOpen]);
 
   // ── Sync Labor Settings State ──
   useEffect(() => {
