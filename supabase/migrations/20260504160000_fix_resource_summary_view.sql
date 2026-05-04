@@ -78,6 +78,7 @@ SELECT
   jenis_komponen,
   harga_snapshot,
   tkdn_percent,
+  tkdn_percent   AS tkdn,
   total_volume,
   kontribusi_nilai,
   nilai_tkdn
