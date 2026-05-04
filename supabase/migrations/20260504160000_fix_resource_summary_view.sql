@@ -1,10 +1,5 @@
--- =============================================================================
--- Migration: Fix view_project_resource_summary
--- - Join langsung via kode_item_dasar (tanpa master_konversi)
--- - Terapkan faktor_konversi dari master_ahsp_details
--- - Fallback ke harga manapun jika location tidak cocok
+-- Migration: Fix Resource Summary View with Grouping and Column Sync
 -- Date: 2026-05-04
--- =============================================================================
 
 DROP VIEW IF EXISTS public.view_project_resource_summary CASCADE;
 
@@ -32,8 +27,7 @@ WITH base AS (
 resolved AS (
   SELECT
     b.*,
-    COALESCE(mhd_loc.kode_item, mhd_any.kode_item) AS kode_item,
-    -- Harga sudah dikonversi ke satuan AHSP (dibagi faktor_konversi)
+    COALESCE(mhd_loc.kode_item, mhd_any.kode_item, b.kode_item_dasar) AS kode_item,
     COALESCE(
       mhd_loc.harga_satuan / b.faktor_konversi,
       mhd_any.harga_satuan / b.faktor_konversi,
@@ -43,28 +37,41 @@ resolved AS (
       mhd_loc.tkdn_percent,
       mhd_any.tkdn_percent,
       CASE WHEN upper(left(trim(b.kode_item_dasar), 1)) = 'L' THEN 100 ELSE 0 END
-    ) AS tkdn_pct,
-    COALESCE(mhd_loc.id, mhd_any.id) AS item_id
+    ) AS tkdn_pct
   FROM base b
-  -- JOIN 1: Match berdasarkan lokasi proyek
   LEFT JOIN public.master_harga_dasar mhd_loc
     ON mhd_loc.kode_item = b.kode_item_dasar
    AND mhd_loc.location_id = b.loc_id
-  -- JOIN 2: Fallback - ambil harga pertama yang tersedia jika lokasi tidak cocok
   LEFT JOIN public.master_harga_dasar mhd_any
     ON mhd_any.kode_item = b.kode_item_dasar
    AND mhd_loc.id IS NULL
+),
+aggregated AS (
+  SELECT
+    project_id,
+    bab_pekerjaan,
+    uraian_ahsp,
+    satuan_uraian,
+    CASE
+      WHEN upper(left(trim(kode_item_dasar), 1)) = 'L' THEN 'tenaga'
+      WHEN upper(left(trim(kode_item_dasar), 1)) IN ('A','B') THEN 'bahan'
+      WHEN upper(left(trim(kode_item_dasar), 1)) = 'M' THEN 'alat'
+      ELSE 'bahan'
+    END AS jenis_komponen,
+    MIN(kode_item) AS key_item,
+    MAX(harga_efektif) AS harga_snapshot,
+    MAX(tkdn_pct) AS tkdn_percent,
+    SUM(volume * koefisien)                                                  AS total_volume,
+    SUM(volume * koefisien * harga_efektif)                                  AS kontribusi_nilai,
+    SUM(volume * koefisien * harga_efektif * (tkdn_pct / 100.0))             AS nilai_tkdn
+  FROM resolved
+  WHERE uraian_ahsp IS NOT NULL
+  GROUP BY
+    project_id, bab_pekerjaan, uraian_ahsp, satuan_uraian, jenis_komponen
 )
 SELECT
   project_id,
   bab_pekerjaan,
-  uraian_ahsp                                AS uraian,
-  MAX(kode_item)                             AS key_item,
-  satuan_uraian                              AS satuan,
-  CASE
-    WHEN upper(left(trim(kode_item_dasar), 1)) = 'L' THEN 'tenaga'
-    WHEN upper(left(trim(kode_item_dasar), 1)) IN ('A','B') THEN 'bahan'
-    WHEN upper(left(trim(kode_item_dasar), 1)) = 'M' THEN 'alat'
   uraian_ahsp    AS uraian,
   key_item,
   satuan_uraian  AS satuan,
@@ -77,7 +84,6 @@ SELECT
 FROM aggregated;
 
 GRANT SELECT ON public.view_project_resource_summary TO authenticated;
-
 
 -- Fix RPC: return total_volume
 DROP FUNCTION IF EXISTS public.get_project_resource_aggregation(uuid);
@@ -96,7 +102,7 @@ LANGUAGE sql
 SECURITY DEFINER
 SET search_path = public
 AS $$
-  SELECT
+  SELECT 
     uraian,
     key_item,
     satuan,
@@ -106,8 +112,14 @@ AS $$
     SUM(nilai_tkdn)            AS nilai_tkdn
   FROM public.view_project_resource_summary
   WHERE project_id = p_project_id
-  GROUP BY uraian, key_item, satuan, jenis_komponen
-  ORDER BY jenis_komponen, uraian;
+  GROUP BY
+    uraian,
+    key_item,
+    satuan,
+    jenis_komponen
+  ORDER BY 
+    jenis_komponen, 
+    uraian;
 $$;
 
 NOTIFY pgrst, 'reload schema';
