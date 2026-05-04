@@ -73,50 +73,55 @@ export default function ProgressTab({
   useEffect(() => {
     if (activeTab !== 'progress' || !projectId) return;
     async function loadProgress() {
-      setLoadingProgress(true);
-      const [progressRes, reportsRes] = await Promise.all([
-        supabase.from('project_progress_daily').select('*').eq('project_id', projectId).eq('created_by', currentUserId),
-        supabase.from('daily_reports').select('*').eq('project_id', projectId)
-      ]);
+      try {
+        setLoadingProgress(true);
+        const [progressRes, reportsRes] = await Promise.all([
+          supabase.from('project_progress_daily').select('*').eq('project_id', projectId).eq('created_by', currentUserId),
+          supabase.from('daily_reports').select('*').eq('project_id', projectId)
+        ]);
 
-      if (!progressRes.error && progressRes.data) {
-        const mapped = {};
-        const customs = new Set();
-        progressRes.data.forEach(row => {
-          // Use name for supervision/custom if ID is not a number/UUID
-          const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
-            ? row.entity_name 
-            : (row.entity_id || row.entity_name);
+        if (!progressRes.error && progressRes.data) {
+          const mapped = {};
+          const customs = new Set();
+          progressRes.data.forEach(row => {
+            // Use name for supervision/custom if ID is not a number/UUID
+            const key = (row.entity_type === 'supervision_staff' || (row.entity_type === 'custom_labor' && !row.entity_id)) 
+              ? row.entity_name 
+              : (row.entity_id || row.entity_name);
+              
+            if (!mapped[key]) mapped[key] = {};
+            mapped[key][row.day_number] = Number(row.val);
             
-          if (!mapped[key]) mapped[key] = {};
-          mapped[key][row.day_number] = Number(row.val);
-          
-          if (row.entity_type === 'custom_labor' && !row.entity_id) {
-            customs.add(row.entity_name);
-          }
-        });
-        setProgressData(mapped);
-        setCustomRoles(Array.from(customs));
+            if (row.entity_type === 'custom_labor' && !row.entity_id) {
+              customs.add(row.entity_name);
+            }
+          });
+          setProgressData(mapped);
+          setCustomRoles(Array.from(customs));
+        }
+
+        if (!reportsRes.error && reportsRes.data) {
+          const reportMap = {};
+          reportsRes.data.forEach(r => {
+            const d = new Date(r.report_date);
+            const start = new Date(projectStartDate);
+            if (isNaN(d.getTime()) || isNaN(start.getTime())) return;
+
+            const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
+            if (isNaN(diff)) return;
+
+            reportMap[diff] = {
+              weather_index: r.weather_index,
+              weather_description: r.weather_description
+            };
+          });
+          setDailyReports(reportMap);
+        }
+      } catch (err) {
+        console.error('Failed to load progress data:', err);
+      } finally {
+        setLoadingProgress(false);
       }
-
-      if (!reportsRes.error && reportsRes.data) {
-        const reportMap = {};
-        reportsRes.data.forEach(r => {
-          const d = new Date(r.report_date);
-          const start = new Date(projectStartDate);
-          if (isNaN(d.getTime()) || isNaN(start.getTime())) return;
-
-          const diff = Math.round((d - start) / (1000 * 60 * 60 * 24)) + 1;
-          if (isNaN(diff)) return;
-
-          reportMap[diff] = {
-            weather_index: r.weather_index,
-            weather_description: r.weather_description
-          };
-        });
-        setDailyReports(reportMap);
-      }
-      setLoadingProgress(false);
     }
     loadProgress();
   }, [activeTab, projectId, currentUserId, projectStartDate]);

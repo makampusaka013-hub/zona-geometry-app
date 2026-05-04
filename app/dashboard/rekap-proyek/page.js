@@ -702,16 +702,17 @@ function ProyekContent() {
     const totalUpah = manpowerItems.reduce((s, r) => s + r.total_upah, 0);
     const totalWorkers = manpowerItems.reduce((s, r) => s + r.pekerja, 0);
     let projectTotalDays = 0;
-    if (sequencedSchedule?.length > 0) {
-      const starts = (sequencedSchedule || []).map(r => r.seq_start).filter(Boolean);
-      const ends = (sequencedSchedule || []).map(r => r.seq_end).filter(Boolean);
-      if (starts.length && ends.length) {
-        const minStart = new Date(Math.min(...starts.map(s => new Date(s))));
-        const maxEnd = new Date(Math.max(...ends.map(e => new Date(e))));
-        projectTotalDays = Math.ceil((maxEnd - minStart) / 86400000) + 1;
+    if (sequencedSchedule && sequencedSchedule.length > 0) {
+      const validStarts = sequencedSchedule.map(r => r.seq_start).filter(s => s && !isNaN(new Date(s).getTime()));
+      const validEnds = sequencedSchedule.map(r => r.seq_end).filter(e => e && !isNaN(new Date(e).getTime()));
+      
+      if (validStarts.length > 0 && validEnds.length > 0) {
+        const minStartTs = Math.min(...validStarts.map(s => new Date(s).getTime()));
+        const maxEndTs = Math.max(...validEnds.map(e => new Date(e).getTime()));
+        projectTotalDays = Math.ceil((maxEndTs - minStartTs) / 86400000) + 1;
       }
     }
-    return { total, maxDurasi, totalUpah, totalWorkers, projectTotalDays };
+    return { total, maxDurasi, totalUpah, totalWorkers, projectTotalDays: projectTotalDays || 0 };
   }, [manpowerItems, sequencedSchedule]);
 
   const scheduleGanttData = useMemo(() => {
