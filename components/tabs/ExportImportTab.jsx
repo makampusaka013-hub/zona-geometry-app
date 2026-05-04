@@ -59,11 +59,26 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
     );
   }
 
-  if (!project || !ahspLines || ahspLines.length === 0) {
+  if (!project) {
     return (
       <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6 opacity-30 dark:opacity-20">
         <FileSpreadsheet className="w-20 h-20 text-slate-400 dark:text-slate-500" />
-        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">E X P O R T  /  I M P O R T</h3>
+        <h3 className="text-[10px] font-black text-slate-500 dark:text-slate-400 uppercase tracking-[0.4em]">PILIH PROYEK TERLEBIH DAHULU</h3>
+      </div>
+    );
+  }
+
+  // Jika sedang di tab export tapi data kosong, tampilkan info
+  if (subTab === 'export' && (!ahspLines || ahspLines.length === 0)) {
+    return (
+      <div className="flex flex-col items-center justify-center py-32 px-6 text-center space-y-6">
+        <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mb-4">
+          <FileSpreadsheet className="w-10 h-10 text-slate-400" />
+        </div>
+        <h3 className="text-xl font-bold text-slate-900 dark:text-white">Data RAB Kosong</h3>
+        <p className="text-sm text-slate-500 dark:text-slate-400 max-w-sm">
+          Anda belum memiliki item pekerjaan di proyek ini. Silakan tambahkan item di tab <b>Edit RAB</b> atau gunakan fitur <b>Import</b> untuk mengunggah file Excel.
+        </p>
       </div>
     );
   }
