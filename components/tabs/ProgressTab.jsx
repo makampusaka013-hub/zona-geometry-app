@@ -276,14 +276,28 @@ export default function ProgressTab({
     }
 
     // Helper for Resources (Material, Labor, Alat)
-    const getResItems = (prefixes) => {
-      const filtered = (resources || []).filter(r => {
+    const getResItems = (targetJenis) => {
+      return (resources || []).filter(r => {
         const code = (r.key_item || r.kode_item || '').trim().toUpperCase();
-        // Cek apakah kode berawalan salah satu dari prefix (misal 'L' untuk Tenaga)
-        return prefixes.some(p => code.startsWith(p));
-      });
-      
-      return filtered.map(r => ({
+        const unit = (r.satuan || '').trim().toUpperCase();
+        const name = (r.uraian || '').toLowerCase();
+
+        // 1. Deteksi berdasarkan Kode (Prefix)
+        let detected = 'bahan';
+        if (code.startsWith('A') || code.startsWith('B')) detected = 'material';
+        else if (code.startsWith('L')) detected = 'labor';
+        else if (code.startsWith('M')) detected = 'equipment';
+        else {
+          // 2. Fallback berdasarkan Satuan
+          if (unit === 'OH' || unit === 'ORG') detected = 'labor';
+          else if (unit === 'JAM' || unit === 'SEWA') detected = 'equipment';
+          // 3. Fallback berdasarkan Nama
+          else if (name.includes('tukang') || name.includes('mandor') || name.includes('pekerja')) detected = 'labor';
+          else if (name.includes('alat berat') || name.includes('mixer') || name.includes('excavator')) detected = 'equipment';
+        }
+
+        return detected === targetJenis;
+      }).map(r => ({
         id: r.key_item || r.kode_item,
         name: r.uraian,
         unit: r.satuan,
@@ -292,9 +306,9 @@ export default function ProgressTab({
       }));
     };
 
-    if (viewMode === 'material') return getResItems(['A', 'B']);
-    if (viewMode === 'labor' || viewMode === 'upah') return getResItems(['L']);
-    if (viewMode === 'equipment' || viewMode === 'alat') return getResItems(['M']);
+    if (viewMode === 'material') return getResItems('material');
+    if (viewMode === 'labor' || viewMode === 'upah') return getResItems('labor');
+    if (viewMode === 'equipment' || viewMode === 'alat') return getResItems('equipment');
 
     return [];
   }, [viewMode, items, resources]);
