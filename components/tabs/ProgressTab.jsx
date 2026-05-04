@@ -260,15 +260,14 @@ export default function ProgressTab({
           return !isResource; // Tampilkan semua yang BUKAN resource
         })
         .map(it => {
-          // Cari nama terbaik
-          const masterName = it.master_ahsp?.nama_pekerjaan || it.master_ahsp?.uraian || '';
-          const finalName = it.uraian_custom || masterName || it.uraian;
+          // Prioritas: Nama Kustom > Nama Resmi AHSP > Uraian default
+          const finalName = it.uraian_custom || it.master_ahsp?.nama_pekerjaan || it.uraian;
           
           return {
             id: it.id,
-            name: finalName,
-            unit: it.satuan,
-            target: Number(it.volume),
+            name: finalName || 'Item Pekerjaan Tanpa Nama',
+            unit: it.satuan || '—',
+            target: Number(it.volume || 0),
             type: 'ahsp_item',
             status_approval: it.status_approval
           };
@@ -408,7 +407,7 @@ export default function ProgressTab({
         })}
       </div>
 
-      <div className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm mx-4">
+      <div key={viewMode} className="border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#020617] overflow-hidden rounded-3xl shadow-sm mx-4">
         <div className="overflow-x-auto max-h-[700px] scrollbar-none relative">
           <table className="text-sm border-separate border-spacing-0 table-fixed min-w-full">
             <thead className="sticky top-0 z-50">
