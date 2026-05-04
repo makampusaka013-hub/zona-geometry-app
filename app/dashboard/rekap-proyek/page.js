@@ -1068,8 +1068,10 @@ function ProyekContent() {
               className="flex flex-col items-end pl-4 border-l border-slate-200 dark:border-slate-800 cursor-pointer hover:opacity-70 transition-opacity"
               onClick={() => setShowCalendar(true)}
             >
-              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Durasi</span>
-              <span className="text-[10px] font-black text-slate-900 dark:text-white">{projectMetrics.duration || manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span></span>
+              <span className="text-[7px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Durasi (KTR / RNC)</span>
+              <span className="text-[10px] font-black text-slate-900 dark:text-white">
+                {projectMetrics.duration || 0} / {manpowerSummary.projectTotalDays || 0} <span className="text-[8px] text-slate-400">Hari</span>
+              </span>
             </div>
 
             <button
@@ -1767,7 +1769,7 @@ function ProyekContent() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Proyek (Hari)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (KTR)</label>
                           <input
                             type="number"
                             value={createForm.manual_duration}
@@ -1934,7 +1936,7 @@ function ProyekContent() {
                       </div>
                       <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (Manual)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Kontrak (KTR)</label>
                           <input
                             type="number"
                             value={identityForm.manual_duration}
@@ -1943,7 +1945,7 @@ function ProyekContent() {
                           />
                         </div>
                         <div className="space-y-2">
-                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Rencana (Otomatis)</label>
+                          <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest px-1">Durasi Rencana (RNC)</label>
                           <div className="w-full px-5 py-4 bg-slate-100/50 dark:bg-slate-800/30 border border-slate-200 dark:border-slate-700 rounded-2xl text-sm font-bold dark:text-slate-400 flex items-center justify-between">
                             <span>{manpowerSummary.projectTotalDays || 0} Hari</span>
                             <span className="text-[8px] px-2 py-0.5 bg-slate-200 dark:bg-slate-700 rounded-full uppercase tracking-tighter">Gantt Chart</span>
