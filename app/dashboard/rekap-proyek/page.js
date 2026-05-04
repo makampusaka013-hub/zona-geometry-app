@@ -98,14 +98,16 @@ function ProyekContent() {
   const pathname = usePathname();
   
   // Connect to Global Store (Single Source of Truth)
-  const { 
-    member, projects, selectedProject, locations, isLoading: storeLoading,
-    initStore, setSelectedProject, setProjects, saveProjectIdentity, handleDeleteProject: storeHandleDeleteProject
-  } = useProjectStore();
+  const member = useProjectStore(s => s.member);
+  const projects = useProjectStore(s => s.projects);
+  const selectedProject = useProjectStore(s => s.selectedProject);
+  const locations = useProjectStore(s => s.locations);
+  const storeLoading = useProjectStore(s => s.isLoading);
+  const initStore = useProjectStore(s => s.initStore);
+  const setSelectedProject = useProjectStore(s => s.setSelectedProject);
+  const saveProjectIdentity = useProjectStore(s => s.saveProjectIdentity);
+  const storeHandleDeleteProject = useProjectStore(s => s.handleDeleteProject);
 
-  // Tab Data & Catalog are technically in useRabStore/useUIStore or local state
-  // If they were intended to be in ProjectStore, we must ensure they are defined.
-  // For now, we add safety guards to all destructured items.
   const tabData = useProjectStore(s => s.tabData) || { schedule: { lines: [] }, ahsp: [], harga: [] };
   const tabLoading = useProjectStore(s => s.tabLoading) || false;
   const ahspCatalog = useProjectStore(s => s.ahspCatalog) || {};
@@ -545,15 +547,6 @@ function ProyekContent() {
   useEffect(() => {
     initStore();
   }, [initStore]);
-
-  // Load available locations
-  useEffect(() => {
-    async function fetchLocations() {
-      const { data } = await supabase.from('locations').select('*').order('name');
-      if (data) setLocations(data);
-    }
-    fetchLocations();
-  }, []);
 
   // Efek untuk menangani aksi dari URL (contoh: ?action=new)
   useEffect(() => {
