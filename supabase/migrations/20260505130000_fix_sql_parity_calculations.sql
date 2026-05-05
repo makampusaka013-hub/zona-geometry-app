@@ -180,7 +180,25 @@ GROUP BY master_ahsp_id, user_id, kode_ahsp;
 
 -- 4. REBUILD view_katalog_ahsp_gabungan
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_gabungan WITH (security_invoker = true) AS
-SELECT * FROM public.view_katalog_ahsp_custom
+SELECT
+  master_ahsp_id,
+  user_id,
+  kode_ahsp,
+  nama_pekerjaan,
+  satuan_pekerjaan,
+  kategori_pekerjaan,
+  jenis_pekerjaan,
+  overhead_profit,
+  total_upah,
+  total_bahan,
+  total_alat,
+  total_subtotal,
+  total_tkdn_percent,
+  is_custom,
+  urutan_prioritas,
+  is_lengkap,
+  details
+FROM public.view_katalog_ahsp_custom
 UNION ALL
 SELECT
   master_ahsp_id,
@@ -198,8 +216,8 @@ SELECT
   total_tkdn_percent,
   false AS is_custom,
   2 AS urutan_prioritas,
-  details,
-  is_lengkap
+  is_lengkap,
+  details
 FROM public.view_katalog_ahsp_lengkap;
 
 -- 5. REBUILD view_analisa_ahsp
