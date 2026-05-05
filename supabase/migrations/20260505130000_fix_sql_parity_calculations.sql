@@ -297,7 +297,7 @@ aggregated AS (
 SELECT
   project_id,
   bab_pekerjaan,
-  uraian,
+  uraian_ahsp AS uraian,
   key_item,
   satuan,
   jenis_komponen,
