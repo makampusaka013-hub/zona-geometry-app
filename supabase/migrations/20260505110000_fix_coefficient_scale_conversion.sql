@@ -1,7 +1,9 @@
--- Migration: 20260505110000_FIX_COEFFICIENT_SCALE_CONVERSION
--- Goal: Ensure coefficient parity between App and Excel when unit conversion exists.
+-- 1. DROP EXISTING VIEWS (Handle dependencies)
+DROP VIEW IF EXISTS public.view_project_resource_summary CASCADE;
+DROP VIEW IF EXISTS public.view_katalog_ahsp_gabungan CASCADE;
+DROP VIEW IF EXISTS public.view_katalog_ahsp_lengkap CASCADE;
 
--- 1. UPDATE view_katalog_ahsp_lengkap
+-- 2. REBUILD view_katalog_ahsp_lengkap
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_lengkap 
   WITH (security_invoker = true)
 AS
@@ -147,7 +149,50 @@ final_agg AS (
 SELECT * FROM final_agg;
 
 
--- 2. UPDATE view_project_resource_summary
+-- 3. RE-ESTABLISH GABUNGAN VIEW (Dependent on Katalog)
+CREATE OR REPLACE VIEW public.view_katalog_ahsp_gabungan WITH (security_invoker = true) AS
+SELECT
+  master_ahsp_id,
+  user_id,
+  kode_ahsp,
+  nama_pekerjaan,
+  satuan_pekerjaan,
+  kategori_pekerjaan,
+  jenis_pekerjaan,
+  overhead_profit,
+  total_upah,
+  total_bahan,
+  total_alat,
+  total_subtotal,
+  total_tkdn_percent,
+  is_custom,
+  urutan_prioritas,
+  details,
+  is_lengkap
+FROM public.view_katalog_ahsp_custom
+UNION ALL
+SELECT
+  master_ahsp_id,
+  NULL AS user_id,
+  kode_ahsp,
+  nama_pekerjaan,
+  satuan_pekerjaan,
+  kategori_pekerjaan,
+  jenis_pekerjaan,
+  overhead_profit,
+  total_upah,
+  total_bahan,
+  total_alat,
+  total_subtotal,
+  total_tkdn_percent,
+  false AS is_custom,
+  2 AS urutan_prioritas,
+  details,
+  is_lengkap
+FROM public.view_katalog_ahsp_lengkap;
+
+
+-- 4. UPDATE view_project_resource_summary
 CREATE OR REPLACE VIEW public.view_project_resource_summary 
 WITH (security_invoker = true) AS
 WITH base AS (
@@ -226,5 +271,8 @@ SELECT
   kontribusi_nilai,
   nilai_tkdn
 FROM aggregated;
+
+GRANT SELECT ON public.view_katalog_ahsp_gabungan TO authenticated;
+GRANT SELECT ON public.view_project_resource_summary TO authenticated;
 
 NOTIFY pgrst, 'reload schema';
