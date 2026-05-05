@@ -114,7 +114,7 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
 
         <div className="flex-1 min-w-0">
           <h4 className="text-[9px] xl:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{label}</h4>
-          <div className={`text-lg xl:text-xl 2xl:text-2xl font-black ${c.text} font-mono tracking-tighter truncate drop-shadow-sm`}>
+          <div className={`text-lg xl:text-xl font-black ${c.text} font-mono tracking-tighter drop-shadow-sm break-all`}>
             {value}
           </div>
           <div className={`flex items-center gap-1.5 mt-1 xl:mt-2 text-[9px] xl:text-[10px] font-black ${c.trend} uppercase tracking-tight opacity-80 dark:opacity-70`}>
@@ -883,13 +883,13 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 xl:gap-6">
                 <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />
                 <StatCard icon={ClipboardList} label="Item Pekerjaan" value={`${projectStats?.totalItems || 0} AHSP`} sub="Lingkup Kerja" color="violet" />
-                <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(1)}%`} sub="Aset Lokal" color="blue" />
+                <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(2)}%`} sub="Aset Lokal" color="blue" />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 xl:gap-6">
                 <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
                 <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
                 <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
