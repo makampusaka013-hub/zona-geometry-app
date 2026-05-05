@@ -423,9 +423,8 @@ function DashboardContent() {
 
       let totB = 0, totT = 0;
       resources?.forEach(r => {
-        const val = Number(r.kontribusi_nilai) || 0;
-        totB += val;
-        totT += (val * (Number(r.nilai_tkdn) || 0)) / 100;
+        totB += Number(r.kontribusi_nilai) || 0;
+        totT += Number(r.nilai_tkdn) || 0;
       });
       const tkdnPct = totB > 0 ? Math.min(100, (totT / totB) * 100) : 0;
 
@@ -883,13 +882,10 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 xl:gap-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 xl:gap-6">
                 <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />
                 <StatCard icon={ClipboardList} label="Item Pekerjaan" value={`${projectStats?.totalItems || 0} AHSP`} sub="Lingkup Kerja" color="violet" />
                 <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(2)}%`} sub="Aset Lokal" color="blue" />
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 2xl:grid-cols-3 gap-4 xl:gap-6">
                 <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
                 <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
                 <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
