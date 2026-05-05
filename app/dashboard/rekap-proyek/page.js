@@ -934,7 +934,7 @@ function ProyekContent() {
                         onClick={() => setSubTabProyek('schedule')}
                         className={`px-3 py-1 rounded-lg text-[9px] font-black uppercase tracking-widest transition-all ${subTabProyek === 'schedule' ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-orange-500 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600' : 'text-slate-400 hover:text-slate-600'}`}
                       >
-                        Jadwal (Schedule)
+                        Schedule
                       </button>
                     </>
                   )}
