@@ -427,7 +427,7 @@ function DashboardContent() {
         totB += val;
         totT += (val * (Number(r.nilai_tkdn) || 0)) / 100;
       });
-      const tkdnPct = totalRab > 0 ? (totT / totalRab) * 100 : 0;
+      const tkdnPct = totB > 0 ? Math.min(100, (totT / totB) * 100) : 0;
 
       const totalUpah = resources?.filter(r => {
         const j = (r.jenis_komponen || '').toLowerCase();
