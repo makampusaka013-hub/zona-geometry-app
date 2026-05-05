@@ -102,22 +102,22 @@ function StatCard({ icon: Icon, label, value, sub, color }) {
   const c = configs[color] || configs.indigo_primary;
 
   return (
-    <div className={`group relative overflow-hidden rounded-[32px] border ${c.card} px-6 py-7 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md dark:shadow-none`}>
+    <div className={`group relative overflow-hidden rounded-[32px] border ${c.card} px-4 py-5 xl:px-6 xl:py-7 transition-all duration-300 cursor-pointer shadow-sm hover:shadow-md dark:shadow-none`}>
       {/* Background Watermark */}
-      <Icon className={`absolute -right-6 -bottom-6 w-32 h-32 ${c.watermark} -rotate-12 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-0`} />
+      <Icon className={`absolute -right-6 -bottom-6 w-24 h-24 xl:w-32 xl:h-32 ${c.watermark} -rotate-12 transition-transform duration-700 group-hover:scale-110 group-hover:rotate-0`} />
 
-      <div className="relative z-10 flex flex-col md:flex-row items-center md:items-center gap-4 text-center md:text-left">
+      <div className="relative z-10 flex flex-row items-center gap-3 xl:gap-4">
         {/* Animated Icon Box */}
-        <div className={`w-16 h-16 flex items-center justify-center rounded-2xl ${c.box} transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg dark:group-hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] shrink-0`}>
-          <Icon className="w-8 h-8" />
+        <div className={`w-12 h-12 xl:w-16 xl:h-16 flex items-center justify-center rounded-2xl ${c.box} transition-all duration-500 group-hover:scale-110 group-hover:shadow-lg dark:group-hover:shadow-[0_0_20px_rgba(0,0,0,0.2)] shrink-0`}>
+          <Icon className="w-6 h-6 xl:w-8 xl:h-8" />
         </div>
 
         <div className="flex-1 min-w-0">
-          <h4 className="text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1.5">{label}</h4>
-          <div className={`text-2xl font-black ${c.text} font-mono tracking-tighter drop-shadow-sm`}>
+          <h4 className="text-[9px] xl:text-[10px] font-black text-slate-400 dark:text-slate-500 uppercase tracking-widest mb-1">{label}</h4>
+          <div className={`text-lg xl:text-xl 2xl:text-2xl font-black ${c.text} font-mono tracking-tighter truncate drop-shadow-sm`}>
             {value}
           </div>
-          <div className={`flex items-center justify-center md:justify-start gap-1.5 mt-2 text-[10px] font-black ${c.trend} uppercase tracking-tight opacity-80 dark:opacity-70`}>
+          <div className={`flex items-center gap-1.5 mt-1 xl:mt-2 text-[9px] xl:text-[10px] font-black ${c.trend} uppercase tracking-tight opacity-80 dark:opacity-70`}>
             <TrendingUp className="w-3 h-3" />
             {sub}
           </div>
@@ -427,7 +427,7 @@ function DashboardContent() {
         totB += val;
         totT += (val * (Number(r.nilai_tkdn) || 0)) / 100;
       });
-      const tkdnPct = totB > 0 ? (totT / totB) * 100 : 0;
+      const tkdnPct = totalRab > 0 ? (totT / totalRab) * 100 : 0;
 
       const totalUpah = resources?.filter(r => {
         const j = (r.jenis_komponen || '').toLowerCase();
@@ -883,13 +883,13 @@ function DashboardContent() {
             </div>
           ) : (
             <>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
                 <StatCard icon={Wallet} label="Total RAB" value={formatIdr(projectStats?.totalRab)} sub="Budget Terencana" color="indigo" />
                 <StatCard icon={ClipboardList} label="Item Pekerjaan" value={`${projectStats?.totalItems || 0} AHSP`} sub="Lingkup Kerja" color="violet" />
                 <StatCard icon={Factory} label="Capaian TKDN" value={`${Number(projectStats?.tkdnPct || 0).toFixed(1)}%`} sub="Aset Lokal" color="blue" />
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+              <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 xl:gap-6">
                 <StatCard icon={HardHat} label="Tenaga" value={formatIdr(projectStats?.totalUpah)} sub="Tenaga Kerja" color="indigo" />
                 <StatCard icon={Construction} label="Bahan" value={formatIdr(projectStats?.totalBahan)} sub="Material Konstruksi" color="blue" />
                 <StatCard icon={Hammer} label="Alat" value={formatIdr(projectStats?.totalAlat)} sub="Peralatan & Mesin" color="violet" />
@@ -1094,7 +1094,7 @@ function DashboardContent() {
 
         <div className="lg:col-span-3 space-y-8">
           {projects.length > 0 && (
-            <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-8 text-white shadow-2xl relative overflow-hidden">
+            <div className="bg-gradient-to-br from-indigo-600 to-indigo-800 dark:from-orange-600 dark:to-orange-800 rounded-[32px] p-6 xl:p-8 text-white shadow-2xl relative overflow-hidden">
               <h4 className="text-[10px] font-black uppercase tracking-widest opacity-60 mb-6 font-mono">
                 {selProject?.code || 'TANPA-KODE'}
                 {selProject?.fiscal_year ? ` / ${selProject.fiscal_year}` : ''}
@@ -1153,7 +1153,7 @@ function DashboardContent() {
           </div>
 
           {projects.length > 0 && (
-            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-8 shadow-sm border border-slate-100 dark:border-slate-800">
+            <div className="bg-white dark:bg-slate-900 rounded-[32px] p-6 xl:p-8 shadow-sm border border-slate-100 dark:border-slate-800">
               <h3 className="text-xs font-black text-slate-400 uppercase tracking-widest mb-8">Status Pekerjaan</h3>
               {(() => {
                 // Find today's day number relative to project start
