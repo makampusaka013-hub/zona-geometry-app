@@ -243,12 +243,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
       setLoadingPro('rab');
       try {
         const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+        // ALWAYS fetch fresh details from the view to ensure we get the latest scaled coefficients
+        const ahspIdsToFetch = [...new Set(enrichedLines.filter(l => l.master_ahsp_id).map(l => l.master_ahsp_id))];
+        if (ahspIdsToFetch.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIdsToFetch);
           if (detailsData) {
             const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+            enrichedLines.forEach(l => { 
+              if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { 
+                if (!l.master_ahsp) l.master_ahsp = {}; 
+                l.master_ahsp.details = detailMap[l.master_ahsp_id]; 
+              } 
+            });
           }
         }
         const [projectRes, catalogRes, overrideRes] = await Promise.all([
@@ -284,12 +290,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
       setLoadingPro('used_ahsp_hsp');
       try {
         const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+        // ALWAYS fetch fresh details from the view to ensure we get the latest scaled coefficients
+        const ahspIdsToFetch = [...new Set(enrichedLines.filter(l => l.master_ahsp_id).map(l => l.master_ahsp_id))];
+        if (ahspIdsToFetch.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIdsToFetch);
           if (detailsData) {
             const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+            enrichedLines.forEach(l => { 
+              if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { 
+                if (!l.master_ahsp) l.master_ahsp = {}; 
+                l.master_ahsp.details = detailMap[l.master_ahsp_id]; 
+              } 
+            });
           }
         }
         const [projectRes, catalogRes, overrideRes] = await Promise.all([
@@ -487,12 +499,18 @@ export default function ExportImportTab({ tabLoading, ahspLines, resources = [],
       setLoadingPro('custom');
       try {
         const enrichedLines = [...ahspLines];
-        const missingDetailIds = enrichedLines.filter(l => l.master_ahsp_id && !l.master_ahsp?.details && (!l.analisa_custom || l.analisa_custom.length === 0)).map(l => l.master_ahsp_id);
-        if (missingDetailIds.length > 0) {
-          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', missingDetailIds);
+        // ALWAYS fetch fresh details from the view to ensure we get the latest scaled coefficients
+        const ahspIdsToFetch = [...new Set(enrichedLines.filter(l => l.master_ahsp_id).map(l => l.master_ahsp_id))];
+        if (ahspIdsToFetch.length > 0) {
+          const { data: detailsData } = await supabase.from('view_katalog_ahsp_lengkap').select('master_ahsp_id, details').in('master_ahsp_id', ahspIdsToFetch);
           if (detailsData) {
             const detailMap = Object.fromEntries(detailsData.map(d => [d.master_ahsp_id, d.details]));
-            enrichedLines.forEach(l => { if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { if (!l.master_ahsp) l.master_ahsp = {}; l.master_ahsp.details = detailMap[l.master_ahsp_id]; } });
+            enrichedLines.forEach(l => { 
+              if (l.master_ahsp_id && detailMap[l.master_ahsp_id]) { 
+                if (!l.master_ahsp) l.master_ahsp = {}; 
+                l.master_ahsp.details = detailMap[l.master_ahsp_id]; 
+              } 
+            });
           }
         }
         let scheduleData = [];
