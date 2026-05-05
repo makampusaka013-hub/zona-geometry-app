@@ -56,6 +56,11 @@ computed AS (
       ELSE (COALESCE(koefisien, 0) * detail_faktor * harga_toko)
     END) AS subtotal,
     
+    (CASE 
+      WHEN lower(trim(detail_satuan)) = lower(trim(price_satuan)) THEN (COALESCE(koefisien, 0) * harga_toko)
+      ELSE (COALESCE(koefisien, 0) * detail_faktor * harga_toko)
+    END) * (COALESCE(detail_tkdn, 0) / 100.0) AS nilai_tkdn,
+    
     CASE
       WHEN upper(substring(trim(COALESCE(detail_kode_item, '')), 1, 1)) = 'L' THEN 'upah'
       WHEN upper(substring(trim(COALESCE(detail_kode_item, '')), 1, 1)) IN ('A','B') THEN 'bahan'
@@ -78,6 +83,7 @@ final_agg AS (
     SUM(CASE WHEN jenis_komponen = 'bahan' THEN COALESCE(subtotal, 0) ELSE 0 END) AS total_bahan,
     SUM(CASE WHEN jenis_komponen = 'alat'  THEN COALESCE(subtotal, 0) ELSE 0 END) AS total_alat,
     SUM(COALESCE(subtotal, 0))  AS total_subtotal,
+    CASE WHEN SUM(COALESCE(subtotal, 0)) > 0 THEN (SUM(COALESCE(nilai_tkdn, 0)) / SUM(COALESCE(subtotal, 0))) * 100 ELSE 0 END AS total_tkdn_percent,
     jsonb_agg(
       jsonb_build_object(
         'uraian',          detail_uraian,
