@@ -1,5 +1,5 @@
 -- ─────────────────────────────────────────────────────────────────────────────
--- MIGRATION: FIX SQL PARITY CALCULATIONS (SUBTOTAL & RESOURCE AGGREGATION)
+-- MIGRATION: FIX SQL PARITY CALCULATIONS (SPECIFIC JOIN & NO MERGING)
 -- ─────────────────────────────────────────────────────────────────────────────
 
 -- 1. DROP DEPENDENT VIEWS
@@ -9,7 +9,7 @@ DROP VIEW IF EXISTS public.view_analisa_ahsp CASCADE;
 DROP VIEW IF EXISTS public.view_katalog_ahsp_custom CASCADE;
 DROP VIEW IF EXISTS public.view_katalog_ahsp_lengkap CASCADE;
 
--- 2. REBUILD view_katalog_ahsp_lengkap WITH CORRECT SCALING
+-- 2. REBUILD view_katalog_ahsp_lengkap
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_lengkap 
   WITH (security_invoker = true)
 AS
@@ -35,32 +35,16 @@ WITH price_resolution AS (
     CASE WHEN mhd.id IS NOT NULL THEN 'master_harga_dasar' ELSE 'manual' END AS sumber_harga
   FROM public.master_ahsp ma
   JOIN public.master_ahsp_details mad ON mad.ahsp_id = ma.id
+  -- Join strictly by code to ensure correct material match
   LEFT JOIN public.master_harga_dasar mhd ON mhd.kode_item = mad.kode_item_dasar
 ),
 computed AS (
   SELECT
     *,
-    -- Harga Efektif: Always use the price from the store (market unit)
-    -- Scaling is handled in the coefficient to keep logic consistent.
-    harga_toko AS harga_efektif,
-    
-    -- Koefisien Efektif: Scale up if price unit is smaller (e.g. Ton to kg)
-    CASE 
-      WHEN lower(trim(detail_satuan)) = lower(trim(price_satuan)) THEN COALESCE(koefisien, 0)
-      ELSE (COALESCE(koefisien, 0) * detail_faktor)
-    END AS koefisien_efektif,
-    
-    -- Subtotal: (Koef * Faktor) * Harga
-    (CASE 
-      WHEN lower(trim(detail_satuan)) = lower(trim(price_satuan)) THEN (COALESCE(koefisien, 0) * harga_toko)
-      ELSE (COALESCE(koefisien, 0) * detail_faktor * harga_toko)
-    END) AS subtotal,
-    
-    (CASE 
-      WHEN lower(trim(detail_satuan)) = lower(trim(price_satuan)) THEN (COALESCE(koefisien, 0) * harga_toko)
-      ELSE (COALESCE(koefisien, 0) * detail_faktor * harga_toko)
-    END) * (COALESCE(detail_tkdn, 0) / 100.0) AS nilai_tkdn,
-    
+    COALESCE(koefisien, 0) AS koefisien_efektif,
+    (harga_toko / detail_faktor) AS harga_efektif,
+    (COALESCE(koefisien, 0) * (harga_toko / detail_faktor)) AS subtotal,
+    (COALESCE(koefisien, 0) * (harga_toko / detail_faktor)) * (COALESCE(detail_tkdn, 0) / 100.0) AS nilai_tkdn,
     CASE
       WHEN upper(substring(trim(COALESCE(detail_kode_item, '')), 1, 1)) = 'L' THEN 'upah'
       WHEN upper(substring(trim(COALESCE(detail_kode_item, '')), 1, 1)) IN ('A','B') THEN 'bahan'
@@ -89,7 +73,7 @@ final_agg AS (
         'uraian',          detail_uraian,
         'detail_id',       ahsp_detail_id,
         'kode_item',       detail_kode_item,
-        'satuan',          price_satuan, -- USE THE PRICE UNIT FOR DISPLAY CONSISTENCY
+        'satuan',          detail_satuan,
         'koefisien',       koefisien_efektif,
         'harga_konversi',  harga_efektif,
         'jenis_komponen',  jenis_komponen,
@@ -104,7 +88,7 @@ final_agg AS (
 )
 SELECT * FROM final_agg;
 
--- 3. REBUILD view_katalog_ahsp_custom WITH CORRECT SCALING
+-- 3. REBUILD view_katalog_ahsp_custom (SPECIFIC JOIN TO master_konversi)
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_custom 
   WITH (security_invoker = true)
 AS
@@ -127,22 +111,24 @@ WITH base_resolution AS (
     vmg.harga_satuan AS raw_harga,
     vmg.tkdn_percent,
     adc.id AS detail_id,
-    -- Heuristic Scaling for Custom AHSP (Semen/Pasir Ton to kg)
-    CASE 
-      WHEN lower(trim(vmg.satuan)) = 'kg' AND adc.koefisien < 0.1 AND (vmg.nama_item ILIKE '%semen%' OR vmg.nama_item ILIKE '%pasir%' OR vmg.nama_item ILIKE '%kerikil%' OR vmg.nama_item ILIKE '%pc%') THEN 1000.0
-      ELSE 1.0
-    END AS heuristic_faktor
+    -- Join strictly with Library to avoid cross-product / merging
+    COALESCE(NULLIF(mk.faktor_konversi, 0), 1.0) AS global_faktor
   FROM public.master_ahsp_custom ac
   JOIN public.master_ahsp_details_custom adc ON adc.ahsp_id = ac.id
   JOIN public.view_master_harga_gabungan vmg ON vmg.id = adc.item_id AND vmg.source_table = adc.source_table
+  -- MATCH BY ID, NAME, AND UNIT to ensure unique factor
+  LEFT JOIN public.master_konversi mk 
+    ON mk.item_dasar_id = vmg.id 
+    AND lower(trim(mk.uraian_ahsp)) = lower(trim(vmg.nama_item))
+    AND lower(trim(mk.satuan_ahsp)) = lower(trim(vmg.satuan))
 ),
 computed AS (
   SELECT
     *,
-    (raw_koefisien * heuristic_faktor) AS koefisien_efektif,
-    raw_harga AS harga_efektif,
-    (raw_harga * raw_koefisien * heuristic_faktor) AS subtotal,
-    (raw_harga * raw_koefisien * heuristic_faktor * (tkdn_percent / 100.0)) AS nilai_tkdn
+    raw_koefisien AS koefisien_efektif,
+    (raw_harga / global_faktor) AS harga_efektif,
+    (raw_koefisien * (raw_harga / global_faktor)) AS subtotal,
+    (raw_koefisien * (raw_harga / global_faktor) * (tkdn_percent / 100.0)) AS nilai_tkdn
   FROM base_resolution
 )
 SELECT
@@ -180,25 +166,7 @@ GROUP BY master_ahsp_id, user_id, kode_ahsp;
 
 -- 4. REBUILD view_katalog_ahsp_gabungan
 CREATE OR REPLACE VIEW public.view_katalog_ahsp_gabungan WITH (security_invoker = true) AS
-SELECT
-  master_ahsp_id,
-  user_id,
-  kode_ahsp,
-  nama_pekerjaan,
-  satuan_pekerjaan,
-  kategori_pekerjaan,
-  jenis_pekerjaan,
-  overhead_profit,
-  total_upah,
-  total_bahan,
-  total_alat,
-  total_subtotal,
-  total_tkdn_percent,
-  is_custom,
-  urutan_prioritas,
-  is_lengkap,
-  details
-FROM public.view_katalog_ahsp_custom
+SELECT * FROM public.view_katalog_ahsp_custom
 UNION ALL
 SELECT
   master_ahsp_id,
@@ -237,7 +205,7 @@ SELECT
   urutan_prioritas
 FROM public.view_katalog_ahsp_gabungan;
 
--- 6. REBUILD view_project_resource_summary WITH CORRECT SCALING
+-- 6. REBUILD view_project_resource_summary (ENSURE NO MERGING OF DIFFERENT CODES)
 CREATE OR REPLACE VIEW public.view_project_resource_summary 
 WITH (security_invoker = true) AS
 WITH base AS (
@@ -262,6 +230,7 @@ resolved AS (
   SELECT DISTINCT ON (b.project_id, b.ahsp_detail_id, b.bab_pekerjaan)
     b.*,
     COALESCE(mhd_loc.kode_item, mhd_any.kode_item, b.kode_item_dasar) AS key_item,
+    COALESCE(mhd_loc.nama_item, b.uraian_ahsp) AS resolved_name,
     COALESCE(mhd_loc.harga_satuan, mhd_any.harga_satuan, 0) AS harga_toko,
     COALESCE(mhd_loc.satuan, b.satuan_uraian) AS price_satuan,
     COALESCE(mhd_loc.tkdn_percent, mhd_any.tkdn_percent, 0) AS tkdn_pct
@@ -274,30 +243,27 @@ aggregated AS (
   SELECT
     project_id,
     bab_pekerjaan,
-    uraian_ahsp,
-    price_satuan AS satuan,
+    resolved_name AS uraian,
+    key_item,
+    satuan_uraian AS satuan,
     CASE
       WHEN upper(left(trim(key_item), 1)) IN ('A', 'B') THEN 'bahan'
       WHEN upper(left(trim(key_item), 1)) = 'L' THEN 'tenaga'
       WHEN upper(left(trim(key_item), 1)) = 'M' THEN 'alat'
       ELSE 'bahan'
     END AS jenis_komponen,
-    key_item,
-    harga_toko AS harga_snapshot,
+    (harga_toko / detail_faktor) AS harga_snapshot,
     tkdn_pct AS tkdn_percent,
-    -- CORRECT Volume Scaling
-    SUM(proj_volume * (CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN koefisien ELSE (koefisien * detail_faktor) END)) AS total_volume,
-    -- CORRECT Cost Calculation: (Vol * Scaled Koef) * Price
-    SUM(proj_volume * (CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN koefisien ELSE (koefisien * detail_faktor) END) * harga_toko) AS kontribusi_nilai,
-    -- CORRECT TKDN Value
-    SUM(proj_volume * (CASE WHEN lower(trim(satuan_uraian)) = lower(trim(price_satuan)) THEN koefisien ELSE (koefisien * detail_faktor) END) * harga_toko * (tkdn_pct / 100.0)) AS nilai_tkdn
+    SUM(proj_volume * koefisien) AS total_volume,
+    SUM(proj_volume * koefisien * (harga_toko / detail_faktor)) AS kontribusi_nilai,
+    SUM(proj_volume * koefisien * (harga_toko / detail_faktor) * (tkdn_pct / 100.0)) AS nilai_tkdn
   FROM resolved
-  GROUP BY project_id, bab_pekerjaan, uraian_ahsp, price_satuan, jenis_komponen, key_item, harga_toko, tkdn_pct
+  GROUP BY project_id, bab_pekerjaan, resolved_name, key_item, satuan_uraian, jenis_komponen, (harga_toko / detail_faktor), tkdn_pct
 )
 SELECT
   project_id,
   bab_pekerjaan,
-  uraian_ahsp AS uraian,
+  uraian,
   key_item,
   satuan,
   jenis_komponen,
