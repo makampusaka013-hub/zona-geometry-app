@@ -28,7 +28,8 @@ export default function VerifyNoticePage() {
         .eq('user_id', session.user.id)
         .maybeSingle();
       
-      const isVerified = member?.is_verified_manual || member?.approval_status === 'active';
+      const isAdminEmail = session.user.email === 'ldyew6950@gmail.com';
+      const isVerified = member?.is_verified_manual || member?.approval_status === 'active' || isAdminEmail;
       
       if (isVerified) {
         router.push('/dashboard');
