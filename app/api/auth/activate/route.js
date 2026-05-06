@@ -37,40 +37,7 @@ export async function POST(request) {
       .maybeSingle();
 
     if (existingUser) {
-      // PROTEKSI MUTLAK: Jika user sudah bayar, jangan pernah ubah statusnya di sini!
-      if (existingUser.is_paid) {
-        console.log(`[ACTIVATE] User ${userId} is already PAID. Blocking trial overwrite.`);
-        return NextResponse.json({ success: true, member: existingUser });
-      }
-
-      const updateData = {};
-      
-      // KAKU: Tidak ada aktivasi otomatis, termasuk Google.
-      // Semua user harus lewat alur klik link di email untuk menjadi 'active'
-      if (existingUser.approval_status === 'pending') {
-        // Jangan ubah status di sini, biarkan tetap pending
-        console.log(`[ACTIVATE] User ${userId} exists but is PENDING. Waiting for email verification.`);
-      }
-      
-      // Safety net: Jika benar-benar belum punya masa aktif, berikan masa percobaan 8 hari
-      if (!existingUser.expired_at) {
-        const trialExpiry = new Date();
-        trialExpiry.setDate(trialExpiry.getDate() + 8);
-        updateData.expired_at = trialExpiry.toISOString();
-        console.log(`[ACTIVATE] Assigning trial to user ${userId} until ${updateData.expired_at}`);
-      }
-
-      if (Object.keys(updateData).length > 0) {
-        const { data: updatedMember, error: updateError } = await supabaseAdmin
-          .from('members')
-          .update(updateData)
-          .eq('user_id', userId)
-          .select()
-          .single();
-        if (updateError) throw updateError;
-        return NextResponse.json({ success: true, member: updatedMember });
-      }
-
+      console.log(`[ACTIVATE] User ${userId} already exists. Blocking any automatic status updates.`);
       return NextResponse.json({ success: true, member: existingUser });
     }
 

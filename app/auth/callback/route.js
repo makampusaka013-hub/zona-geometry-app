@@ -45,6 +45,7 @@ export async function GET(request) {
 
           // 1. Jika member belum ada (User baru login Google)
           if (!currentMember) {
+            console.log(`[AUTH-CALLBACK] New user detected: ${user.email}. Initializing as PENDING.`);
             await fetch(`${origin}/api/auth/activate`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -73,19 +74,23 @@ export async function GET(request) {
           // 2. Jika member sudah ada tapi BELUM aktif (Pending atau belum verifikasi)
           // Admin adalah pengecualian (selalu boleh masuk)
           const isAdmin = currentMember.role === 'admin';
-          const isVerified = currentMember.is_verified_manual && currentMember.approval_status === 'active';
+          const isActive = currentMember.approval_status === 'active';
+          const isVerifiedManual = currentMember.is_verified_manual === true;
 
-          if (!isVerified && !isAdmin) {
-            console.log(`[AUTH-CALLBACK] Blocking unverified user: ${user.email}`);
+          // SYARAT MUTLAK: Harus Active DAN Verified (Kecuali Admin)
+          if (!isAdmin && (!isActive || !isVerifiedManual)) {
+            console.log(`[AUTH-CALLBACK] Blocking unverified user: ${user.email}. Status: ${currentMember.approval_status}`);
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
+
+          console.log(`[AUTH-CALLBACK] User ${user.email} is AUTHORIZED. Redirecting to dashboard.`);
         }
       } catch (err) {
         console.error('Callback Server Error:', err);
         return NextResponse.redirect(`${siteUrl}/login?message=Terjadi kesalahan sistem.`);
       }
 
-      // 3. Hanya user yang AKTIF (atau Admin) yang bisa sampai ke sini
+      // 3. Hanya user yang lolos pengecekan di atas yang bisa masuk
       const finalTarget = next.startsWith('/') ? next : `/${next}`;
       return NextResponse.redirect(new URL(finalTarget, siteUrl).toString());
     }
