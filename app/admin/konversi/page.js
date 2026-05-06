@@ -434,8 +434,8 @@ export default function KonversiPage() {
               onClick={handleSyncAllCatalog}
               disabled={syncingAll}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${syncingAll
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20'
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20'
                 }`}
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
@@ -445,8 +445,8 @@ export default function KonversiPage() {
               onClick={handleAutoMapSameItems}
               disabled={autoMapping || syncingAll}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${autoMapping
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
+                ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
                 }`}
             >
               <Database className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
@@ -476,8 +476,8 @@ export default function KonversiPage() {
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
                 className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeFilter === f.id
-                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
-                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                  ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                  : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
                   }`}
               >
                 {f.icon}
@@ -548,8 +548,8 @@ export default function KonversiPage() {
                           )}
                           {row.has_unit_mismatch && (
                             <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm ${row.is_beda_satuan_urgent
-                                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50 animate-pulse'
-                                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/50'
+                              ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50 animate-pulse'
+                              : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/50'
                               }`}>
                               <AlertCircle className="w-3 h-3 mr-1" />
                               {row.is_beda_satuan_urgent ? 'Beda Satuan (Default 1)' : 'Beda Satuan'}
@@ -725,28 +725,28 @@ export default function KonversiPage() {
             className="fixed bottom-8 right-8 z-[9999] animate-slide-up"
             id="custom-toast"
           >
-          <div className={`
+            <div className={`
             flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border
             ${notification.type === 'error'
                 ? 'bg-red-500/10 border-red-500/30 text-red-200'
                 : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'}
           `}>
-            <div className={`
+              <div className={`
               w-7 h-7 rounded-lg flex items-center justify-center text-sm
               ${notification.type === 'error' ? 'bg-red-500/20' : 'bg-emerald-500/20'}
             `}>
-              {notification.type === 'error' ? '✕' : '✓'}
+                {notification.type === 'error' ? '✕' : '✓'}
+              </div>
+              <div className="flex flex-col max-w-[280px]">
+                <p className="text-[13px] font-bold leading-tight">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-2 opacity-30 hover:opacity-100 transition-opacity"
+              >
+                <span className="text-xs">✕</span>
+              </button>
             </div>
-            <div className="flex flex-col max-w-[280px]">
-              <p className="text-[13px] font-bold leading-tight">{notification.message}</p>
-            </div>
-            <button
-              onClick={() => setNotification(null)}
-              className="ml-2 opacity-30 hover:opacity-100 transition-opacity"
-            >
-              <span className="text-xs">✕</span>
-            </button>
-          </div>
           </div>
         )}
 

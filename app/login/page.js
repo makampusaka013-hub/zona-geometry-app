@@ -51,13 +51,8 @@ function LoginContent() {
       .maybeSingle();
 
     // 2. Tentukan tujuan redirect
-    const adminEmail = 'ldyew6950@gmail.com';
     let target = '/dashboard';
-    
-    // Failsafe: Jika dia adalah admin utama, langsung ke dashboard
-    if (data.user.email === adminEmail) {
-      target = '/dashboard';
-    } else if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
+    if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
       target = '/verify-notice';
     }
 
@@ -135,8 +130,8 @@ function LoginContent() {
                 <label className="block text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   Kata Sandi
                 </label>
-                <Link 
-                  href="/auth/forgot-password" 
+                <Link
+                  href="/auth/forgot-password"
                   className="text-[10px] font-bold text-indigo-600 dark:text-orange-400 hover:underline uppercase tracking-wider"
                 >
                   Lupa Password?
@@ -202,7 +197,7 @@ function LoginContent() {
             className="flex w-full h-11 items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white dark:bg-white/5 px-4 py-3 text-sm font-bold text-slate-700 dark:text-white transition-all hover:bg-slate-50 dark:hover:bg-white/10 active:scale-[0.98] disabled:opacity-50"
           >
             {googleLoading ? (
-               <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-slate-700 dark:border-white/20 dark:border-t-white" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-slate-400 border-t-slate-700 dark:border-white/20 dark:border-t-white" />
             ) : (
               <svg className="h-5 w-5" viewBox="0 0 24 24">
                 <path

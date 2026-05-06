@@ -35,7 +35,7 @@ export async function GET(request) {
         approval_status: 'active',
         role: member.role === 'admin' ? 'admin' : 'normal',
         expired_at: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
-        verification_token: null 
+        verification_token: null
       })
       .eq('user_id', member.user_id)
       .select();
@@ -52,12 +52,12 @@ export async function GET(request) {
 
     // 3. Redirect ke Dashboard dengan pesan sukses
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
-    
+
     // Gunakan redirect permanen atau pastikan URL bersih
     const redirectUrl = new URL('/dashboard', siteUrl);
     redirectUrl.searchParams.set('message', 'Berhasil verifikasi! Akun Anda aktif dengan Trial 8 Hari.');
     redirectUrl.searchParams.set('v', Date.now().toString());
-    
+
     return NextResponse.redirect(redirectUrl.toString());
 
   } catch (err) {

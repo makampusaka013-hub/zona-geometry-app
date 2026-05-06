@@ -51,8 +51,8 @@ export async function POST(request) {
     // 2. Simpan/Update Token ke Database
     const { error: updateError } = await supabaseAdmin
       .from('members')
-      .upsert({ 
-        user_id: userId, 
+      .upsert({
+        user_id: userId,
         verification_token: verificationToken,
         full_name: fullName || (email ? email.split('@')[0] : 'User'),
         role: 'view',
@@ -68,7 +68,7 @@ export async function POST(request) {
     // 3. Siapkan Link Verifikasi (Pastikan menggunakan SITE_URL asli)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
     const verifyLink = `${siteUrl}/api/auth/verify?token=${verificationToken}`;
-    
+
     const htmlContent = `
       <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0;">
         <div style="text-align: center; margin-bottom: 30px;">

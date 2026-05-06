@@ -35,7 +35,7 @@ export async function GET(request) {
       try {
         // Logika Tambahan: Cek status member & Aktivasi Premium
         const { data: { user } } = await supabase.auth.getUser();
-        
+
         if (user) {
           const { data: currentMember } = await supabase
             .from('members')
@@ -43,56 +43,51 @@ export async function GET(request) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // 1. Jika member belum ada (User baru login Google)
+          // Jika member belum ada (Google user baru)
           if (!currentMember) {
-            console.log(`[AUTH-CALLBACK] New user detected: ${user.email}. Initializing as PENDING.`);
+            // 1. Buat data member dulu (status otomatis pending)
             await fetch(`${origin}/api/auth/activate`, {
-               method: 'POST',
-               headers: { 'Content-Type': 'application/json' },
-               body: JSON.stringify({ 
-                 userId: user.id, 
-                 email: user.email,
-                 fullName: user.user_metadata?.full_name,
-                 currentRole: 'normal',
-                 provider: 'google'
-               })
-             });
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                userId: user.id,
+                email: user.email,
+                fullName: user.user_metadata?.full_name,
+                currentRole: 'normal',
+                provider: 'google'
+              })
+            });
 
+            // 2. Kirim email verifikasi secara otomatis
             await fetch(`${origin}/api/auth/send-verification`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                userId: user.id, 
+              body: JSON.stringify({
+                userId: user.id,
                 email: user.email,
                 fullName: user.user_metadata?.full_name
               })
             });
 
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
-          } 
-          
-          // 2. Jika member sudah ada tapi BELUM aktif (Pending atau belum verifikasi)
-          const adminEmail = 'ldyew6950@gmail.com'; // Hard-coded safety
-          const isAdmin = currentMember.role === 'admin' || user.email === adminEmail;
-          const isActive = currentMember.approval_status === 'active';
-          const isVerifiedManual = currentMember.is_verified_manual === true;
-
-          // SYARAT MUTLAK: Harus Active DAN Verified (Kecuali Admin)
-          if (!isAdmin && (!isActive || !isVerifiedManual)) {
-            console.log(`[AUTH-CALLBACK] Blocking unverified user: ${user.email}. Status: ${currentMember.approval_status}`);
-            return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
 
-          console.log(`[AUTH-CALLBACK] Admin/Authorized User ${user.email} is AUTHORIZED.`);
+          // Jika sudah ada tapi belum terverifikasi (baik Google lama atau Email)
+          if (!currentMember.is_verified_manual || currentMember.approval_status !== 'active') {
+            // Cek apakah perlu kirim ulang email jika token tidak ada? 
+            // (Opsional, tapi untuk keamanan kita arahkan saja ke notice)
+            return NextResponse.redirect(`${siteUrl}/verify-notice`);
+          }
         }
       } catch (err) {
         console.error('Callback Server Error:', err);
-        return NextResponse.redirect(`${siteUrl}/login?message=Terjadi kesalahan sistem.`);
       }
 
-      // 3. Hanya user yang lolos pengecekan di atas yang bisa masuk
+      // Pastikan URL redirect bersih dan absolut
       const finalTarget = next.startsWith('/') ? next : `/${next}`;
-      return NextResponse.redirect(new URL(finalTarget, siteUrl).toString());
+      const finalUrl = new URL(finalTarget, siteUrl);
+
+      return NextResponse.redirect(finalUrl.toString());
     }
   }
 

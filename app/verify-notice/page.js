@@ -27,10 +27,9 @@ export default function VerifyNoticePage() {
         .select('is_verified_manual, approval_status')
         .eq('user_id', session.user.id)
         .maybeSingle();
-      
-      const isAdminEmail = session.user.email === 'ldyew6950@gmail.com';
-      const isVerified = member?.is_verified_manual || member?.approval_status === 'active' || isAdminEmail;
-      
+
+      const isVerified = member?.is_verified_manual || member?.approval_status === 'active';
+
       if (isVerified) {
         router.push('/dashboard');
       } else {
@@ -74,7 +73,7 @@ export default function VerifyNoticePage() {
           fullName: user.user_metadata?.full_name
         })
       });
-      
+
       let result;
       const rawText = await res.text();
       try {
@@ -88,10 +87,10 @@ export default function VerifyNoticePage() {
         setMessage({ type: 'success', text: 'Email verifikasi baru telah dikirim!' });
       } else {
         if (result.debugLink) {
-          setMessage({ 
-            type: 'warning', 
-            text: result.error || 'Email gagal dikirim (Masalah DNS).', 
-            link: result.debugLink 
+          setMessage({
+            type: 'warning',
+            text: result.error || 'Email gagal dikirim (Masalah DNS).',
+            link: result.debugLink
           });
         } else {
           throw new Error(result.error || 'Terjadi kesalahan pada server email.');
@@ -104,7 +103,7 @@ export default function VerifyNoticePage() {
       setLoading(false);
     }
   }
-  
+
   const getMailProviderUrl = (email) => {
     if (!email) return 'https://mail.google.com';
     const domain = email.split('@')[1]?.toLowerCase();
@@ -133,7 +132,7 @@ export default function VerifyNoticePage() {
           </div>
           <h1 className="text-3xl font-black text-white mb-3 tracking-tight">Verifikasi Email</h1>
           <p className="text-slate-400 text-sm leading-relaxed">
-            Kami telah mengirimkan link verifikasi premium ke 
+            Kami telah mengirimkan link verifikasi premium ke
             <span className="block font-bold text-white mt-1">{user?.email || 'email Anda'}</span>
           </p>
         </div>
@@ -155,11 +154,10 @@ export default function VerifyNoticePage() {
             </div>
 
             {message && (
-              <div className={`p-4 rounded-2xl text-xs font-bold text-center animate-in fade-in slide-in-from-top-2 ${
-                message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' : 
-                message.type === 'warning' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
-                'bg-red-500/10 text-red-400 border border-red-500/20'
-              }`}>
+              <div className={`p-4 rounded-2xl text-xs font-bold text-center animate-in fade-in slide-in-from-top-2 ${message.type === 'success' ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' :
+                  message.type === 'warning' ? 'bg-orange-500/10 text-orange-400 border border-orange-500/20' :
+                    'bg-red-500/10 text-red-400 border border-red-500/20'
+                }`}>
                 {message.text}
                 {message.link && (
                   <a href={message.link} className="block mt-2 underline text-white font-black">
@@ -226,8 +224,8 @@ export default function VerifyNoticePage() {
                 </button>
               </div>
             )}
-            
-            <Link 
+
+            <Link
               href="/login"
               className="w-full flex items-center justify-center gap-2 text-[10px] font-black uppercase tracking-widest text-slate-500 hover:text-white transition-colors"
             >

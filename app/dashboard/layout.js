@@ -33,11 +33,10 @@ export default function DashboardLayout({ children }) {
           .maybeSingle();
 
         if (data) {
-          const isAdminEmail = session.user.email === 'ldyew6950@gmail.com';
-          const isActive = data.approval_status === 'active' || isAdminEmail;
-          const isAdmin = data.role === 'admin' || isAdminEmail;
-          
-          if (!isActive && !isAdmin && !pathname.includes('verify')) {
+          const admin = data.role === 'admin';
+          const isVerified = data.is_verified_manual || data.approval_status === 'active';
+
+          if (!isVerified && !admin && !pathname.includes('verify')) {
             router.replace('/verify-notice');
             return;
           }
@@ -88,11 +87,11 @@ export default function DashboardLayout({ children }) {
   return (
     <div className="flex h-screen overflow-hidden bg-white dark:bg-[#0f172a] transition-colors duration-200">
       <Sidebar isOpen={isSidebarOpen} onClose={() => setIsSidebarOpen(false)} />
-      
+
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
         <header className="lg:hidden flex items-center justify-between px-6 py-4 bg-white dark:bg-[#020617] border-b border-slate-100 dark:border-slate-800 shrink-0 z-20">
           <div className="flex items-center gap-3">
-            <button 
+            <button
               onClick={() => setIsSidebarOpen(true)}
               className="p-2 -ml-2 rounded-xl text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
             >
@@ -102,7 +101,7 @@ export default function DashboardLayout({ children }) {
             </button>
             <div className="flex items-center gap-2">
               <LogoMark className="w-8 h-8" />
-              <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest leading-none">Zona<br/>Geometry</span>
+              <span className="text-xs font-black text-slate-700 dark:text-slate-200 uppercase tracking-widest leading-none">Zona<br />Geometry</span>
             </div>
           </div>
           <ThemeToggle />
