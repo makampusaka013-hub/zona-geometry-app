@@ -156,7 +156,8 @@ export default function KonversiPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [savingRow, setSavingRow] = useState(null);
   const [syncingAll, setSyncingAll] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('terpakai'); // Default ke 'terpakai' agar tidak bingung dengan data katalog
+  const [autoMapping, setAutoMapping] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('terpakai');
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -231,6 +232,22 @@ export default function KonversiPage() {
       toast.error('Gagal sinkronisasi: ' + err.message);
     } finally {
       setSyncingAll(false);
+    }
+  }
+
+  async function handleAutoMapSameItems() {
+    setAutoMapping(true);
+    try {
+      const { data, error } = await supabase.rpc('auto_map_same_items');
+      if (error) throw error;
+      
+      showToast(`Berhasil memasangkan ${data?.affected_count || 0} item yang sama persis!`);
+      fetchKonversiPage(currentPage);
+    } catch (err) {
+      console.error('Auto-map failed:', err);
+      showToast('Gagal auto-map: ' + err.message, 'error');
+    } finally {
+      setAutoMapping(false);
     }
   }
 
@@ -423,6 +440,19 @@ export default function KonversiPage() {
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
               {syncingAll ? 'Sinkronisasi...' : 'Sinkronkan Item dari AHSP'}
             </button>
+            <button
+              onClick={handleAutoMapSameItems}
+              disabled={autoMapping || syncingAll}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                autoMapping
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
+              }`}
+            >
+              <Database className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
+              {autoMapping ? 'Memasangkan...' : 'Auto-Map Item Sama'}
+            </button>
+
             <div className="flex-1 max-w-xl relative w-full">
               <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
               <input
@@ -437,9 +467,8 @@ export default function KonversiPage() {
 
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: 'all', label: 'Semua Item', icon: <Database className="w-4 h-4" /> },
               { id: 'terpakai', label: 'Terpakai di AHSP', icon: <RefreshCw className="w-4 h-4" /> },
-              { id: 'konversi', label: 'Sudah Konversi (≠1)', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
+              { id: 'konversi', label: 'Sudah Konversi (Selesai)', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
               { id: 'beda_satuan', label: 'Beda Satuan (Default 1)', icon: <AlertCircle className="w-4 h-4 text-rose-500" /> },
             ].map((f) => (
               <button
