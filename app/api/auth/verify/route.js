@@ -27,22 +27,28 @@ export async function GET(request) {
       return NextResponse.redirect(new URL('/login?message=Link verifikasi tidak valid atau sudah kedaluwarsa.', request.url));
     }
 
-    // 2. Aktivasi member & berikan Trial 8 Hari (1+7)
-    const trialExpiry = new Date();
-    trialExpiry.setDate(trialExpiry.getDate() + 8);
-
-    const { error: updateError } = await supabaseAdmin
+    // 2. Lakukan Update Status (Aktifkan User)
+    const { data: updatedData, error: updateError, count } = await supabaseAdmin
       .from('members')
       .update({
         is_verified_manual: true,
         approval_status: 'active',
-        role: member.role === 'view' ? 'normal' : (member.role || 'normal'), // Pastikan minimal Normal
-        expired_at: trialExpiry.toISOString(),
-        verification_token: null // Hapus token setelah digunakan
+        role: member.role === 'admin' ? 'admin' : 'normal',
+        expired_at: new Date(Date.now() + 8 * 24 * 60 * 60 * 1000).toISOString(),
+        verification_token: null 
       })
-      .eq('user_id', member.user_id);
+      .eq('user_id', member.user_id)
+      .select();
 
-    if (updateError) throw updateError;
+    if (updateError) {
+      throw new Error(`Database Update Error: ${updateError.message}`);
+    }
+
+    if (!updatedData || updatedData.length === 0) {
+      throw new Error('Tidak ada data yang diupdate. Pastikan User ID benar.');
+    }
+
+    console.log(`VERIFY SUCCESS: User ${member.user_id} is now ACTIVE.`);
 
     // 3. Redirect ke Dashboard dengan pesan sukses
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
