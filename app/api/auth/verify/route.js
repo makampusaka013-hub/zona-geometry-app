@@ -45,11 +45,17 @@ export async function GET(request) {
     if (updateError) throw updateError;
 
     // 3. Redirect ke Dashboard dengan pesan sukses
-    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-    return NextResponse.redirect(`${siteUrl}/dashboard?message=Berhasil verifikasi! Akun Anda aktif dengan Trial 8 Hari.`);
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
+    
+    // Gunakan redirect permanen atau pastikan URL bersih
+    const redirectUrl = new URL('/dashboard', siteUrl);
+    redirectUrl.searchParams.set('message', 'Berhasil verifikasi! Akun Anda aktif dengan Trial 8 Hari.');
+    
+    return NextResponse.redirect(redirectUrl.toString());
 
   } catch (err) {
     console.error('Verification system failure:', err);
-    return NextResponse.redirect(new URL('/login?message=Terjadi kesalahan sistem saat verifikasi.', request.url));
+    const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
+    return NextResponse.redirect(new URL('/login?message=Terjadi kesalahan sistem saat verifikasi.', siteUrl));
   }
 }
