@@ -137,8 +137,9 @@ CREATE POLICY projects_insert_policy ON public.projects FOR INSERT TO authentica
 -- 7. SYNC WITH AUTHENTICATOR: Hapus Trigger Terlarang (PENTING!)
 -- Dokumen autentikator.md melarang trigger ini karena mengganggu verifikasi email.
 DROP TRIGGER IF EXISTS protect_member_sensitive_data ON public.members;
-DROP FUNCTION IF EXISTS public.protect_member_sensitive_data();
+DROP TRIGGER IF EXISTS tr_protect_member_sensitive_data ON public.members;
 DROP TRIGGER IF EXISTS tr_force_active_admin ON public.members;
+DROP FUNCTION IF EXISTS public.protect_member_sensitive_data() CASCADE;
 
 -- 8. Hardening Fungsi Dashboard (SECURITY INVOKER)
 ALTER FUNCTION public.get_ahsp_catalog_v2(uuid, text, text, boolean, integer, integer) SECURITY INVOKER;
