@@ -96,6 +96,15 @@ export async function GET(request) {
 
   // Final fallback to login with error message
   const errorUrl = new URL('/login', siteUrl);
-  errorUrl.searchParams.set('message', 'Gagal menukar kode login. Silakan coba lagi.');
+  const finalMessage = error?.message || 'Gagal menukar kode login. Silakan coba lagi.';
+  errorUrl.searchParams.set('message', finalMessage);
+  if (error?.description) errorUrl.searchParams.set('error_description', error.description);
+  
+  console.error('[AUTH-CALLBACK-FINAL-ERROR]', {
+    message: finalMessage,
+    description: error?.description,
+    code: error?.code
+  });
+
   return NextResponse.redirect(errorUrl.toString());
 }
