@@ -1,13 +1,27 @@
 'use client';
 
-import { useEffect, useState, useRef } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
+import { 
+  Search, 
+  ArrowLeft, 
+  Link as LinkIcon, 
+  Info, 
+  Save, 
+  ChevronLeft, 
+  ChevronRight, 
+  ExternalLink,
+  AlertCircle,
+  CheckCircle2,
+  Database
+} from 'lucide-react';
+import { toast } from '@/lib/toast';
 
 const PAGE_SIZE = 30;
 
-function SearchableSelect({ value, onChange, initialLabel, initialSatuan }) {
+function SearchableSelect({ value, onChange, initialLabel, initialSatuan, initialKode }) {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [options, setOptions] = useState([]);
@@ -15,7 +29,7 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan }) {
   const wrapperRef = useRef(null);
 
   // Default option array to hold the initially selected item if we don't have it fetched yet
-  const selectedOpt = options.find(o => o.id === value) || (value && initialLabel ? { id: value, nama_item: initialLabel, satuan: initialSatuan } : null);
+  const selectedOpt = options.find(o => o.id === value) || (value && initialLabel ? { id: value, nama_item: initialLabel, satuan: initialSatuan, kode_item: initialKode } : null);
 
   useEffect(() => {
     function handleClickOutside(event) {
@@ -61,27 +75,34 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan }) {
   return (
     <div ref={wrapperRef} className="relative w-full">
       <div 
-        className="w-full rounded-md border border-slate-300 bg-white py-2 px-3 text-sm shadow-sm cursor-pointer flex justify-between items-center focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 hover:border-slate-400 transition-colors"
+        className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 px-4 text-sm shadow-sm cursor-pointer flex justify-between items-center focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all group"
         onClick={() => {
           setIsOpen(!isOpen);
-          if (!isOpen && options.length === 0) setSearchTerm(''); // Reset search on open to trigger initial fetch
+          if (!isOpen && options.length === 0) setSearchTerm(''); 
         }}
       >
-        <span className="truncate pr-4 text-slate-700 font-medium select-none">
-          {selectedOpt ? `${selectedOpt.nama_item} (${selectedOpt.satuan || '-'})` : '-- Cari & Pilih Item Dasar --'}
-        </span>
-        <svg className={`shrink-0 w-4 h-4 text-slate-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
+        <div className="flex flex-col gap-0.5 truncate pr-4">
+          <span className="truncate text-slate-700 dark:text-slate-200 font-semibold select-none">
+            {selectedOpt ? selectedOpt.nama_item : '-- Cari & Pilih Item Dasar --'}
+          </span>
+          {selectedOpt && (
+            <span className="text-[10px] text-indigo-500 dark:text-indigo-400 font-mono font-bold">
+              {selectedOpt.kode_item} • {selectedOpt.satuan || '-'}
+            </span>
+          )}
+        </div>
+        <svg className={`shrink-0 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
       </div>
       
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-slate-200 rounded-lg shadow-2xl max-h-80 flex flex-col">
-          <div className="p-3 border-b border-slate-100 bg-slate-50/80 rounded-t-lg">
+        <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-h-[400px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
+          <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50">
             <div className="relative">
-              <svg className="absolute left-2.5 top-2.5 h-4 w-4 text-slate-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+              <Search className="absolute left-3 top-3 h-4 w-4 text-slate-400" />
               <input
                 type="text"
-                className="w-full text-sm py-2 pl-9 pr-3 border border-indigo-200 rounded-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 bg-white shadow-sm"
-                placeholder="Ketik nama atau kode item (Server Search)..."
+                className="w-full text-sm py-2.5 pl-10 pr-4 border border-indigo-200 dark:border-slate-600 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500 dark:bg-slate-800 dark:text-slate-100"
+                placeholder="Ketik nama atau kode item..."
                 value={searchTerm}
                 onChange={e => setSearchTerm(e.target.value)}
                 autoFocus
@@ -100,17 +121,23 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan }) {
               options.map(o => (
                 <li
                   key={o.id}
-                  className="px-3 py-2.5 hover:bg-indigo-50 rounded-md cursor-pointer mb-0.5 last:mb-0 transition-colors"
+                  className="px-4 py-3 hover:bg-indigo-50 dark:hover:bg-indigo-900/30 rounded-xl cursor-pointer mb-1 transition-all"
                   onClick={() => {
                     onChange(o.id, o);
                     setIsOpen(false);
                     setSearchTerm('');
                   }}
                 >
-                  <div className="text-sm font-semibold text-slate-800">{o.nama_item} <span className="text-xs font-normal text-slate-400 ml-1">({o.kode_item})</span></div>
-                  <div className="text-[11px] text-slate-500 flex justify-between mt-1.5 items-center">
-                    <span className="bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200 font-medium">Satuan: {o.satuan}</span>
-                    <span className="text-emerald-700 font-bold bg-emerald-50 px-1.5 py-0.5 rounded border border-emerald-100">
+                  <div className="flex justify-between items-start gap-2">
+                    <div className="text-sm font-bold text-slate-800 dark:text-slate-100">{o.nama_item}</div>
+                    <div className="text-[10px] font-mono bg-indigo-100 dark:bg-indigo-900 text-indigo-600 dark:text-indigo-400 px-1.5 py-0.5 rounded font-black uppercase tracking-wider">{o.kode_item}</div>
+                  </div>
+                  <div className="text-[11px] text-slate-500 dark:text-slate-400 flex justify-between mt-2 items-center">
+                    <span className="flex items-center gap-1">
+                      <Database className="w-3 h-3 opacity-50" />
+                      Satuan: {o.satuan}
+                    </span>
+                    <span className="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-900/20 px-2 py-0.5 rounded-full border border-emerald-100 dark:border-emerald-800">
                       Rp {Number(o.harga_satuan).toLocaleString('id-ID')}
                     </span>
                   </div>
@@ -206,7 +233,8 @@ export default function KonversiPage() {
           master_harga_dasar (
             nama_item,
             satuan,
-            harga_satuan
+            harga_satuan,
+            kode_item
           )
         `, { count: 'exact' });
 
@@ -294,138 +322,139 @@ export default function KonversiPage() {
     );
   }
 
-  // Komponen Pagination
-  const PaginationControls = () => (
-    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-xl border border-slate-200 bg-slate-50 p-4">
-      <div className="text-sm text-slate-600">
-        Menampilkan halaman <strong className="text-slate-900">{currentPage}</strong> dari <strong className="text-slate-900">{totalPages}</strong> 
-        <span className="mx-2 text-slate-300">|</span>
-        Total: <strong className="text-slate-900">{totalRows}</strong> item
+  // Komponen Paginatio  const PaginationControls = () => (
+    <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
+      <div className="text-sm text-slate-500 dark:text-slate-400">
+        Menampilkan halaman <strong className="text-slate-900 dark:text-slate-100">{currentPage}</strong> dari <strong className="text-slate-900 dark:text-slate-100">{totalPages}</strong> 
+        <span className="mx-3 opacity-30">|</span>
+        Total: <strong className="text-indigo-600 dark:text-indigo-400">{totalRows}</strong> item
       </div>
       
       <div className="flex items-center gap-3">
         <button
           onClick={handlePrev}
           disabled={currentPage === 1 || loadingData}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Previous
+          <ChevronLeft className="w-5 h-5" />
         </button>
         
         <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-          <span className="text-sm text-slate-600">Buka hal:</span>
           <input 
             type="number" 
             min="1" 
             max={totalPages}
             value={inputPage || ''}
             onChange={(e) => setInputPage(e.target.value)}
-            className="w-16 rounded-md border border-slate-300 py-1.5 px-2 text-sm text-center shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-1 focus:ring-indigo-500"
+            className="w-14 rounded-xl border border-slate-200 dark:border-slate-700 py-2 text-sm text-center font-bold dark:bg-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
           />
           <button 
             type="submit"
             disabled={loadingData}
-            className="rounded-lg bg-indigo-600 px-3 py-1.5 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 disabled:opacity-50"
+            className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all disabled:opacity-50"
           >
             Go
           </button>
         </form>
-
+ 
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages || loadingData}
-          className="rounded-lg border border-slate-300 bg-white px-3 py-1.5 text-sm font-medium text-slate-700 shadow-sm transition-colors hover:bg-slate-100 disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-2 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 shadow-sm transition-all hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed"
         >
-          Next
+          <ChevronRight className="w-5 h-5" />
         </button>
       </div>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-slate-50 px-4 py-8 sm:py-12">
-      <div className="mx-auto max-w-6xl">
-        <header className="mb-6">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-8 sm:py-12 transition-colors duration-300">
+      <div className="mx-auto max-w-7xl">
+        <header className="mb-8">
           <Link
             href="/admin/upload-data"
-            className="text-sm font-medium text-indigo-600 underline-offset-2 hover:text-indigo-800 hover:underline mb-2 inline-block"
+            className="group inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors mb-4"
           >
-            ← Kembali ke Upload Data
+            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+            Kembali ke Upload Data
           </Link>
-          <h1 className="text-2xl font-bold text-slate-900">Mapping Harga & Konversi</h1>
-          <p className="mt-1 text-sm text-slate-600">
-            Cocokkan nama komponen AHSP dengan master harga bahan dasar agar RAB dapat terhitung dengan benar.
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Mapping Harga & Konversi</h1>
+          <p className="mt-2 text-slate-500 dark:text-slate-400 font-medium">
+            Sinkronisasi cerdas antara item AHSP dan master harga pasar. Pastikan kalkulasi RAB presisi dengan pemetaan yang akurat.
           </p>
         </header>
-
+ 
         {/* Kotak Filter / Pencarian AHSP */}
-        <div className="mb-4 bg-white p-4 rounded-xl border border-slate-200 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex-1 max-w-md relative">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <svg className="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fillRule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clipRule="evenodd" /></svg>
-            </div>
+        <div className="mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="flex-1 max-w-xl relative">
+            <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
             <input
               type="text"
-              placeholder="Cari item AHSP..."
+              placeholder="Cari uraian pekerjaan AHSP..."
               value={searchAhsp}
               onChange={(e) => setSearchAhsp(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-slate-300 rounded-lg text-sm shadow-sm focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition-shadow"
+              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
             />
           </div>
           {appliedSearch && (
-            <div className="inline-flex items-center gap-2 bg-indigo-50 text-indigo-700 px-3 py-1.5 rounded-lg text-sm font-medium border border-indigo-100">
+            <div className="inline-flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-2xl text-sm font-bold border border-indigo-100 dark:border-indigo-800/50">
               Mencari: &quot;{appliedSearch}&quot;
-              <button onClick={() => setSearchAhsp('')} className="text-indigo-500 hover:text-indigo-700 p-0.5 rounded-full hover:bg-indigo-100 transition-colors">
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+              <button onClick={() => setSearchAhsp('')} className="p-1 hover:bg-white dark:hover:bg-indigo-800 rounded-full transition-colors">
+                <ChevronRight className="w-4 h-4 rotate-45" />
               </button>
             </div>
           )}
-        </div>
+        </div>div>
 
         <div className="mb-4">
           <PaginationControls />
         </div>
 
-        <section className="rounded-xl border border-slate-200 bg-white p-5 shadow-sm min-h-[500px]">
+        <section className="rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-xl overflow-hidden min-h-[600px]">
           {loadingData ? (
-            <div className="flex h-64 items-center justify-center text-sm text-slate-500">
-              <div className="flex flex-col items-center gap-3">
-                <div className="h-8 w-8 animate-spin rounded-full border-2 border-indigo-200 border-t-indigo-600" />
-                <span>Memuat data...</span>
+            <div className="flex h-96 items-center justify-center">
+              <div className="flex flex-col items-center gap-4">
+                <div className="h-12 w-12 animate-spin rounded-full border-4 border-indigo-100 dark:border-indigo-900 border-t-indigo-600 dark:border-t-indigo-400" />
+                <span className="text-sm font-bold text-slate-500 dark:text-slate-400 uppercase tracking-widest animate-pulse">Sinkronisasi Data...</span>
               </div>
             </div>
           ) : (
-            <div className="overflow-x-auto overflow-y-visible pb-32">
-              <table className="min-w-full text-sm">
+            <div className="overflow-x-auto overflow-y-visible pb-40">
+              <table className="min-w-full">
                 <thead>
-                  <tr className="bg-slate-100 text-left text-xs font-semibold uppercase tracking-wide text-slate-700">
-                    <th className="border-b border-slate-200 px-4 py-3 w-1/3">AHSP Item</th>
-                    <th className="border-b border-slate-200 px-4 py-3 w-1/3">Link ke Harga Dasar</th>
-                    <th className="border-b border-slate-200 px-4 py-3 w-1/6 text-center">Satuan Konversi</th>
-                    <th className="border-b border-slate-200 px-4 py-3 w-1/6 text-center">Faktor Konversi</th>
-                    <th className="border-b border-slate-200 px-4 py-3 w-1/12 text-right">Aksi</th>
+                  <tr className="bg-slate-50 dark:bg-slate-800/50 text-left text-[11px] font-black uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Komponen AHSP</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Referensi Master Harga</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Satuan Target</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Faktor Bagi (÷)</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/12 text-right">Tindakan</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-slate-100 bg-white">
+                <tbody className="divide-y divide-slate-50 dark:divide-slate-800">
                   {konversiList.map(row => (
-                    <tr key={row.id} className="hover:bg-slate-50 transition-colors group">
-                      <td className="px-4 py-4 align-top">
-                        <div className="font-medium text-slate-900 leading-tight">{row.uraian_ahsp}</div>
-                        <div className="text-xs text-slate-500 mt-1.5 flex items-center gap-1.5">
-                           Satuan: <span className="bg-slate-100 text-slate-700 px-1.5 rounded">{row.satuan_ahsp || '-'}</span>
+                    <tr key={row.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
+                      <td className="px-6 py-6 align-top">
+                        <div className="font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2">{row.uraian_ahsp}</div>
+                        <div className="flex flex-wrap gap-2">
+                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
+                            Satuan AHSP: {row.satuan_ahsp || '-'}
+                          </span>
                         </div>
                         {!row.item_dasar_id && (
-                          <div className="mt-2.5 inline-block rounded-md bg-red-50 border border-red-200 px-2.5 py-1 text-xs font-medium text-red-600 shadow-sm">
-                             Belum di-mapping
+                          <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/20 px-3 py-1 text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest border border-rose-100 dark:border-rose-900/50 shadow-sm animate-pulse">
+                             <AlertCircle className="w-3 h-3" />
+                             Belum Terhubung
                           </div>
                         )}
                       </td>
-                      <td className="px-4 py-4 align-top">
+                      <td className="px-6 py-6 align-top">
                         {/* CUSTOM SEARCHABLE SELECT SERVER-SIDE */}
                         <SearchableSelect 
                           value={row._editHargaId} 
                           initialLabel={row.master_harga_dasar?.nama_item}
                           initialSatuan={row.master_harga_dasar?.satuan}
+                          initialKode={row.master_harga_dasar?.kode_item}
                           onChange={(newId, selectedObj) => {
                             setKonversiList(prev => prev.map(p => {
                               if (p.id === row.id) {
@@ -435,7 +464,8 @@ export default function KonversiPage() {
                                   master_harga_dasar: selectedObj ? {
                                     nama_item: selectedObj.nama_item,
                                     satuan: selectedObj.satuan,
-                                    harga_satuan: selectedObj.harga_satuan
+                                    harga_satuan: selectedObj.harga_satuan,
+                                    kode_item: selectedObj.kode_item
                                   } : p.master_harga_dasar
                                 };
                               }
@@ -445,45 +475,49 @@ export default function KonversiPage() {
                         />
 
                         {/* INFO BOX BAWAH */}
-                        <div className="text-xs text-slate-500 mt-3 p-3 rounded-lg border border-slate-100 bg-slate-50/80 group-hover:bg-white group-hover:border-slate-200 transition-colors shadow-sm">
-                          <div className="flex items-center gap-1.5 mb-2">
-                             <span className="font-semibold text-slate-700">Tersimpan di sistem:</span>
-                          </div>
-                          
+                        <div className="text-xs text-slate-500 mt-4 p-4 rounded-2xl border border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/40 group-hover:bg-white dark:group-hover:bg-slate-800 transition-all shadow-sm">
                           {row.master_harga_dasar ? (
-                            <>
-                              <div className="font-medium text-slate-800 mb-2 truncate" title={row.master_harga_dasar.nama_item}>
-                                {row.master_harga_dasar.nama_item}
+                            <div className="space-y-3">
+                              <div className="flex justify-between items-start gap-4">
+                                <div className="font-bold text-slate-800 dark:text-slate-200 flex-1 leading-tight">
+                                  {row.master_harga_dasar.nama_item}
+                                </div>
+                                <div className="text-[9px] font-black bg-indigo-50 dark:bg-indigo-900/50 text-indigo-600 dark:text-indigo-400 px-2 py-0.5 rounded uppercase tracking-tighter shrink-0">
+                                  {row.master_harga_dasar.kode_item}
+                                </div>
                               </div>
-                              <div className="flex flex-col gap-1.5 border-t border-slate-100 pt-2">
+                              
+                              <div className="flex flex-col gap-2 border-t border-slate-200/50 dark:border-slate-700/50 pt-3">
                                 <div className="flex justify-between items-center">
-                                  <span className="text-slate-500">Harga Satuan Dasar:</span>
-                                  <span className="font-medium text-slate-700">
+                                  <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Harga Dasar:</span>
+                                  <span className="font-mono font-black text-slate-700 dark:text-slate-300">
                                     Rp {Number(row.master_harga_dasar.harga_satuan).toLocaleString('id-ID')}
-                                    <span className="text-[10px] text-slate-400 ml-1">/{row.master_harga_dasar.satuan}</span>
+                                    <span className="text-[9px] text-slate-400 ml-1 font-normal">/{row.master_harga_dasar.satuan}</span>
                                   </span>
                                 </div>
-                                <div className="flex justify-between items-center bg-indigo-50/70 -mx-1 px-1.5 py-1 rounded">
-                                  <span className="text-indigo-700 font-medium">Harga Terkonversi:</span>
-                                  <span className="font-bold text-indigo-700">
+                                <div className="flex justify-between items-center bg-emerald-50 dark:bg-emerald-900/20 -mx-2 px-3 py-2 rounded-xl border border-emerald-100 dark:border-emerald-800/50">
+                                  <span className="text-[10px] font-black text-emerald-700 dark:text-emerald-400 uppercase tracking-widest">Harga Terkonversi:</span>
+                                  <span className="font-mono font-black text-emerald-700 dark:text-emerald-400 text-sm">
                                     Rp {Number((row.master_harga_dasar.harga_satuan || 0) / (parseFloat(row._editFaktor) || 1)).toLocaleString('id-ID')}
-                                    <span className="text-[10px] text-indigo-400 ml-1">/{row._editSatuan || 'sat'}</span>
+                                    <span className="text-[9px] text-emerald-500/60 ml-1 font-normal">/{row._editSatuan || 'sat'}</span>
                                   </span>
                                 </div>
                               </div>
-                            </>
+                            </div>
                           ) : (
-                            <div className="py-1.5 px-2 bg-slate-100 rounded text-slate-500 text-center border border-slate-200 border-dashed">
-                              Belum terhubung ke Master Harga
+                            <div className="py-4 text-center">
+                              <Database className="w-6 h-6 mx-auto mb-2 text-slate-300 dark:text-slate-700" />
+                              <div className="text-[10px] font-bold text-slate-400 dark:text-slate-600 uppercase tracking-widest">
+                                Belum terhubung ke Master Harga
+                              </div>
                             </div>
                           )}
                         </div>
-                      </td>
-                      <td className="px-4 py-4 align-top text-center">
+                      </                      <td className="px-6 py-6 align-top text-center">
                         <input
                           type="text"
                           placeholder="sat"
-                          className="w-20 rounded-lg border border-slate-300 py-2 px-3 text-sm text-center shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 mx-auto block hover:border-slate-400 transition-colors"
+                          className="w-24 rounded-xl border border-slate-200 dark:border-slate-700 py-2.5 px-3 text-sm text-center font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:bg-slate-800 dark:text-white mx-auto block hover:border-indigo-400 transition-all"
                           value={row._editSatuan || ''}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -491,11 +525,11 @@ export default function KonversiPage() {
                           }}
                         />
                       </td>
-                      <td className="px-4 py-4 align-top text-center">
+                      <td className="px-6 py-6 align-top text-center">
                         <input
                           type="number"
                           step="0.01"
-                          className="w-24 rounded-lg border border-slate-300 py-2 px-3 text-sm text-center shadow-sm focus:border-indigo-500 focus:outline-none focus:ring-2 focus:ring-indigo-500 mx-auto block hover:border-slate-400 transition-colors"
+                          className="w-28 rounded-xl border border-slate-200 dark:border-slate-700 py-2.5 px-3 text-sm text-center font-mono font-bold shadow-sm focus:ring-2 focus:ring-indigo-500 outline-none dark:bg-slate-800 dark:text-white mx-auto block hover:border-indigo-400 transition-all"
                           value={row._editFaktor ?? ''}
                           onChange={(e) => {
                             const val = e.target.value;
@@ -503,19 +537,24 @@ export default function KonversiPage() {
                           }}
                         />
                       </td>
-                      <td className="px-4 py-4 align-top text-right">
+                      <td className="px-6 py-6 align-top text-right">
                         <button
                           type="button"
                           onClick={() => handleSaveRow(row, row._editHargaId, row._editFaktor, row._editSatuan)}
                           disabled={savingRow === row.id}
-                          className="inline-flex items-center justify-center rounded-lg bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-700 disabled:opacity-50"
+                          className="group relative inline-flex items-center justify-center rounded-xl bg-slate-900 dark:bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-xl hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all disabled:opacity-50 overflow-hidden"
                         >
                           {savingRow === row.id ? (
-                             <span className="flex items-center gap-1.5">
-                               <svg className="animate-spin h-3.5 w-3.5 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                               Menyimpan
+                             <span className="flex items-center gap-2">
+                               <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                               ...
                              </span>
-                          ) : 'Simpan'}
+                          ) : (
+                            <>
+                              <Save className="w-4 h-4 mr-2" />
+                              Simpan
+                            </>
+                          )}
                         </button>
                       </td>
                     </tr>

@@ -101,6 +101,10 @@ export default function UploadDataMasterPage() {
         return;
       }
 
+      // Fetch current global profit from setting
+      const { data: profitVal } = await supabase.rpc('get_global_profit');
+      if (profitVal) setGlobalProfit(profitVal);
+
       setLoadingAuth(false);
     })();
   }, [router]);

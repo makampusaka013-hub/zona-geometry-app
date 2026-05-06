@@ -527,7 +527,7 @@ function InlineUserOverrideCell({ det, isPro, onSaved }) {
 // =============================================================================
 // MODAL: TAMBAH / EDIT HSP CUSTOM
 // =============================================================================
-function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
+function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId, defaultProfit = 10 }) {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({
@@ -535,7 +535,7 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
     nama: '',
     satuan: 'm2',
     kategori: 'Pekerjaan Persiapan',
-    profit: 10,
+    profit: defaultProfit,
     details: []
   });
 
@@ -557,7 +557,7 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
         nama: '',
         satuan: 'm2',
         kategori: 'Pekerjaan Persiapan',
-        profit: 10,
+        profit: defaultProfit,
         details: []
       });
     }
@@ -875,8 +875,8 @@ function ModalHspCustom({ isOpen, onClose, ahspId, onSaved, currentUserId }) {
                             <span className="font-semibold text-slate-900 dark:text-slate-100">{det.nama_item}</span>
                             <div className="flex items-center gap-1.5 mt-0.5">
                               <span className={`text-[8px] font-black uppercase px-1.5 py-0.5 rounded ${det.kategori === 'Upah' ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-400' :
-                                  det.kategori === 'Bahan' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
-                                    'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
+                                det.kategori === 'Bahan' ? 'bg-green-100 text-green-700 dark:bg-green-900/40 dark:text-green-400' :
+                                  'bg-orange-100 text-orange-700 dark:bg-orange-900/40 dark:text-orange-400'
                                 }`}>{det.kategori}</span>
                               <span className="text-[9px] text-slate-400 font-mono">{det.kode_item}</span>
                             </div>
@@ -1015,6 +1015,8 @@ export default function KatalogAhspPage() {
   const [expandedRows, setExpandedRows] = useState(new Set());
   const [errorMsg, setErrorMsg] = useState('');
   const [toastMsg, setToastMsg] = useState('');
+  const [globalProfit, setGlobalProfit] = useState(15);
+  const [updatingProfit, setUpdatingProfit] = useState(false);
 
   const isAdmin = memberRole === 'admin';
   const isPro = memberRole === 'pro';
@@ -1058,6 +1060,10 @@ export default function KatalogAhspPage() {
         const unique = [...new Set(data.map(d => d.jenis_pekerjaan).filter(Boolean))].sort();
         setJenisOptions(unique);
       }
+
+      // Fetch global profit setting
+      const { data: profitVal } = await supabase.rpc('get_global_profit');
+      if (profitVal) setGlobalProfit(profitVal);
     } catch (err) {
       console.error('Failed to load stats:', err);
     }
@@ -1111,6 +1117,20 @@ export default function KatalogAhspPage() {
       return next;
     });
   };
+
+  async function handleUpdateGlobalProfit() {
+    setUpdatingProfit(true);
+    try {
+      const { error } = await supabase.rpc('update_global_profit', { p_profit: Number(globalProfit) });
+      if (error) throw error;
+      toast.success(`Profit Global berhasil diubah ke ${globalProfit}%`);
+      loadData(); // Reload to see changes
+    } catch (err) {
+      toast.error('Gagal update profit: ' + err.message);
+    } finally {
+      setUpdatingProfit(false);
+    }
+  }
 
   function showToast(msg) {
     setToastMsg(msg);
@@ -1232,6 +1252,25 @@ export default function KatalogAhspPage() {
               <div className="flex gap-4 p-3 bg-white dark:bg-[#1e293b] rounded-lg border border-slate-200 dark:border-slate-700 shadow-sm text-[10px] uppercase font-bold tracking-wider">
                 <div className="text-green-700 dark:text-green-500">Lengkap: {completeCount}</div>
                 <div className="text-rose-700 dark:text-rose-500">Belum Lengkap: {incompleteCount}</div>
+              </div>
+            )}
+            {isAdmin && (
+              <div className="flex items-center gap-2 p-2 bg-indigo-50 dark:bg-indigo-900/30 rounded-lg border border-indigo-200 dark:border-indigo-800">
+                <span className="text-[9px] font-black text-indigo-600 dark:text-orange-400 uppercase">Profit Global:</span>
+                <input
+                  type="number"
+                  value={globalProfit}
+                  onChange={e => setGlobalProfit(e.target.value)}
+                  className="w-12 bg-white dark:bg-slate-800 border border-indigo-300 dark:border-indigo-700 rounded px-1.5 py-0.5 text-xs font-bold focus:outline-none"
+                />
+                <span className="text-[9px] text-indigo-400">%</span>
+                <button
+                  onClick={handleUpdateGlobalProfit}
+                  disabled={updatingProfit}
+                  className="bg-indigo-600 dark:bg-orange-600 text-white px-2 py-0.5 rounded text-[9px] font-black uppercase tracking-wider hover:bg-indigo-700 disabled:opacity-50"
+                >
+                  {updatingProfit ? '...' : 'Sync'}
+                </button>
               </div>
             )}
           </div>
@@ -1463,6 +1502,7 @@ export default function KatalogAhspPage() {
           onClose={() => setShowHspModal(false)}
           ahspId={editHspId}
           currentUserId={currentUserId}
+          defaultProfit={globalProfit}
           onSaved={() => {
             showToast(editHspId ? '✅ AHSP Custom berhasil diperbarui!' : '✅ AHSP Custom berhasil ditambahkan!');
             loadData();
