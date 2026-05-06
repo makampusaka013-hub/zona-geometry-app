@@ -406,7 +406,7 @@ export default function KonversiPage() {
               </button>
             </div>
           )}
-        </div>div>
+        </div>
 
         <div className="mb-4">
           <PaginationControls />
@@ -514,7 +514,8 @@ export default function KonversiPage() {
                             </div>
                           )}
                         </div>
-                      </                      <td className="px-6 py-6 align-top text-center">
+                      </td>
+                      <td className="px-6 py-6 align-top text-center">
                         <input
                           type="text"
                           placeholder="sat"
