@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 
 export async function GET(request) {
   const { searchParams, origin } = new URL(request.url);
+  const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || origin;
   const code = searchParams.get('code');
   // if "next" is in search params, use it as the redirect URL
   const next = searchParams.get('next') ?? '/dashboard';
@@ -42,14 +43,21 @@ export async function GET(request) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // 1. Cek Verifikasi
-          if (!currentMember?.is_verified_manual && currentMember?.role !== 'admin') {
-            return NextResponse.redirect(`${origin}/verify-notice`);
-          }
-
-          // 2. Cek Aktivasi Premium jika sudah diverifikasi tapi belum aktif
-          if (currentMember?.is_verified_manual && currentMember?.approval_status !== 'active') {
-            // Kita panggil internal API activation
+          // Untuk Google, otomatiskan jika member belum ada
+          if (!currentMember) {
+            await fetch(`${origin}/api/auth/activate`, {
+               method: 'POST',
+               headers: { 'Content-Type': 'application/json' },
+               body: JSON.stringify({ 
+                 userId: user.id, 
+                 email: user.email,
+                 fullName: user.user_metadata?.full_name,
+                 currentRole: 'normal'
+               })
+             });
+          } else if (!currentMember.is_verified_manual && currentMember.role !== 'admin') {
+            return NextResponse.redirect(`${siteUrl}/verify-notice`);
+          } else if (currentMember.approval_status !== 'active') {
             await fetch(`${origin}/api/auth/activate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -61,10 +69,10 @@ export async function GET(request) {
         console.error('Callback Server Error:', err);
       }
 
-      return NextResponse.redirect(`${origin}${next}`);
+      return NextResponse.redirect(`${siteUrl}${next}`);
     }
   }
 
   // Return the user to an error page with some instructions
-  return NextResponse.redirect(`${origin}/login?message=Gagal menukar kode login. Silakan coba lagi.`);
+  return NextResponse.redirect(`${siteUrl}/login?message=Gagal menukar kode login. Silakan coba lagi.`);
 }
