@@ -68,11 +68,13 @@ $$;
 
 -- 3. Shadow RLS Helpers (Gunakan internal DEFINER + public INVOKER wrapper)
 
+DROP FUNCTION IF EXISTS internal.is_app_admin();
 CREATE OR REPLACE FUNCTION internal.is_app_admin()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT COALESCE((SELECT m.role = 'admin' FROM public.members m WHERE m.user_id = auth.uid()), false);
 $$;
 
+DROP FUNCTION IF EXISTS internal.is_app_active();
 CREATE OR REPLACE FUNCTION internal.is_app_active()
 RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
 DECLARE v_role text; v_status text;
@@ -83,11 +85,13 @@ BEGIN
   RETURN false;
 END $$;
 
+DROP FUNCTION IF EXISTS internal.member_can_read_project(uuid);
 CREATE OR REPLACE FUNCTION internal.member_can_read_project(p_project_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT internal.is_app_admin() OR EXISTS (SELECT 1 FROM public.project_members pm WHERE pm.project_id = p_project_id AND pm.user_id = auth.uid());
 $$;
 
+DROP FUNCTION IF EXISTS internal.member_can_write_project(uuid);
 CREATE OR REPLACE FUNCTION internal.member_can_write_project(p_project_id uuid)
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
   SELECT internal.is_app_active() AND (internal.is_app_admin() OR COALESCE((SELECT pm.can_write AND mem.role <> 'view' FROM public.project_members pm JOIN public.members mem ON mem.user_id = pm.user_id WHERE pm.project_id = p_project_id AND pm.user_id = auth.uid()), false));
@@ -114,17 +118,29 @@ RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
   SELECT internal.member_can_write_project(p_project_id);
 $$;
 
--- 4. Ubah Fungsi Dashboard Menjadi SECURITY INVOKER
+-- 4. Update Policy Utama untuk menggunakan Internal Helper (KEAMANAN INTI)
+-- Tanpa policy ini, user tidak bisa login/membaca data mereka sendiri.
+
+DROP POLICY IF EXISTS members_select_own_or_admin ON public.members;
+CREATE POLICY members_select_own_or_admin ON public.members FOR SELECT TO authenticated USING (user_id = auth.uid() OR internal.is_app_admin());
+
+DROP POLICY IF EXISTS projects_read_policy ON public.projects;
+CREATE POLICY projects_read_policy ON public.projects FOR SELECT TO authenticated USING (internal.member_can_read_project(id));
+
+DROP POLICY IF EXISTS projects_write_policy ON public.projects;
+CREATE POLICY projects_write_policy ON public.projects FOR ALL TO authenticated USING (internal.member_can_write_project(id));
+
+-- 5. Ubah Fungsi Dashboard Menjadi SECURITY INVOKER
 ALTER FUNCTION public.get_ahsp_catalog_v2(uuid, text, text, boolean, integer, integer) SECURITY INVOKER;
 ALTER FUNCTION public.get_project_resource_aggregation(uuid) SECURITY INVOKER;
 ALTER FUNCTION public.save_project_atomic(uuid, jsonb, jsonb, boolean, uuid) SECURITY INVOKER;
 ALTER FUNCTION public.update_user_heartbeat(text, text) SECURITY INVOKER;
 
--- 5. Cabut Izin Eksekusi Global (Nuclear Revoke)
+-- 6. Cabut Izin Eksekusi Global (Nuclear Revoke)
 ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM public, anon, authenticated;
 REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon, authenticated;
 
--- 6. Berikan Izin Eksekusi Whitelist
+-- 7. Berikan Izin Eksekusi Whitelist
 GRANT EXECUTE ON FUNCTION public.is_app_admin() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.is_app_active() TO anon, authenticated;
 GRANT EXECUTE ON FUNCTION public.member_can_read_project(uuid) TO authenticated;
@@ -134,11 +150,12 @@ GRANT EXECUTE ON FUNCTION public.get_project_resource_aggregation(uuid) TO authe
 GRANT EXECUTE ON FUNCTION public.save_project_atomic(uuid, jsonb, jsonb, boolean, uuid) TO authenticated;
 GRANT EXECUTE ON FUNCTION public.update_user_heartbeat(text, text) TO authenticated;
 
--- 7. Izin untuk Schema Internal (Hanya untuk RLS)
+-- 8. Izin untuk Schema Internal (Hanya untuk RLS)
 GRANT USAGE ON SCHEMA internal TO anon, authenticated;
 GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA internal TO anon, authenticated;
 
--- 8. Proteksi Member Trigger
+-- 9. Proteksi Member Trigger
+DROP FUNCTION IF EXISTS public.protect_member_sensitive_data();
 CREATE OR REPLACE FUNCTION public.protect_member_sensitive_data()
 RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
 BEGIN
