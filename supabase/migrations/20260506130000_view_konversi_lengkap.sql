@@ -1,5 +1,5 @@
--- Migration: view_konversi_lengkap
--- Tujuan: Mempermudah filtering data di halaman Admin Konversi dengan flag terpakai, terhubung, dan beda satuan.
+-- Migration: view_konversi_lengkap (Updated)
+-- Tujuan: Menambahkan logika filter "Beda Satuan" yang lebih spesifik (Beda Satuan + Faktor masih 1).
 
 drop view if exists public.view_konversi_lengkap;
 
@@ -12,11 +12,18 @@ select
     mk.*,
     (u.uraian_ahsp is not null) as is_terpakai_ahsp,
     (mk.item_dasar_id is not null) as is_mapped,
+    -- Flag umum untuk indikator UI jika satuan berbeda
     case 
         when mk.item_dasar_id is not null and mhd.satuan is not null 
         then (mk.satuan_ahsp <> mhd.satuan)
         else false 
-    end as is_beda_satuan,
+    end as has_unit_mismatch,
+    -- Flag khusus untuk filter permintaan User (Beda Satuan DAN Faktor Konversi masih 1)
+    case 
+        when mk.item_dasar_id is not null and mhd.satuan is not null 
+        then (mk.satuan_ahsp <> mhd.satuan) and (mk.faktor_konversi = 1)
+        else false 
+    end as is_beda_satuan_urgent,
     mhd.nama_item as master_nama_item,
     mhd.satuan as master_satuan,
     mhd.harga_satuan as master_harga_satuan,

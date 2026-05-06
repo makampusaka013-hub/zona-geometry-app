@@ -250,7 +250,7 @@ export default function KonversiPage() {
       } else if (activeFilter === 'konversi') {
         query = query.eq('is_mapped', true);
       } else if (activeFilter === 'beda_satuan') {
-        query = query.eq('is_beda_satuan', true);
+        query = query.eq('is_beda_satuan_urgent', true);
       }
 
       if (overrideSearch.trim() !== '') {
@@ -505,10 +505,14 @@ export default function KonversiPage() {
                               Terpakai di AHSP
                             </span>
                           )}
-                          {row.is_beda_satuan && (
-                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-[10px] font-bold text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-800/50 shadow-sm">
-                              <AlertCircle className="w-3 h-3" />
-                              Beda Satuan
+                          {row.has_unit_mismatch && (
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm ${
+                              row.is_beda_satuan_urgent 
+                                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50 animate-pulse' 
+                                : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/50'
+                            }`}>
+                              <AlertCircle className="w-3 h-3 mr-1" />
+                              {row.is_beda_satuan_urgent ? 'Beda Satuan (Default 1)' : 'Beda Satuan'}
                             </span>
                           )}
                         </div>
