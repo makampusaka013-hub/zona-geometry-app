@@ -360,6 +360,7 @@ export default function UploadDataMasterPage() {
   async function handleUpdateGlobalProfit() {
     setProfitUpdateResult(null);
     setUpdatingProfit(true);
+    try {
       const response = await fetch('/api/admin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
