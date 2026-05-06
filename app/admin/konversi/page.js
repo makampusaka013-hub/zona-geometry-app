@@ -161,7 +161,6 @@ export default function KonversiPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [savingRow, setSavingRow] = useState(null);
   const [syncingAll, setSyncingAll] = useState(false);
-  const [autoMapping, setAutoMapping] = useState(false);
   const [activeFilter, setActiveFilter] = useState('terpakai'); // Default ke 'terpakai' agar tidak bingung dengan data katalog
 
   // Pagination states
@@ -216,25 +215,7 @@ export default function KonversiPage() {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchAhsp, appliedSearch, activeFilter]);
-
-  // fetchHargaDasar() dihapus karena SearchableSelect melakukan fetch secara server-side
-
-  async function handleAutoMap() {
-    setAutoMapping(true);
-    try {
-      const { data, error } = await supabase.rpc('auto_map_konversi');
-      if (error) throw error;
-      
-      toast.success(`Berhasil memetakan ${data?.mapped_count || 0} item secara otomatis!`);
-      fetchKonversiPage(1);
-    } catch (err) {
-      console.error('Auto map failed:', err);
-      toast.error('Gagal mapping otomatis: ' + err.message);
-    } finally {
-      setAutoMapping(false);
-    }
-  }
+  }, [searchAhsp, activeFilter]);
 
   async function handleSyncAllCatalog() {
     setSyncingAll(true);
@@ -242,7 +223,7 @@ export default function KonversiPage() {
       const { data, error } = await supabase.rpc('sync_all_catalog_to_konversi');
       if (error) throw error;
       
-      toast.success(`Sinkronisasi berhasil! ${data?.synced_count || 0} item dari Katalog Harga kini siap dikelola.`);
+      toast.success(`Berhasil menyinkronkan ${data?.synced_count || 0} item baru dari AHSP!`);
       fetchKonversiPage(1);
     } catch (err) {
       console.error('Sync failed:', err);
@@ -418,11 +399,13 @@ export default function KonversiPage() {
             className="group inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors mb-4"
           >
             <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
-            Kembali ke Upload Data
+          <Link href="/admin/upload-data" className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold hover:gap-3 transition-all mb-4">
+            <ChevronRight className="w-4 h-4 rotate-180" />
+            Kembali ke Pusat Upload
           </Link>
-          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Mapping Harga & Konversi</h1>
+          <h1 className="text-4xl font-black text-slate-900 dark:text-white tracking-tight">Sentralisasi Harga Satuan AHSP</h1>
           <p className="mt-2 text-slate-500 dark:text-slate-400 font-medium">
-            Sinkronisasi cerdas antara item AHSP dan master harga pasar. Pastikan kalkulasi RAB presisi dengan pemetaan yang akurat.
+            Hubungkan seluruh item material proyek ke Katalog Harga Pasar untuk mendapatkan perhitungan RAB yang presisi.
           </p>
         </header>
  
@@ -431,7 +414,7 @@ export default function KonversiPage() {
           <div className="flex flex-col md:flex-row gap-4 items-end sm:items-center">
             <button
               onClick={handleSyncAllCatalog}
-              disabled={syncingAll || autoMapping}
+              disabled={syncingAll}
               className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
                 syncingAll
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
@@ -439,20 +422,7 @@ export default function KonversiPage() {
               }`}
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
-              {syncingAll ? 'Sinkronisasi...' : 'Tarik Semua Katalog Harga'}
-            </button>
-
-            <button
-              onClick={handleAutoMap}
-              disabled={syncingAll || autoMapping}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
-                autoMapping
-                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
-                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
-              }`}
-            >
-              <Zap className={`w-4 h-4 ${autoMapping ? 'animate-spin' : ''}`} />
-              {autoMapping ? 'Memetakan...' : 'Mapping Otomatis (Nama & Satuan Sama)'}
+              {syncingAll ? 'Sinkronisasi...' : 'Sinkronkan Item dari AHSP'}
             </button>
             <div className="flex-1 max-w-xl relative w-full">
               <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
@@ -515,11 +485,11 @@ export default function KonversiPage() {
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-800/50 text-left text-[11px] font-black uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">
-                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Komponen AHSP</th>
-                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Referensi Master Harga</th>
-                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Satuan Target</th>
-                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Faktor Bagi (÷)</th>
-                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/4 text-right">Estimasi Harga AHSP</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Material dari Proyek (AHSP)</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Sumber Harga Pasar</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/8 text-center">Satuan Target</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/8 text-center">Faktor Bagi (÷)</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/4 text-right">Konversi ke Harga AHSP</th>
                     <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/12 text-right">Tindakan</th>
                   </tr>
                 </thead>

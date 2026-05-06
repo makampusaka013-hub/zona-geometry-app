@@ -11,21 +11,17 @@ as $$
 declare
   v_count int := 0;
 begin
-  -- Masukkan semua item dari harga dasar yang belum ada di konversi
-  -- Gunakan DISTINCT ON agar jika ada nama_item + satuan yang sama di katalog, tidak error
-  insert into public.master_konversi (uraian_ahsp, satuan_ahsp, item_dasar_id, faktor_konversi, kode_item_dasar)
-  select distinct on (nama_item, satuan)
-    nama_item, 
-    satuan, 
-    id, 
-    1, 
-    kode_item
-  from public.master_harga_dasar
-  order by nama_item, satuan, created_at desc
+  -- Masukkan semua item UNIK dari rincian AHSP yang pernah diupload
+  -- Gunakan DISTINCT ON agar (uraian_ahsp, satuan_uraian) yang sama tidak duplikat
+  insert into public.master_konversi (uraian_ahsp, satuan_ahsp, faktor_konversi)
+  select distinct on (uraian_ahsp, satuan_uraian)
+    uraian_ahsp, 
+    satuan_uraian, 
+    1
+  from public.master_ahsp_details
+  where uraian_ahsp is not null
   on conflict (uraian_ahsp, satuan_ahsp) 
-  do update set 
-    item_dasar_id = coalesce(master_konversi.item_dasar_id, EXCLUDED.item_dasar_id),
-    kode_item_dasar = coalesce(master_konversi.kode_item_dasar, EXCLUDED.kode_item_dasar);
+  do nothing; -- Jika sudah ada, biarkan saja (jangan timpa mapping yang sudah dibuat)
 
   get diagnostics v_count = row_count;
 
