@@ -412,11 +412,11 @@ export default function ProgressTab({
           <table className="text-sm border-separate border-spacing-0 table-fixed min-w-full">
             <thead className="sticky top-0 z-50">
               <tr className="bg-slate-100 dark:bg-slate-900 text-[9px] uppercase font-black tracking-widest text-slate-500 dark:text-slate-400 shadow-sm">
-                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-4 py-4 text-left w-[220px] border-b border-slate-200 dark:border-slate-800 text-[9px] font-black uppercase tracking-[0.2em] text-slate-500 dark:text-slate-400">ITEM PEKERJAAN</th>
-                <th className="px-2 py-4 text-center w-[50px] border-b border-slate-200 dark:border-slate-800">Sat</th>
-                <th className="px-3 py-4 text-right w-[80px] border-b border-slate-200 dark:border-slate-800">Target</th>
-                <th className="px-3 py-4 text-right w-[80px] border-b border-slate-200 dark:border-slate-800">Real</th>
-                <th className="px-3 py-4 text-right w-[90px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
+                <th className="sticky left-0 z-50 bg-slate-100 dark:bg-slate-900 px-4 py-3 text-left w-[380px] border-b border-slate-200 dark:border-slate-800 text-[9px] font-black uppercase tracking-[0.1em] text-slate-500 dark:text-slate-400">ITEM PEKERJAAN</th>
+                <th className="px-2 py-3 text-center w-[60px] border-b border-slate-200 dark:border-slate-800">Sat</th>
+                <th className="px-3 py-3 text-right w-[70px] border-b border-slate-200 dark:border-slate-800">Target</th>
+                <th className="px-3 py-3 text-right w-[70px] border-b border-slate-200 dark:border-slate-800">Real</th>
+                <th className="px-3 py-3 text-right w-[80px] border-b border-slate-200 dark:border-slate-800">Selisih</th>
                 {Array.from({ length: Math.min(daysPerPage, timeRange - viewStartIndex) }).map((_, idx) => {
                   const actualDayIdx = viewStartIndex + idx;
                   return (
@@ -453,9 +453,9 @@ export default function ProgressTab({
                       </tr>
                     )}
                     <tr onClick={() => setSelectedRowId(isSelected ? null : key)} className={`${isSelected ? 'bg-slate-50 dark:bg-slate-800/50' : 'bg-white dark:bg-[#020617]'} hover:bg-slate-50/50 dark:hover:bg-slate-900/30 transition-colors cursor-pointer group`}>
-                    <td className={`sticky left-0 z-10 ${rowBgClass} px-4 py-4 border-r border-slate-100 dark:border-slate-800/50 w-[220px]`}>
+                    <td className={`sticky left-0 z-10 ${rowBgClass} px-4 py-3 border-r border-slate-100 dark:border-slate-800/50 w-[380px]`}>
                       <div className="flex items-center gap-2 mb-0.5">
-                        {babName && <div className="text-[7px] text-indigo-600 dark:text-orange-400 font-black uppercase tracking-widest truncate max-w-[80px]">{babName}</div>}
+                        {babName && <div className="text-[7px] text-indigo-600 dark:text-orange-400 font-black uppercase tracking-widest truncate max-w-[150px]">{babName}</div>}
                         {row.status_approval === 'final' && (
                           <span className="text-[7px] font-black bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 px-1 py-0.5 rounded uppercase flex items-center gap-1 shadow-sm">
                             <CheckCircle2 className="w-2 h-2" /> FINAL
@@ -467,16 +467,16 @@ export default function ProgressTab({
                           </span>
                         )}
                       </div>
-                      <div className="font-bold text-slate-800 dark:text-white text-[11px] truncate leading-tight" title={row.name}>{row.name}</div>
+                      <div className="font-bold text-slate-800 dark:text-white text-[10px] whitespace-normal line-clamp-2 leading-tight" title={row.name}>{row.name}</div>
                     </td>
-                    <td className="px-2 py-4 text-center text-[10px] font-bold text-slate-500 w-[50px]">{row.unit}</td>
-                    <td className="px-3 py-4 text-right text-[10px] font-mono font-bold text-slate-400 w-[80px]">
+                    <td className="px-2 py-3 text-center text-[10px] font-bold text-slate-500 w-[60px]">{row.unit}</td>
+                    <td className="px-3 py-3 text-right text-[10px] font-mono font-bold text-slate-400 w-[70px]">
                       {row.type === 'supervision_staff' ? '-' : fmt(row.target)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[80px]">
+                    <td className="px-3 py-3 text-right text-[10px] font-black text-indigo-600 dark:text-orange-400 w-[70px]">
                       {fmt(totalReal)}
                     </td>
-                    <td className="px-3 py-4 text-right text-[10px] font-black w-[90px]">
+                    <td className="px-3 py-3 text-right text-[10px] font-black w-[80px]">
                       <div className="flex flex-col items-end">
                         <span className={row.type === 'supervision_staff' ? 'text-slate-300' : (diff < -0.000001 ? 'text-red-500' : 'text-emerald-500')}>
                           {row.type === 'supervision_staff' ? '-' : fmt(diff)}
