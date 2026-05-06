@@ -160,6 +160,7 @@ export default function KonversiPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [savingRow, setSavingRow] = useState(null);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'terpakai', 'konversi', 'beda_satuan'
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -213,7 +214,7 @@ export default function KonversiPage() {
 
     return () => clearTimeout(timer);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [searchAhsp, appliedSearch]);
+  }, [searchAhsp, appliedSearch, activeFilter]);
 
   // fetchHargaDasar() dihapus karena SearchableSelect melakukan fetch secara server-side
 
@@ -241,27 +242,24 @@ export default function KonversiPage() {
       const to = from + PAGE_SIZE - 1;
 
       let query = supabase
-        .from('master_konversi')
-        .select(`
-          id,
-          uraian_ahsp,
-          satuan_ahsp,
-          faktor_konversi,
-          item_dasar_id,
-          master_harga_dasar (
-            nama_item,
-            satuan,
-            harga_satuan,
-            kode_item
-          )
-        `, { count: 'exact' });
+        .from('view_konversi_lengkap')
+        .select('*', { count: 'exact' });
+
+      if (activeFilter === 'terpakai') {
+        query = query.eq('is_terpakai_ahsp', true);
+      } else if (activeFilter === 'konversi') {
+        query = query.eq('is_mapped', true);
+      } else if (activeFilter === 'beda_satuan') {
+        query = query.eq('is_beda_satuan', true);
+      }
 
       if (overrideSearch.trim() !== '') {
-        query = query.ilike('uraian_ahsp', `%${overrideSearch.trim()}%`);
+        query = query.or(`uraian_ahsp.ilike.%${overrideSearch.trim()}%,master_nama_item.ilike.%${overrideSearch.trim()}%`);
       }
 
       const { data: konvData, error: konvErr, count } = await query
-        .order('item_dasar_id', { ascending: true, nullsFirst: true })
+        .order('is_terpakai_ahsp', { ascending: false })
+        .order('is_mapped', { ascending: true })
         .order('uraian_ahsp', { ascending: true })
         .range(from, to);
 
@@ -270,6 +268,12 @@ export default function KonversiPage() {
       setTotalRows(count || 0);
       setKonversiList((konvData || []).map(item => ({
         ...item,
+        master_harga_dasar: item.is_mapped ? {
+          nama_item: item.master_nama_item,
+          satuan: item.master_satuan,
+          harga_satuan: item.master_harga_satuan,
+          kode_item: item.master_kode_item
+        } : null,
         _editHargaId: item.item_dasar_id || '',
         _editFaktor: item.faktor_konversi || 1,
         _editSatuan: item.satuan_ahsp || '',
@@ -430,6 +434,29 @@ export default function KonversiPage() {
               />
             </div>
           </div>
+
+          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
+            {[
+              { id: 'all', label: 'Semua Item', icon: <Database className="w-4 h-4" /> },
+              { id: 'terpakai', label: 'Terpakai di AHSP', icon: <RefreshCw className="w-4 h-4" /> },
+              { id: 'konversi', label: 'Sudah Konversi', icon: <CheckCircle2 className="w-4 h-4" /> },
+              { id: 'beda_satuan', label: 'Beda Satuan', icon: <AlertCircle className="w-4 h-4 text-orange-500" /> },
+            ].map((f) => (
+              <button
+                key={f.id}
+                onClick={() => setActiveFilter(f.id)}
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
+                  activeFilter === f.id
+                    ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
+                    : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
+                }`}
+              >
+                {f.icon}
+                {f.label}
+              </button>
+            ))}
+          </div>
+
           {appliedSearch && (
             <div className="inline-flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-2xl text-sm font-bold border border-indigo-100 dark:border-indigo-800/50">
               Mencari: &quot;{appliedSearch}&quot;
@@ -468,11 +495,22 @@ export default function KonversiPage() {
                   {konversiList.map(row => (
                     <tr key={row.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                       <td className="px-6 py-6 align-top">
-                        <div className="font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2">{row.uraian_ahsp}</div>
-                        <div className="flex flex-wrap gap-2">
-                          <span className="inline-flex items-center gap-1.5 px-2 py-0.5 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-600 dark:text-slate-400">
-                            Satuan AHSP: {row.satuan_ahsp || '-'}
+                        <div className="font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2 text-lg">{row.uraian_ahsp}</div>
+                        <div className="flex flex-wrap gap-2 items-center">
+                          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-sm">
+                            SATUAN AHSP: <span className="text-slate-900 dark:text-slate-100 uppercase">{row.satuan_ahsp || '-'}</span>
                           </span>
+                          {row.is_terpakai_ahsp && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
+                              Terpakai di AHSP
+                            </span>
+                          )}
+                          {row.is_beda_satuan && (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-orange-50 dark:bg-orange-900/20 text-[10px] font-bold text-orange-600 dark:text-orange-400 border border-orange-100 dark:border-orange-800/50 shadow-sm">
+                              <AlertCircle className="w-3 h-3" />
+                              Beda Satuan
+                            </span>
+                          )}
                         </div>
                         {!row.item_dasar_id && (
                           <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/20 px-3 py-1 text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest border border-rose-100 dark:border-rose-900/50 shadow-sm animate-pulse">

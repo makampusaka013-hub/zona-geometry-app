@@ -10,14 +10,16 @@ declare
   v_count int := 0;
 begin
   -- Masukkan semua item dari harga dasar yang belum ada di konversi
+  -- Gunakan DISTINCT ON agar jika ada nama_item + satuan yang sama di katalog, tidak error
   insert into public.master_konversi (uraian_ahsp, satuan_ahsp, item_dasar_id, faktor_konversi, kode_item_dasar)
-  select 
+  select distinct on (nama_item, satuan)
     nama_item, 
     satuan, 
     id, 
     1, 
     kode_item
   from public.master_harga_dasar
+  order by nama_item, satuan, created_at desc
   on conflict (uraian_ahsp, satuan_ahsp) 
   do update set 
     item_dasar_id = coalesce(master_konversi.item_dasar_id, EXCLUDED.item_dasar_id),
