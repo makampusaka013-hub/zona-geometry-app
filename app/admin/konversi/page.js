@@ -162,7 +162,7 @@ export default function KonversiPage() {
   const [savingRow, setSavingRow] = useState(null);
   const [syncingAll, setSyncingAll] = useState(false);
   const [autoMapping, setAutoMapping] = useState(false);
-  const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'terpakai', 'konversi', 'beda_satuan'
+  const [activeFilter, setActiveFilter] = useState('terpakai'); // Default ke 'terpakai' agar tidak bingung dengan data katalog
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -527,11 +527,22 @@ export default function KonversiPage() {
                   {konversiList.map(row => (
                     <tr key={row.id} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/30 transition-colors group">
                       <td className="px-6 py-6 align-top">
-                        <div className="font-bold text-slate-900 dark:text-slate-100 leading-tight mb-2 text-lg">{row.uraian_ahsp}</div>
+                        <div className={`font-bold leading-tight mb-2 text-lg ${row.is_terpakai_ahsp ? 'text-indigo-600 dark:text-indigo-400' : 'text-slate-900 dark:text-slate-100'}`}>
+                          {row.uraian_ahsp}
+                        </div>
                         <div className="flex flex-wrap gap-2 items-center">
                           <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-slate-800 text-[10px] font-bold text-slate-500 dark:text-slate-400 border border-slate-200 dark:border-slate-700 shadow-sm">
-                            SATUAN AHSP: <span className="text-slate-900 dark:text-slate-100 uppercase">{row.satuan_ahsp || '-'}</span>
+                            SATUAN: <span className="text-slate-900 dark:text-slate-100 uppercase">{row.satuan_ahsp || '-'}</span>
                           </span>
+                          {row.is_terpakai_ahsp ? (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-500 text-white text-[9px] font-black uppercase tracking-widest shadow-sm">
+                              Real AHSP
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-400 text-[9px] font-black uppercase tracking-widest border border-slate-300 dark:border-slate-600 shadow-sm">
+                              Hanya Katalog
+                            </span>
+                          )}
                           {row.is_terpakai_ahsp && (
                             <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-lg bg-indigo-50 dark:bg-indigo-900/30 text-[10px] font-bold text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/50 shadow-sm">
                               Terpakai di AHSP
