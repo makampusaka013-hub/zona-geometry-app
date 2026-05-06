@@ -69,10 +69,16 @@ export async function GET(request) {
         console.error('Callback Server Error:', err);
       }
 
-      return NextResponse.redirect(`${siteUrl}${next}`);
+      // Pastikan URL redirect bersih dan absolut
+      const finalTarget = next.startsWith('/') ? next : `/${next}`;
+      const finalUrl = new URL(finalTarget, siteUrl);
+      
+      return NextResponse.redirect(finalUrl.toString());
     }
   }
 
   // Return the user to an error page with some instructions
-  return NextResponse.redirect(`${siteUrl}/login?message=Gagal menukar kode login. Silakan coba lagi.`);
+  const loginUrl = new URL('/login', siteUrl);
+  loginUrl.searchParams.set('message', 'Gagal menukar kode login. Silakan coba lagi.');
+  return NextResponse.redirect(loginUrl.toString());
 }

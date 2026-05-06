@@ -41,8 +41,8 @@ export default function RegisterPage() {
       return;
     }
 
-    const successMsg = 'Registrasi berhasil! Silakan cek email Anda untuk verifikasi.';
-    router.push(`/login?message=${encodeURIComponent(successMsg)}`);
+    // Langsung arahkan ke halaman instruksi verifikasi
+    router.push('/verify-notice');
   }
 
   return (
