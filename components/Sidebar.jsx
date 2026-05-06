@@ -228,8 +228,8 @@ export function Sidebar({ isOpen, onClose }) {
             <select 
               value={member?.selected_location_id || ''}
               onChange={(e) => handleLocationChange(e.target.value)}
-              disabled={isUpdatingLocation}
-              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-black text-slate-700 dark:text-slate-200 outline-none focus:ring-2 ring-indigo-500/10 transition-all appearance-none cursor-pointer"
+              disabled={isUpdatingLocation || (member?.expired_at && new Date(member.expired_at) < new Date() && member?.role !== 'admin')}
+              className="w-full bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl px-3 py-2.5 text-xs font-black text-slate-700 dark:text-slate-200 outline-none focus:ring-2 ring-indigo-500/10 transition-all appearance-none cursor-pointer disabled:opacity-50"
             >
               <option value="" disabled>Pilih Wilayah...</option>
               {locations.map(loc => (
@@ -274,7 +274,16 @@ export function Sidebar({ isOpen, onClose }) {
         )}
         
         {navLinks
-          .filter(link => !link.hidden)
+          .filter(link => {
+            if (link.hidden) return false;
+            // Jika expired dan bukan admin, hanya tunjukkan Tentang Produk
+            const isExpired = member?.expired_at && new Date(member.expired_at) < new Date();
+            const isAdmin = member?.role === 'admin';
+            if (isExpired && !isAdmin) {
+              return link.name === 'Tentang Produk';
+            }
+            return true;
+          })
           .map((link) => {
             const baseHref = link.href.split('?')[0];
             const isActive = link.href === '/dashboard' 
@@ -338,7 +347,9 @@ export function Sidebar({ isOpen, onClose }) {
                 )}
               </div>
               <p className="text-xs font-bold text-indigo-600 dark:text-orange-500 truncate uppercase mt-0.5">
-                {(member?.role === 'normal' && !member?.is_paid) ? 'TRIAL' : (member?.role || 'Guest')}
+                {member?.expired_at && new Date(member.expired_at) < new Date() && member?.role !== 'admin' 
+                  ? <span className="text-red-500">EXPIRED</span> 
+                  : ((member?.role === 'normal' && !member?.is_paid) ? 'TRIAL' : (member?.role || 'Guest'))}
               </p>
               {member?.expired_at && (member?.is_paid || member?.role === 'normal') && (
                 <p className={`text-[10px] mt-1 font-bold ${daysRemaining <= 1 ? 'text-red-500' : 'text-slate-400 dark:text-slate-500'}`}>

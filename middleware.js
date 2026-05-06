@@ -42,11 +42,39 @@ export async function middleware(request) {
 
   const { data: { user } } = await supabase.auth.getUser();
   
-  // Debugging User
-  console.log('MIDDLEWARE USER:', user ? 'VALID' : 'INVALID');
-
   // 3. Protected Routes
-  if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
+  if (user && request.nextUrl.pathname.startsWith('/dashboard')) {
+    // Ambil status member untuk cek masa aktif
+    const { data: member } = await supabase
+      .from('members')
+      .select('expired_at, role')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (member) {
+      const now = new Date();
+      const expiryDate = member.expired_at ? new Date(member.expired_at) : null;
+      const isExpired = expiryDate && now > expiryDate;
+      const isAdmin = member.role === 'admin';
+
+      // JIKA EXPIRED & BUKAN ADMIN: Hanya izinkan profil dan tentang produk
+      if (isExpired && !isAdmin) {
+        const currentPath = request.nextUrl.pathname;
+        const allowedPaths = [
+          '/dashboard/about',
+          '/dashboard/profile',
+          '/dashboard/upgrade',
+          '/api/auth'
+        ];
+
+        const isAllowed = allowedPaths.some(path => currentPath.startsWith(path));
+
+        if (!isAllowed) {
+          return NextResponse.redirect(new URL('/dashboard/about?expired=true', request.url));
+        }
+      }
+    }
+  } else if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
