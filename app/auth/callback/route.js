@@ -8,6 +8,8 @@ export async function GET(request) {
   const code = searchParams.get('code');
   // if "next" is in search params, use it as the redirect URL
   const next = searchParams.get('next') ?? '/dashboard';
+  const errorParam = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
 
   if (code) {
     const cookieStore = await cookies();
@@ -32,9 +34,9 @@ export async function GET(request) {
       }
     );
 
-    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
 
-    if (!error) {
+    if (!exchangeError) {
       try {
         const user = data?.user;
 
@@ -90,20 +92,23 @@ export async function GET(request) {
       const finalTarget = next.startsWith('/') ? next : `/${next}`;
       return NextResponse.redirect(`${siteUrl}${finalTarget}`);
     } else {
-      console.error('Callback: Code exchange error:', error.message);
+      console.error('Callback: Code exchange error:', exchangeError.message);
+      // Pass the exchange error to the fallback logic
+      const errUrl = new URL('/login', siteUrl);
+      errUrl.searchParams.set('message', exchangeError.message);
+      return NextResponse.redirect(errUrl.toString());
     }
   }
 
-  // Final fallback to login with error message
+  // Final fallback to login with error message from searchParams
   const errorUrl = new URL('/login', siteUrl);
-  const finalMessage = error?.message || 'Gagal menukar kode login. Silakan coba lagi.';
+  const finalMessage = errorParam || 'Gagal memproses login. Silakan coba lagi.';
   errorUrl.searchParams.set('message', finalMessage);
-  if (error?.description) errorUrl.searchParams.set('error_description', error.description);
+  if (errorDescription) errorUrl.searchParams.set('error_description', errorDescription);
   
   console.error('[AUTH-CALLBACK-FINAL-ERROR]', {
     message: finalMessage,
-    description: error?.description,
-    code: error?.code
+    description: errorDescription
   });
 
   return NextResponse.redirect(errorUrl.toString());
