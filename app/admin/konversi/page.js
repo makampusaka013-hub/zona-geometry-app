@@ -4,13 +4,13 @@ import { useEffect, useState, useRef, useMemo } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
-import { 
-  Search, 
-  ChevronLeft, 
-  ChevronRight, 
-  AlertCircle, 
-  Save, 
-  CheckCircle2, 
+import {
+  Search,
+  ChevronLeft,
+  ChevronRight,
+  AlertCircle,
+  Save,
+  CheckCircle2,
   RefreshCw,
   Database
 } from 'lucide-react';
@@ -40,7 +40,7 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan, initia
 
   useEffect(() => {
     if (!isOpen) return;
-    
+
     // Server-side debounced search
     const timer = setTimeout(async () => {
       setLoading(true);
@@ -71,11 +71,11 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan, initia
 
   return (
     <div ref={wrapperRef} className="relative w-full">
-      <div 
+      <div
         className="w-full rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 py-3 px-4 text-sm shadow-sm cursor-pointer flex justify-between items-center focus-within:ring-2 focus-within:ring-indigo-500 hover:border-indigo-400 dark:hover:border-indigo-600 transition-all group"
         onClick={() => {
           setIsOpen(!isOpen);
-          if (!isOpen && options.length === 0) setSearchTerm(''); 
+          if (!isOpen && options.length === 0) setSearchTerm('');
         }}
       >
         <div className="flex flex-col gap-0.5 truncate pr-4">
@@ -90,7 +90,7 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan, initia
         </div>
         <svg className={`shrink-0 w-4 h-4 text-slate-400 group-hover:text-indigo-500 transition-transform ${isOpen ? 'rotate-180' : ''}`} fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7"></path></svg>
       </div>
-      
+
       {isOpen && (
         <div className="absolute z-50 w-full mt-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-2xl shadow-2xl max-h-[400px] flex flex-col overflow-hidden animate-in fade-in zoom-in duration-200">
           <div className="p-4 border-b border-slate-100 dark:border-slate-700 bg-slate-50/80 dark:bg-slate-900/50">
@@ -109,8 +109,8 @@ function SearchableSelect({ value, onChange, initialLabel, initialSatuan, initia
           <ul className="overflow-y-auto flex-1 p-1">
             {loading ? (
               <li className="px-4 py-6 text-sm text-slate-500 text-center flex items-center justify-center gap-2">
-                 <svg className="animate-spin h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                 Mencari data...
+                <svg className="animate-spin h-4 w-4 text-slate-400" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Mencari data...
               </li>
             ) : options.length === 0 ? (
               <li className="px-4 py-6 text-sm text-slate-500 italic text-center">Data tidak ditemukan. Cobalah kata kunci lain.</li>
@@ -163,10 +163,10 @@ export default function KonversiPage() {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalRows, setTotalRows] = useState(0);
   const [inputPage, setInputPage] = useState('1');
-  
+
   // Search state
   const [searchAhsp, setSearchAhsp] = useState('');
-  const [appliedSearch, setAppliedSearch] = useState(''); 
+  const [appliedSearch, setAppliedSearch] = useState('');
   const [notification, setNotification] = useState(null);
 
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
@@ -224,7 +224,7 @@ export default function KonversiPage() {
     try {
       const { data, error } = await supabase.rpc('sync_all_catalog_to_konversi');
       if (error) throw error;
-      
+
       toast.success(`Berhasil menyinkronkan ${data?.synced_count || 0} item baru dari AHSP!`);
       fetchKonversiPage(1);
     } catch (err) {
@@ -240,7 +240,7 @@ export default function KonversiPage() {
     try {
       const { data, error } = await supabase.rpc('auto_map_same_items');
       if (error) throw error;
-      
+
       showToast(`Berhasil memasangkan ${data?.affected_count || 0} item yang sama persis!`);
       fetchKonversiPage(currentPage);
     } catch (err) {
@@ -367,11 +367,11 @@ export default function KonversiPage() {
   const PaginationControls = () => (
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 rounded-2xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 p-5 shadow-sm">
       <div className="text-sm text-slate-500 dark:text-slate-400">
-        Menampilkan halaman <strong className="text-slate-900 dark:text-slate-100">{currentPage}</strong> dari <strong className="text-slate-900 dark:text-slate-100">{totalPages}</strong> 
+        Menampilkan halaman <strong className="text-slate-900 dark:text-slate-100">{currentPage}</strong> dari <strong className="text-slate-900 dark:text-slate-100">{totalPages}</strong>
         <span className="mx-3 opacity-30">|</span>
         Total: <strong className="text-indigo-600 dark:text-indigo-400">{totalRows}</strong> item
       </div>
-      
+
       <div className="flex items-center gap-3">
         <button
           onClick={handlePrev}
@@ -380,17 +380,17 @@ export default function KonversiPage() {
         >
           <ChevronLeft className="w-5 h-5" />
         </button>
-        
+
         <form onSubmit={handleJumpPage} className="flex items-center gap-2">
-          <input 
-            type="number" 
-            min="1" 
+          <input
+            type="number"
+            min="1"
             max={totalPages}
             value={inputPage || ''}
             onChange={(e) => setInputPage(e.target.value)}
             className="w-14 rounded-xl border border-slate-200 dark:border-slate-700 py-2 text-sm text-center font-bold dark:bg-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-indigo-500 outline-none"
           />
-          <button 
+          <button
             type="submit"
             disabled={loadingData}
             className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-indigo-500/20 hover:bg-indigo-700 transition-all disabled:opacity-50"
@@ -398,7 +398,7 @@ export default function KonversiPage() {
             Go
           </button>
         </form>
- 
+
         <button
           onClick={handleNext}
           disabled={currentPage === totalPages || loadingData}
@@ -424,18 +424,17 @@ export default function KonversiPage() {
             Hubungkan seluruh item material proyek ke Katalog Harga Pasar untuk mendapatkan perhitungan RAB yang presisi.
           </p>
         </header>
- 
+
         {/* Kotak Filter / Pencarian AHSP */}
         <div className="mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
           <div className="flex flex-col md:flex-row gap-4 items-end sm:items-center">
             <button
               onClick={handleSyncAllCatalog}
               disabled={syncingAll}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
-                syncingAll
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${syncingAll
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20'
-              }`}
+                }`}
             >
               <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
               {syncingAll ? 'Sinkronisasi...' : 'Sinkronkan Item dari AHSP'}
@@ -443,11 +442,10 @@ export default function KonversiPage() {
             <button
               onClick={handleAutoMapSameItems}
               disabled={autoMapping || syncingAll}
-              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
-                autoMapping
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${autoMapping
                   ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
                   : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
-              }`}
+                }`}
             >
               <Database className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
               {autoMapping ? 'Memasangkan...' : 'Auto-Map Item Sama'}
@@ -474,11 +472,10 @@ export default function KonversiPage() {
               <button
                 key={f.id}
                 onClick={() => setActiveFilter(f.id)}
-                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${
-                  activeFilter === f.id
+                className={`flex items-center gap-2 px-5 py-2.5 rounded-xl text-xs font-bold transition-all whitespace-nowrap ${activeFilter === f.id
                     ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-500/30'
                     : 'bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-400 hover:bg-slate-200 dark:hover:bg-slate-700'
-                }`}
+                  }`}
               >
                 {f.icon}
                 {f.label}
@@ -547,11 +544,10 @@ export default function KonversiPage() {
                             </span>
                           )}
                           {row.has_unit_mismatch && (
-                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm ${
-                              row.is_beda_satuan_urgent 
-                                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50 animate-pulse' 
+                            <span className={`inline-flex items-center px-2.5 py-1 rounded-lg text-[10px] font-bold border shadow-sm ${row.is_beda_satuan_urgent
+                                ? 'bg-rose-50 dark:bg-rose-900/20 text-rose-600 dark:text-rose-400 border-rose-100 dark:border-rose-900/50 animate-pulse'
                                 : 'bg-orange-50 dark:bg-orange-900/20 text-orange-600 dark:text-orange-400 border-orange-100 dark:border-orange-800/50'
-                            }`}>
+                              }`}>
                               <AlertCircle className="w-3 h-3 mr-1" />
                               {row.is_beda_satuan_urgent ? 'Beda Satuan (Default 1)' : 'Beda Satuan'}
                             </span>
@@ -559,24 +555,24 @@ export default function KonversiPage() {
                         </div>
                         {!row.item_dasar_id && (
                           <div className="mt-3 inline-flex items-center gap-1.5 rounded-full bg-rose-50 dark:bg-rose-900/20 px-3 py-1 text-[10px] font-black text-rose-600 dark:text-rose-400 uppercase tracking-widest border border-rose-100 dark:border-rose-900/50 shadow-sm animate-pulse">
-                             <AlertCircle className="w-3 h-3" />
-                             Belum Terhubung
+                            <AlertCircle className="w-3 h-3" />
+                            Belum Terhubung
                           </div>
                         )}
                       </td>
                       <td className="px-6 py-6 align-top">
                         {/* CUSTOM SEARCHABLE SELECT SERVER-SIDE */}
-                        <SearchableSelect 
-                          value={row._editHargaId} 
+                        <SearchableSelect
+                          value={row._editHargaId}
                           initialLabel={row.master_harga_dasar?.nama_item}
                           initialSatuan={row.master_harga_dasar?.satuan}
                           initialKode={row.master_harga_dasar?.kode_item}
                           onChange={(newId, selectedObj) => {
                             setKonversiList(prev => prev.map(p => {
                               if (p.id === row.id) {
-                                return { 
-                                  ...p, 
-                                  _editHargaId: newId, 
+                                return {
+                                  ...p,
+                                  _editHargaId: newId,
                                   master_harga_dasar: selectedObj ? {
                                     nama_item: selectedObj.nama_item,
                                     satuan: selectedObj.satuan,
@@ -602,7 +598,7 @@ export default function KonversiPage() {
                                   {row.master_harga_dasar.kode_item}
                                 </div>
                               </div>
-                              
+
                               <div className="flex flex-col gap-2 border-t border-slate-200/50 dark:border-slate-700/50 pt-3">
                                 <div className="flex justify-between items-center">
                                   <span className="text-[10px] font-bold text-slate-400 dark:text-slate-500 uppercase tracking-widest">Harga Dasar:</span>
@@ -682,10 +678,10 @@ export default function KonversiPage() {
                           className="group relative inline-flex items-center justify-center rounded-xl bg-slate-900 dark:bg-indigo-600 px-6 py-3 text-sm font-bold text-white shadow-xl hover:bg-slate-800 dark:hover:bg-indigo-700 transition-all disabled:opacity-50 overflow-hidden"
                         >
                           {savingRow === row.id ? (
-                             <span className="flex items-center gap-2">
-                               <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
-                               ...
-                             </span>
+                            <span className="flex items-center gap-2">
+                              <svg className="animate-spin h-4 w-4 text-white" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                              ...
+                            </span>
                           ) : (
                             <>
                               <Save className="w-4 h-4 mr-2" />
@@ -696,14 +692,14 @@ export default function KonversiPage() {
                       </td>
                     </tr>
                   ))}
-                  
+
                   {konversiList.length === 0 && (
                     <tr>
                       <td colSpan={4} className="px-4 py-16 text-center text-sm text-slate-500 bg-slate-50 rounded-b-xl border-t border-slate-100">
                         {appliedSearch ? (
-                           <div>Tidak ada item AHSP yang sesuai dengan kata kunci &quot;{appliedSearch}&quot;.</div>
+                          <div>Tidak ada item AHSP yang sesuai dengan kata kunci &quot;{appliedSearch}&quot;.</div>
                         ) : (
-                           <div>Belum ada item Konversi AHSP. Silakan upload file terlebih dahulu.</div>
+                          <div>Belum ada item Konversi AHSP. Silakan upload file terlebih dahulu.</div>
                         )}
                       </td>
                     </tr>
@@ -720,41 +716,41 @@ export default function KonversiPage() {
             <PaginationControls />
           </div>
         )}
-      {/* Toast Notification Modern */}
-      {notification && (
-        <div 
-          className="fixed bottom-8 right-8 z-[9999] animate-slide-up"
-          id="custom-toast"
-        >
-          <div className={`
-            flex items-center gap-4 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border
-            ${notification.type === 'error' 
-              ? 'bg-red-500/20 border-red-500/50 text-red-100' 
-              : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-100'}
-          `}>
+        {/* Toast Notification Modern */}
+        {notification && (
+          <div
+            className="fixed bottom-8 right-8 z-[9999] animate-slide-up"
+            id="custom-toast"
+          >
             <div className={`
+            flex items-center gap-4 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border
+            ${notification.type === 'error'
+                ? 'bg-red-500/20 border-red-500/50 text-red-100'
+                : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-100'}
+          `}>
+              <div className={`
               w-10 h-10 rounded-xl flex items-center justify-center text-xl
               ${notification.type === 'error' ? 'bg-red-500/30' : 'bg-emerald-500/30'}
             `}>
-              {notification.type === 'error' ? '✕' : '✓'}
+                {notification.type === 'error' ? '✕' : '✓'}
+              </div>
+              <div className="flex flex-col min-w-[200px]">
+                <span className="font-black text-[10px] uppercase tracking-[0.2em] opacity-50 mb-0.5">
+                  {notification.type === 'error' ? 'System Error' : 'System Message'}
+                </span>
+                <p className="text-sm font-bold tracking-tight">{notification.message}</p>
+              </div>
+              <button
+                onClick={() => setNotification(null)}
+                className="ml-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+              >
+                <span className="opacity-40">✕</span>
+              </button>
             </div>
-            <div className="flex flex-col min-w-[200px]">
-              <span className="font-black text-[10px] uppercase tracking-[0.2em] opacity-50 mb-0.5">
-                {notification.type === 'error' ? 'System Error' : 'System Message'}
-              </span>
-              <p className="text-sm font-bold tracking-tight">{notification.message}</p>
-            </div>
-            <button 
-              onClick={() => setNotification(null)}
-              className="ml-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-            >
-              <span className="opacity-40">✕</span>
-            </button>
           </div>
-        </div>
-      )}
+        )}
 
-      <style jsx global>{`
+        <style jsx global>{`
         @keyframes slide-up {
           from { transform: translateY(100%) scale(0.9); opacity: 0; }
           to { transform: translateY(0) scale(1); opacity: 1; }
