@@ -43,8 +43,9 @@ export async function GET(request) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // Untuk Google, otomatiskan jika member belum ada
+          // Jika member belum ada (Google user baru)
           if (!currentMember) {
+            // 1. Buat data member dulu (status otomatis pending)
             await fetch(`${origin}/api/auth/activate`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -56,26 +57,25 @@ export async function GET(request) {
                  provider: 'google'
                })
              });
-            return NextResponse.redirect(`${siteUrl}/verify-notice`);
-          } 
-          
-          // Jika belum terverifikasi manual (untuk email)
-          if (!currentMember.is_verified_manual && currentMember.role !== 'admin') {
-            return NextResponse.redirect(`${siteUrl}/verify-notice`);
-          } 
 
-          // Jika status belum active, coba aktivasi otomatis HANYA untuk Google
-          if (currentMember.approval_status !== 'active') {
-            await fetch(`${origin}/api/auth/activate`, {
+            // 2. Kirim email verifikasi secara otomatis
+            await fetch(`${origin}/api/auth/send-verification`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 userId: user.id, 
-                currentRole: currentMember.role,
-                provider: 'google' 
+                email: user.email,
+                fullName: user.user_metadata?.full_name
               })
             });
-            // Cek lagi setelah aktivasi, jika masih tidak active (karena bukan Google), lempar ke verify-notice
+
+            return NextResponse.redirect(`${siteUrl}/verify-notice`);
+          } 
+          
+          // Jika sudah ada tapi belum terverifikasi (baik Google lama atau Email)
+          if (!currentMember.is_verified_manual || currentMember.approval_status !== 'active') {
+            // Cek apakah perlu kirim ulang email jika token tidak ada? 
+            // (Opsional, tapi untuk keamanan kita arahkan saja ke notice)
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
         }
