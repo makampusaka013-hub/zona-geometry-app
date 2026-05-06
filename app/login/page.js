@@ -6,6 +6,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { LogoMark } from '@/components/LogoMark';
 import { ThemeToggle } from '@/components/ThemeToggle';
 import { authService } from '@/lib/services/authService';
+import { supabase } from '@/lib/supabase';
 
 function LoginContent() {
   const router = useRouter();
@@ -43,23 +44,31 @@ function LoginContent() {
       return;
     }
 
-    // 1. Cek status di tabel members
-    const { data: member } = await authService.supabase
-      .from('members')
-      .select('approval_status, role')
-      .eq('user_id', data.user.id)
-      .maybeSingle();
+    try {
+      // 1. Cek status di tabel members
+      const { data: member, error: memberError } = await supabase
+        .from('members')
+        .select('approval_status, role')
+        .eq('user_id', data.user.id)
+        .maybeSingle();
 
-    // 2. Tentukan tujuan redirect
-    let target = '/dashboard';
-    if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
-      target = '/verify-notice';
+      if (memberError) throw memberError;
+
+      // 2. Tentukan tujuan redirect
+      let target = '/dashboard';
+      if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
+        target = '/verify-notice';
+      }
+
+      // Success: Allow a tiny bit of time for cookies to sync then redirect
+      setTimeout(() => {
+        window.location.href = target;
+      }, 500);
+    } catch (err) {
+      console.error('Login process error:', err);
+      setError('Gagal memverifikasi status akun. Silakan coba lagi.');
+      setLoading(false);
     }
-
-    // Success: Allow a tiny bit of time for cookies to sync then redirect
-    setTimeout(() => {
-      window.location.href = target;
-    }, 500);
   }
 
   return (
