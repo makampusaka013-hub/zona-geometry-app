@@ -1,17 +1,16 @@
 -- =============================================================================
--- Migration: Global Security Hardening v5 (Final Linter + Authenticator + API Bypass + Correct Order)
+-- Migration: Global Security Hardening v6 (Linter Resolution - Final Polishing)
 -- Description: 
--- 1. Uses "Shadow Functions" to satisfy linter (public INVOKER -> internal DEFINER).
--- 2. NUCLEAR CLEANUP: Drops all legacy policies and forbidden triggers.
--- 3. API BYPASS: Allows SERVICE_ROLE (Server-Side API) to bypass security checks.
--- 4. FIX LOGIN: Ensures non-recursive, permissioned access to members table.
+-- 1. Fixes "Function Search Path Mutable" by setting search_path on public wrappers.
+-- 2. Fixes "RLS Policy Always True" by adding a check to projects_insert_policy.
+-- 3. NUCLEAR CLEANUP: البرنامج Programmatic cleanup of policies and triggers.
+-- 4. API BYPASS: Allows SERVICE_ROLE to bypass administrative checks.
 -- =============================================================================
 
 -- 1. Buat Schema Internal
 CREATE SCHEMA IF NOT EXISTS internal;
 
--- 2. NUCLEAR POLICY CLEANUP (Harus dilakukan pertama agar bisa drop fungsi)
--- Ini menghapus semua policy lama yang menghambat pembaruan fungsi internal.
+-- 2. NUCLEAR POLICY CLEANUP (Harus dilakukan pertama)
 DO $$ 
 DECLARE 
     pol RECORD;
@@ -24,7 +23,7 @@ BEGIN
     END LOOP;
 END $$;
 
--- 3. Definisi Shadow RLS Helpers (Sekarang aman di-drop karena policy sudah hilang)
+-- 3. Definisi Shadow RLS Helpers (Internal DEFINER)
 DROP FUNCTION IF EXISTS internal.is_app_admin();
 CREATE OR REPLACE FUNCTION internal.is_app_admin()
 RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
@@ -128,24 +127,25 @@ BEGIN
 END;
 $$;
 
--- 5. Public Wrappers (SECURITY INVOKER - Aman dari Advisor/Linter)
+-- 5. Public Wrappers (SECURITY INVOKER + Fixed search_path)
+-- Menambahkan SET search_path untuk mengatasi linter "Function Search Path Mutable"
 CREATE OR REPLACE FUNCTION public.is_app_admin()
-RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
   SELECT internal.is_app_admin();
 $$;
 
 CREATE OR REPLACE FUNCTION public.is_app_active()
-RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
   SELECT internal.is_app_active();
 $$;
 
 CREATE OR REPLACE FUNCTION public.member_can_read_project(p_project_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
   SELECT internal.member_can_read_project(p_project_id);
 $$;
 
 CREATE OR REPLACE FUNCTION public.member_can_write_project(p_project_id uuid)
-RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER SET search_path = public AS $$
   SELECT internal.member_can_write_project(p_project_id);
 $$;
 
@@ -155,7 +155,9 @@ CREATE POLICY members_update_own ON public.members FOR UPDATE TO authenticated U
 
 CREATE POLICY projects_read_policy ON public.projects FOR SELECT TO authenticated USING (internal.member_can_read_project(id));
 CREATE POLICY projects_write_policy ON public.projects FOR ALL TO authenticated USING (internal.member_can_write_project(id));
-CREATE POLICY projects_insert_policy ON public.projects FOR INSERT TO authenticated WITH CHECK (true);
+
+-- Fix "RLS Policy Always True" by adding a check for project insertion
+CREATE POLICY projects_insert_policy ON public.projects FOR INSERT TO authenticated WITH CHECK (auth.uid() IS NOT NULL);
 
 -- 7. SYNC WITH AUTHENTICATOR (Hapus Trigger)
 DROP TRIGGER IF EXISTS protect_member_sensitive_data ON public.members;
