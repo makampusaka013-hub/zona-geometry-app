@@ -734,6 +734,7 @@ export default function KonversiPage() {
           animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
       `}</style>
+      </div>
     </div>
   );
 }
