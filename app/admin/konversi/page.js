@@ -722,31 +722,28 @@ export default function KonversiPage() {
             className="fixed bottom-8 right-8 z-[9999] animate-slide-up"
             id="custom-toast"
           >
-            <div className={`
-            flex items-center gap-4 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border
+          <div className={`
+            flex items-center gap-3 px-4 py-3 rounded-xl shadow-2xl backdrop-blur-md border
             ${notification.type === 'error'
-                ? 'bg-red-500/20 border-red-500/50 text-red-100'
-                : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-100'}
+                ? 'bg-red-500/10 border-red-500/30 text-red-200'
+                : 'bg-emerald-500/10 border-emerald-500/30 text-emerald-200'}
           `}>
-              <div className={`
-              w-10 h-10 rounded-xl flex items-center justify-center text-xl
-              ${notification.type === 'error' ? 'bg-red-500/30' : 'bg-emerald-500/30'}
+            <div className={`
+              w-7 h-7 rounded-lg flex items-center justify-center text-sm
+              ${notification.type === 'error' ? 'bg-red-500/20' : 'bg-emerald-500/20'}
             `}>
-                {notification.type === 'error' ? '✕' : '✓'}
-              </div>
-              <div className="flex flex-col min-w-[200px]">
-                <span className="font-black text-[10px] uppercase tracking-[0.2em] opacity-50 mb-0.5">
-                  {notification.type === 'error' ? 'System Error' : 'System Message'}
-                </span>
-                <p className="text-sm font-bold tracking-tight">{notification.message}</p>
-              </div>
-              <button
-                onClick={() => setNotification(null)}
-                className="ml-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
-              >
-                <span className="opacity-40">✕</span>
-              </button>
+              {notification.type === 'error' ? '✕' : '✓'}
             </div>
+            <div className="flex flex-col max-w-[280px]">
+              <p className="text-[13px] font-bold leading-tight">{notification.message}</p>
+            </div>
+            <button
+              onClick={() => setNotification(null)}
+              className="ml-2 opacity-30 hover:opacity-100 transition-opacity"
+            >
+              <span className="text-xs">✕</span>
+            </button>
+          </div>
           </div>
         )}
 
