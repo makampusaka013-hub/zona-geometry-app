@@ -166,8 +166,14 @@ export default function KonversiPage() {
   // Search state
   const [searchAhsp, setSearchAhsp] = useState('');
   const [appliedSearch, setAppliedSearch] = useState(''); 
+  const [notification, setNotification] = useState(null);
 
   const totalPages = Math.max(1, Math.ceil(totalRows / PAGE_SIZE));
+
+  const showToast = (message, type = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 4000);
+  };
 
   useEffect(() => {
     (async () => {
@@ -247,9 +253,10 @@ export default function KonversiPage() {
         query = query.eq('is_beda_satuan_urgent', true);
       }
 
-      // Pencarian sederhana tapi ampuh
+      // Pencarian Super Fleksibel: Ganti spasi dengan % agar kebal Enter/Newline
       if (overrideSearch.trim() !== '') {
-        query = query.ilike('uraian_ahsp', `%${overrideSearch.trim()}%`);
+        const flexibleSearch = `%${overrideSearch.trim().replace(/\s+/g, '%')}%`;
+        query = query.ilike('uraian_ahsp', flexibleSearch);
       }
 
       const { data: konvData, error: konvErr, count } = await query
@@ -276,7 +283,7 @@ export default function KonversiPage() {
       setCurrentPage(pageIndex);
     } catch (err) {
       console.error('Error fetching data:', err);
-      alert('Gagal mengambil data: ' + err.message);
+      showToast('Gagal mengambil data: ' + err.message, 'error');
     } finally {
       setLoadingData(false);
     }
@@ -303,11 +310,11 @@ export default function KonversiPage() {
 
       if (error) throw error;
 
-      alert('Berhasil menyimpan konversi.');
+      showToast('Berhasil menyimpan konversi.');
       await fetchKonversiPage(currentPage, appliedSearch);
     } catch (err) {
       console.error(err);
-      alert('Gagal menyimpan: ' + err.message);
+      showToast('Gagal menyimpan: ' + err.message, 'error');
     } finally {
       setSavingRow(null);
     }
@@ -684,7 +691,49 @@ export default function KonversiPage() {
             <PaginationControls />
           </div>
         )}
-      </div>
+      {/* Toast Notification Modern */}
+      {notification && (
+        <div 
+          className="fixed bottom-8 right-8 z-[9999] animate-slide-up"
+          id="custom-toast"
+        >
+          <div className={`
+            flex items-center gap-4 px-6 py-4 rounded-2xl shadow-2xl backdrop-blur-xl border
+            ${notification.type === 'error' 
+              ? 'bg-red-500/20 border-red-500/50 text-red-100' 
+              : 'bg-emerald-500/20 border-emerald-500/50 text-emerald-100'}
+          `}>
+            <div className={`
+              w-10 h-10 rounded-xl flex items-center justify-center text-xl
+              ${notification.type === 'error' ? 'bg-red-500/30' : 'bg-emerald-500/30'}
+            `}>
+              {notification.type === 'error' ? '✕' : '✓'}
+            </div>
+            <div className="flex flex-col min-w-[200px]">
+              <span className="font-black text-[10px] uppercase tracking-[0.2em] opacity-50 mb-0.5">
+                {notification.type === 'error' ? 'System Error' : 'System Message'}
+              </span>
+              <p className="text-sm font-bold tracking-tight">{notification.message}</p>
+            </div>
+            <button 
+              onClick={() => setNotification(null)}
+              className="ml-2 w-8 h-8 flex items-center justify-center rounded-lg hover:bg-white/10 transition-colors"
+            >
+              <span className="opacity-40">✕</span>
+            </button>
+          </div>
+        </div>
+      )}
+
+      <style jsx global>{`
+        @keyframes slide-up {
+          from { transform: translateY(100%) scale(0.9); opacity: 0; }
+          to { transform: translateY(0) scale(1); opacity: 1; }
+        }
+        .animate-slide-up {
+          animation: slide-up 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        }
+      `}</style>
     </div>
   );
 }
