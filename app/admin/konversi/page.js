@@ -160,6 +160,7 @@ export default function KonversiPage() {
   const [loadingData, setLoadingData] = useState(false);
   const [savingRow, setSavingRow] = useState(null);
   const [syncingAll, setSyncingAll] = useState(false);
+  const [autoMapping, setAutoMapping] = useState(false);
   const [activeFilter, setActiveFilter] = useState('all'); // 'all', 'terpakai', 'konversi', 'beda_satuan'
 
   // Pagination states
@@ -217,6 +218,22 @@ export default function KonversiPage() {
   }, [searchAhsp, appliedSearch, activeFilter]);
 
   // fetchHargaDasar() dihapus karena SearchableSelect melakukan fetch secara server-side
+
+  async function handleAutoMap() {
+    setAutoMapping(true);
+    try {
+      const { data, error } = await supabase.rpc('auto_map_konversi');
+      if (error) throw error;
+      
+      toast.success(`Berhasil memetakan ${data?.mapped_count || 0} item secara otomatis!`);
+      fetchKonversiPage(1);
+    } catch (err) {
+      console.error('Auto map failed:', err);
+      toast.error('Gagal mapping otomatis: ' + err.message);
+    } finally {
+      setAutoMapping(false);
+    }
+  }
 
   async function handleSyncAllCatalog() {
     setSyncingAll(true);
@@ -413,15 +430,28 @@ export default function KonversiPage() {
           <div className="flex flex-col md:flex-row gap-4 items-end sm:items-center">
             <button
               onClick={handleSyncAllCatalog}
-              disabled={syncingAll}
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
+              disabled={syncingAll || autoMapping}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                syncingAll
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-emerald-600 hover:bg-emerald-700 text-white shadow-lg shadow-emerald-500/20'
+              }`}
             >
-              {syncingAll ? (
-                <RefreshCw className="w-4 h-4 animate-spin" />
-              ) : (
-                <RefreshCw className="w-4 h-4" />
-              )}
-              {syncingAll ? 'Proses...' : 'Tarik Semua Katalog Harga'}
+              <RefreshCw className={`w-4 h-4 ${syncingAll ? 'animate-spin' : ''}`} />
+              {syncingAll ? 'Sinkronisasi...' : 'Tarik Semua Katalog Harga'}
+            </button>
+
+            <button
+              onClick={handleAutoMap}
+              disabled={syncingAll || autoMapping}
+              className={`flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all ${
+                autoMapping
+                  ? 'bg-slate-100 text-slate-400 cursor-not-allowed'
+                  : 'bg-indigo-600 hover:bg-indigo-700 text-white shadow-lg shadow-indigo-500/20'
+              }`}
+            >
+              <Zap className={`w-4 h-4 ${autoMapping ? 'animate-spin' : ''}`} />
+              {autoMapping ? 'Memetakan...' : 'Mapping Otomatis (Nama & Satuan Sama)'}
             </button>
             <div className="flex-1 max-w-xl relative w-full">
               <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
@@ -488,6 +518,7 @@ export default function KonversiPage() {
                     <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/3">Referensi Master Harga</th>
                     <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Satuan Target</th>
                     <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/6 text-center">Faktor Bagi (÷)</th>
+                    <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/4 text-right">Estimasi Harga AHSP</th>
                     <th className="border-b border-slate-100 dark:border-slate-700 px-6 py-5 w-1/12 text-right">Tindakan</th>
                   </tr>
                 </thead>
@@ -613,6 +644,26 @@ export default function KonversiPage() {
                           }}
                         />
                       </td>
+
+                      <td className="px-6 py-6 align-top text-right">
+                        {row.master_harga_dasar ? (
+                          <div className="flex flex-col items-end gap-1">
+                            <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Harga Konversi</div>
+                            <div className="text-lg font-black text-emerald-600 dark:text-emerald-400 leading-none">
+                              Rp {(row.master_harga_dasar.harga_satuan / (row._editFaktor || 1)).toLocaleString('id-ID')}
+                              <span className="ml-1 text-[10px] font-bold text-slate-400">/{row.satuan_ahsp}</span>
+                            </div>
+                            <div className="text-[9px] font-bold text-slate-400 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md mt-1">
+                              Dari: Rp {row.master_harga_dasar.harga_satuan.toLocaleString('id-ID')}/{row.master_harga_dasar.satuan}
+                            </div>
+                          </div>
+                        ) : (
+                          <div className="text-[10px] font-bold text-slate-300 dark:text-slate-700 italic">
+                            Pilih referensi harga...
+                          </div>
+                        )}
+                      </td>
+
                       <td className="px-6 py-6 align-top text-right">
                         <button
                           type="button"
