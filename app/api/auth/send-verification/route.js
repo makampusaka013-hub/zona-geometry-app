@@ -1,22 +1,36 @@
-import { Resend } from 'resend';
+import nodemailer from 'nodemailer';
 import { createClient } from '@supabase/supabase-js';
 import { NextResponse } from 'next/server';
 import crypto from 'crypto';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+// Konfigurasi Transporter Hostinger SMTP
+const transporter = nodemailer.createTransport({
+  host: 'smtp.hostinger.com',
+  port: 465,
+  secure: true, // Port 465 menggunakan SSL/TLS
+  auth: {
+    user: process.env.ADMIN_EMAIL,
+    pass: process.env.EMAIL_PASSWORD,
+  },
+  // Opsi tambahan untuk stabilitas Hostinger
+  pool: true,
+  maxConnections: 5,
+  rateDelta: 1000,
+  rateLimit: 5
+});
 
 function logDebug(message) {
-  console.log(`[VERIFICATION-EMAIL-RESEND] ${message}`);
+  console.log(`[VERIFICATION-EMAIL-SMTP] ${message}`);
 }
 
 export async function POST(request) {
   try {
     const { userId, email, fullName } = await request.json();
 
-    logDebug(`MEMULAI PENGIRIMAN: User ${userId}, Email ${email}`);
+    logDebug(`MEMULAI PENGIRIMAN SMTP: User ${userId}, Email ${email}`);
 
     if (!userId || !email) {
-      logDebug(`ERROR: Missing required fields`);
+      logDebug(`ERROR: Data user atau email kosong`);
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
@@ -25,7 +39,7 @@ export async function POST(request) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // 1. Generate Secure Token
+    // 1. Generate atau Ambil Token Verifikasi
     const { data: currentMember } = await supabaseAdmin
       .from('members')
       .select('verification_token')
@@ -34,8 +48,7 @@ export async function POST(request) {
 
     const verificationToken = currentMember?.verification_token || crypto.randomBytes(32).toString('hex');
 
-    // 2. Save Token (Upsert)
-    // Catatan: Pastikan Trigger 'protect_member_sensitive_data' sudah di-disable di Supabase
+    // 2. Simpan/Update Token ke Database
     const { error: updateError } = await supabaseAdmin
       .from('members')
       .upsert({ 
@@ -44,48 +57,46 @@ export async function POST(request) {
         full_name: fullName || (email ? email.split('@')[0] : 'User'),
         role: 'view',
         approval_status: 'pending',
-        email: email // Pastikan email tersimpan
+        email: email
       }, { onConflict: 'user_id' });
 
     if (updateError) {
-      logDebug(`DATABASE ERROR: ${JSON.stringify(updateError)}`);
+      logDebug(`DATABASE ERROR: ${updateError.message}`);
       throw updateError;
     }
 
-    logDebug(`DATABASE OK. Menyiapkan email via Resend...`);
-
-    // 3. Prepare Email
+    // 3. Siapkan Link Verifikasi (Pastikan menggunakan SITE_URL asli)
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
     const verifyLink = `${siteUrl}/api/auth/verify?token=${verificationToken}`;
     
-    const { data, error } = await resend.emails.send({
-      from: process.env.EMAIL_FROM || 'Zona Geometry <onboarding@resend.dev>',
+    const htmlContent = `
+      <div style="font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; max-width: 600px; margin: 0 auto; padding: 40px; background-color: #ffffff; border-radius: 20px; border: 1px solid #e2e8f0;">
+        <div style="text-align: center; margin-bottom: 30px;">
+          <h2 style="color: #f97316; margin: 0; letter-spacing: 2px;">ZONA GEOMETRY</h2>
+        </div>
+        <h1 style="color: #0f172a; font-size: 24px; text-align: center; margin-bottom: 20px;">Konfirmasi Akun Anda</h1>
+        <p style="color: #475569; line-height: 1.6; text-align: center;">Halo <strong>${fullName || 'User'}</strong>, terima kasih telah mendaftar. Klik tombol di bawah untuk mengaktifkan akun dan mendapatkan <strong>Trial 8 Hari</strong>.</p>
+        <div style="text-align: center; margin: 40px 0;">
+          <a href="${verifyLink}" style="background-color: #f97316; color: #ffffff; padding: 16px 40px; border-radius: 12px; font-weight: bold; text-decoration: none; display: inline-block; box-shadow: 0 10px 15px -3px rgba(249, 115, 22, 0.3);">Konfirmasi Akun</a>
+        </div>
+        <hr style="border: 0; border-top: 1px solid #f1f5f9; margin: 30px 0;">
+        <p style="color: #94a3b8; font-size: 12px; text-align: center;">Jika Anda tidak merasa mendaftar, silakan abaikan email ini.</p>
+      </div>
+    `;
+
+    // 4. Kirim Email via SMTP Hostinger
+    const info = await transporter.sendMail({
+      from: process.env.EMAIL_FROM || `"Zona Geometry" <${process.env.ADMIN_EMAIL}>`,
       to: email,
       subject: '✨ Konfirmasi Verifikasi Akun Anda',
-      html: `
-        <div style="font-family: sans-serif; max-width: 500px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
-          <h2 style="color: #f97316; text-align: center;">ZONA GEOMETRY</h2>
-          <h1 style="text-align: center; color: #333;">Verifikasi Akun</h1>
-          <p>Halo <strong>${fullName || 'User'}</strong>,</p>
-          <p>Klik tombol di bawah ini untuk mengaktifkan akun Anda dan mendapatkan <strong>Akses Trial 8 Hari</strong>.</p>
-          <div style="text-align: center; margin: 30px 0;">
-            <a href="${verifyLink}" style="background-color: #f97316; color: white; padding: 15px 30px; text-decoration: none; border-radius: 8px; font-weight: bold; display: inline-block;">Konfirmasi Akun</a>
-          </div>
-          <p style="color: #666; font-size: 12px; text-align: center;">Jika Anda tidak merasa mendaftar, abaikan email ini.</p>
-        </div>
-      `,
+      html: htmlContent,
     });
 
-    if (error) {
-      logDebug(`RESEND ERROR: ${JSON.stringify(error)}`);
-      throw error;
-    }
-
-    logDebug(`RESEND SUCCESS: Email terkirim ke ${email}`);
+    logDebug(`SMTP SUCCESS: Email terkirim ke ${email}. MessageId: ${info.messageId}`);
     return NextResponse.json({ success: true });
 
   } catch (err) {
-    logDebug(`SERVER FATAL ERROR: ${err.message}`);
+    logDebug(`SMTP FATAL ERROR: ${err.message}`);
     return NextResponse.json({ success: false, error: err.message }, { status: 500 });
   }
 }
