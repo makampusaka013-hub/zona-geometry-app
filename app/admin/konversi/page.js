@@ -16,7 +16,8 @@ import {
   AlertCircle,
   CheckCircle2,
   Database,
-  RefreshCw
+  RefreshCw,
+  Zap
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
