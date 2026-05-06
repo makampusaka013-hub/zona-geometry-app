@@ -50,6 +50,7 @@ export async function GET(request) {
     // Gunakan redirect permanen atau pastikan URL bersih
     const redirectUrl = new URL('/dashboard', siteUrl);
     redirectUrl.searchParams.set('message', 'Berhasil verifikasi! Akun Anda aktif dengan Trial 8 Hari.');
+    redirectUrl.searchParams.set('v', Date.now().toString());
     
     return NextResponse.redirect(redirectUrl.toString());
 

@@ -24,11 +24,13 @@ export default function VerifyNoticePage() {
       // Cek jika tiba-tiba sudah terverifikasi (refresh otomatis)
       const { data: member } = await supabase
         .from('members')
-        .select('is_verified_manual')
+        .select('is_verified_manual, approval_status')
         .eq('user_id', session.user.id)
         .maybeSingle();
       
-      if (member?.is_verified_manual) {
+      const isVerified = member?.is_verified_manual || member?.approval_status === 'active';
+      
+      if (isVerified) {
         router.push('/dashboard');
       } else {
         // AUTO-SEND: Jika masuk halaman ini dan belum ada pesan, pastikan email terkirim

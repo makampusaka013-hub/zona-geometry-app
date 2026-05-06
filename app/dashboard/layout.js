@@ -28,14 +28,15 @@ export default function DashboardLayout({ children }) {
 
         const { data } = await supabase
           .from('members')
-          .select('role, expired_at, is_verified_manual')
+          .select('role, expired_at, is_verified_manual, approval_status')
           .eq('user_id', session.user.id)
           .maybeSingle();
 
         if (data) {
           const admin = data.role === 'admin';
+          const isVerified = data.is_verified_manual || data.approval_status === 'active';
           
-          if (!data.is_verified_manual && !admin) {
+          if (!isVerified && !admin && !pathname.includes('verify')) {
             router.replace('/verify-notice');
             return;
           }
