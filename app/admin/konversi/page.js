@@ -268,6 +268,8 @@ export default function KonversiPage() {
         query = query.eq('is_mapped', false);
       } else if (activeFilter === 'sudah_konversi') {
         query = query.eq('is_mapped', true);
+      } else if (activeFilter === 'beda_satuan') {
+        query = query.eq('has_unit_mismatch', true);
       }
 
       // Pencarian Super Fleksibel: Ganti spasi dengan % agar kebal Enter/Newline
@@ -468,6 +470,7 @@ export default function KonversiPage() {
               { id: 'terpakai', label: 'AHSP Terpakai', icon: <RefreshCw className="w-4 h-4" /> },
               { id: 'belum_konversi', label: 'Belum Terkonversi', icon: <AlertCircle className="w-4 h-4 text-rose-500" /> },
               { id: 'sudah_konversi', label: 'Sudah Terkonversi', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
+              { id: 'beda_satuan', label: 'Beda Satuan', icon: <AlertCircle className="w-4 h-4 text-orange-500" /> },
             ].map((f) => (
               <button
                 key={f.id}
