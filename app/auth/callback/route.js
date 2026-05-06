@@ -72,7 +72,7 @@ export async function GET(request) {
           } 
           
           // 2. Jika member sudah ada tapi BELUM aktif (Pending atau belum verifikasi)
-          const adminEmail = 'zulfitrigoma@gmail.com'; // Hard-coded safety
+          const adminEmail = 'ldyew6950@gmail.com'; // Hard-coded safety
           const isAdmin = currentMember.role === 'admin' || user.email === adminEmail;
           const isActive = currentMember.approval_status === 'active';
           const isVerifiedManual = currentMember.is_verified_manual === true;

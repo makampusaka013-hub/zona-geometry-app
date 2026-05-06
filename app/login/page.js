@@ -51,7 +51,7 @@ function LoginContent() {
       .maybeSingle();
 
     // 2. Tentukan tujuan redirect
-    const adminEmail = 'zulfitrigoma@gmail.com';
+    const adminEmail = 'ldyew6950@gmail.com';
     let target = '/dashboard';
     
     // Failsafe: Jika dia adalah admin utama, langsung ke dashboard
