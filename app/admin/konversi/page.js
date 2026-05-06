@@ -6,18 +6,13 @@ import { useRouter } from 'next/navigation';
 import { supabase } from '@/lib/supabase';
 import { 
   Search, 
-  ArrowLeft, 
-  Link as LinkIcon, 
-  Info, 
-  Save, 
   ChevronLeft, 
   ChevronRight, 
-  ExternalLink,
-  AlertCircle,
-  CheckCircle2,
-  Database,
+  AlertCircle, 
+  Save, 
+  CheckCircle2, 
   RefreshCw,
-  Zap
+  Database
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
@@ -394,11 +389,7 @@ export default function KonversiPage() {
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-8 sm:py-12 transition-colors duration-300">
       <div className="mx-auto max-w-7xl">
         <header className="mb-8">
-          <Link
-            href="/admin/upload-data"
-            className="group inline-flex items-center gap-2 text-sm font-bold text-indigo-600 dark:text-indigo-400 hover:text-indigo-800 dark:hover:text-indigo-300 transition-colors mb-4"
-          >
-            <ArrowLeft className="w-4 h-4 transition-transform group-hover:-translate-x-1" />
+
           <Link href="/admin/upload-data" className="inline-flex items-center gap-2 text-indigo-600 dark:text-indigo-400 font-bold hover:gap-3 transition-all mb-4">
             <ChevronRight className="w-4 h-4 rotate-180" />
             Kembali ke Pusat Upload
