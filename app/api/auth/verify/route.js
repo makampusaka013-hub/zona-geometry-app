@@ -57,6 +57,8 @@ export async function GET(request) {
   } catch (err) {
     console.error('Verification system failure:', err);
     const siteUrl = process.env.NEXT_PUBLIC_SITE_URL || 'https://www.zonageometry.id';
-    return NextResponse.redirect(new URL('/login?message=Terjadi kesalahan sistem saat verifikasi.', siteUrl));
+    // Berikan pesan error asli di URL agar kita bisa debug
+    const errorMsg = encodeURIComponent(err.message || 'Kesalahan sistem tidak diketahui');
+    return NextResponse.redirect(new URL(`/login?message=Gagal Verifikasi: ${errorMsg}`, siteUrl));
   }
 }
