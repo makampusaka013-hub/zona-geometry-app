@@ -43,9 +43,8 @@ export async function GET(request) {
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // Jika member belum ada (Google user baru)
+          // 1. Jika member belum ada (User baru login Google)
           if (!currentMember) {
-            // 1. Buat data member dulu (status otomatis pending)
             await fetch(`${origin}/api/auth/activate`, {
                method: 'POST',
                headers: { 'Content-Type': 'application/json' },
@@ -58,7 +57,6 @@ export async function GET(request) {
                })
              });
 
-            // 2. Kirim email verifikasi secara otomatis
             await fetch(`${origin}/api/auth/send-verification`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
@@ -72,22 +70,24 @@ export async function GET(request) {
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           } 
           
-          // Jika sudah ada tapi belum terverifikasi (baik Google lama atau Email)
-          if (!currentMember.is_verified_manual || currentMember.approval_status !== 'active') {
-            // Cek apakah perlu kirim ulang email jika token tidak ada? 
-            // (Opsional, tapi untuk keamanan kita arahkan saja ke notice)
+          // 2. Jika member sudah ada tapi BELUM aktif (Pending atau belum verifikasi)
+          // Admin adalah pengecualian (selalu boleh masuk)
+          const isAdmin = currentMember.role === 'admin';
+          const isVerified = currentMember.is_verified_manual && currentMember.approval_status === 'active';
+
+          if (!isVerified && !isAdmin) {
+            console.log(`[AUTH-CALLBACK] Blocking unverified user: ${user.email}`);
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
         }
       } catch (err) {
         console.error('Callback Server Error:', err);
+        return NextResponse.redirect(`${siteUrl}/login?message=Terjadi kesalahan sistem.`);
       }
 
-      // Pastikan URL redirect bersih dan absolut
+      // 3. Hanya user yang AKTIF (atau Admin) yang bisa sampai ke sini
       const finalTarget = next.startsWith('/') ? next : `/${next}`;
-      const finalUrl = new URL(finalTarget, siteUrl);
-      
-      return NextResponse.redirect(finalUrl.toString());
+      return NextResponse.redirect(new URL(finalTarget, siteUrl).toString());
     }
   }
 
