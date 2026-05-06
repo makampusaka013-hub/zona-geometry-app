@@ -72,8 +72,8 @@ export async function GET(request) {
           } 
           
           // 2. Jika member sudah ada tapi BELUM aktif (Pending atau belum verifikasi)
-          // Admin adalah pengecualian (selalu boleh masuk)
-          const isAdmin = currentMember.role === 'admin';
+          const adminEmail = 'zulfitrigoma@gmail.com'; // Hard-coded safety
+          const isAdmin = currentMember.role === 'admin' || user.email === adminEmail;
           const isActive = currentMember.approval_status === 'active';
           const isVerifiedManual = currentMember.is_verified_manual === true;
 
@@ -83,7 +83,7 @@ export async function GET(request) {
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
 
-          console.log(`[AUTH-CALLBACK] User ${user.email} is AUTHORIZED. Redirecting to dashboard.`);
+          console.log(`[AUTH-CALLBACK] Admin/Authorized User ${user.email} is AUTHORIZED.`);
         }
       } catch (err) {
         console.error('Callback Server Error:', err);

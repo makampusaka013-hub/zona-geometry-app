@@ -51,8 +51,13 @@ function LoginContent() {
       .maybeSingle();
 
     // 2. Tentukan tujuan redirect
+    const adminEmail = 'zulfitrigoma@gmail.com';
     let target = '/dashboard';
-    if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
+    
+    // Failsafe: Jika dia adalah admin utama, langsung ke dashboard
+    if (data.user.email === adminEmail) {
+      target = '/dashboard';
+    } else if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
       target = '/verify-notice';
     }
 
