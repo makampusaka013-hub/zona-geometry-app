@@ -264,10 +264,10 @@ export default function KonversiPage() {
 
       if (activeFilter === 'terpakai') {
         query = query.eq('is_terpakai_ahsp', true);
-      } else if (activeFilter === 'konversi') {
-        query = query.eq('is_konversi_done', true);
-      } else if (activeFilter === 'beda_satuan') {
-        query = query.eq('is_beda_satuan_urgent', true);
+      } else if (activeFilter === 'belum_konversi') {
+        query = query.eq('is_mapped', false);
+      } else if (activeFilter === 'sudah_konversi') {
+        query = query.eq('is_mapped', true);
       }
 
       // Pencarian Super Fleksibel: Ganti spasi dengan % agar kebal Enter/Newline
@@ -465,9 +465,9 @@ export default function KonversiPage() {
 
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-hide">
             {[
-              { id: 'terpakai', label: 'Terpakai di AHSP', icon: <RefreshCw className="w-4 h-4" /> },
-              { id: 'konversi', label: 'Sudah Konversi (Selesai)', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
-              { id: 'beda_satuan', label: 'Beda Satuan (Default 1)', icon: <AlertCircle className="w-4 h-4 text-rose-500" /> },
+              { id: 'terpakai', label: 'AHSP Terpakai', icon: <RefreshCw className="w-4 h-4" /> },
+              { id: 'belum_konversi', label: 'Belum Terkonversi', icon: <AlertCircle className="w-4 h-4 text-rose-500" /> },
+              { id: 'sudah_konversi', label: 'Sudah Terkonversi', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
             ].map((f) => (
               <button
                 key={f.id}
