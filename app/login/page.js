@@ -66,7 +66,9 @@ function LoginContent() {
       }, 500);
     } catch (err) {
       console.error('Login process error:', err);
-      setError('Gagal memverifikasi status akun. Silakan coba lagi.');
+      // Detailed error for debugging (will be visible in browser console)
+      const errorMsg = err?.message || 'Gagal memverifikasi status akun.';
+      setError(`${errorMsg} Silakan coba lagi.`);
       setLoading(false);
     }
   }
