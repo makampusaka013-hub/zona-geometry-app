@@ -114,7 +114,9 @@ function LoginContent() {
 
           {error && (
             <div className="mb-6 rounded-xl border border-red-500/20 bg-red-500/10 px-4 py-3 text-sm text-red-400 text-center animate-in fade-in slide-in-from-top-2">
-              {error}
+              {error === 'server_error' || error === 'unexpected_failure' 
+                ? 'Gagal sinkronisasi akun. Silakan coba lagi atau hubungi Admin.' 
+                : error}
             </div>
           )}
 
