@@ -45,9 +45,11 @@ export async function POST(request) {
 
       const updateData = {};
       
-      // Jika masih pending, ubah jadi active agar bisa login
-      if (existingUser.approval_status === 'pending') {
+      // Hanya aktifkan otomatis jika providernya Google (karena Google sudah verifikasi email)
+      // Jika email biasa, status TETAP pending sampai mereka klik link di email
+      if (existingUser.approval_status === 'pending' && provider === 'google') {
         updateData.approval_status = 'active';
+        updateData.is_verified_manual = true;
       }
       
       // Safety net: Jika benar-benar belum punya masa aktif, berikan masa percobaan 8 hari

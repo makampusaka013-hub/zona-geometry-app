@@ -52,19 +52,31 @@ export async function GET(request) {
                  userId: user.id, 
                  email: user.email,
                  fullName: user.user_metadata?.full_name,
-                 currentRole: 'normal'
+                 currentRole: 'normal',
+                 provider: 'google'
                })
              });
-            // Setelah login Google sukses, arahkan SELALU ke halaman verifikasi/instruksi dulu
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
-          } else if (!currentMember.is_verified_manual && currentMember.role !== 'admin') {
+          } 
+          
+          // Jika belum terverifikasi manual (untuk email)
+          if (!currentMember.is_verified_manual && currentMember.role !== 'admin') {
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
-          } else if (currentMember.approval_status !== 'active') {
+          } 
+
+          // Jika status belum active, coba aktivasi otomatis HANYA untuk Google
+          if (currentMember.approval_status !== 'active') {
             await fetch(`${origin}/api/auth/activate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ userId: user.id, currentRole: currentMember?.role })
+              body: JSON.stringify({ 
+                userId: user.id, 
+                currentRole: currentMember.role,
+                provider: 'google' 
+              })
             });
+            // Cek lagi setelah aktivasi, jika masih tidak active (karena bukan Google), lempar ke verify-notice
+            return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
         }
       } catch (err) {
