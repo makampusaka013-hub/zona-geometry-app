@@ -25,33 +25,34 @@ export async function GET(request) {
                 cookieStore.set(name, value, options)
               );
             } catch {
-              // The `setAll` method was called from a Server Component.
-              // This can be ignored if you have middleware refreshing
-              // user sessions.
+              // Ignore cookie setting errors in server components
             }
           },
         },
       }
     );
 
-    const { error } = await supabase.auth.exchangeCodeForSession(code);
+    const { data, error } = await supabase.auth.exchangeCodeForSession(code);
 
     if (!error) {
       try {
-        // Logika Tambahan: Cek status member & Aktivasi Premium
-        const { data: { user } } = await supabase.auth.getUser();
+        const user = data?.user;
 
         if (user) {
-          const { data: currentMember } = await supabase
+          const { data: currentMember, error: memberError } = await supabase
             .from('members')
             .select('approval_status, role, is_verified_manual')
             .eq('user_id', user.id)
             .maybeSingle();
 
-          // Jika member belum ada (Google user baru)
+          if (memberError) console.error('Callback: Member lookup error:', memberError);
+
+          // Jika member belum ada (User baru via Google)
           if (!currentMember) {
-            // 1. Buat data member dulu (status otomatis pending)
-            await fetch(`${origin}/api/auth/activate`, {
+            console.log('Callback: Creating new member for Google user:', user.email);
+            
+            // Gunakan siteUrl agar request internal konsisten
+            await fetch(`${siteUrl}/api/auth/activate`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -61,10 +62,9 @@ export async function GET(request) {
                 currentRole: 'normal',
                 provider: 'google'
               })
-            });
+            }).catch(e => console.error('Callback: Activate failed:', e));
 
-            // 2. Kirim email verifikasi secara otomatis
-            await fetch(`${origin}/api/auth/send-verification`, {
+            await fetch(`${siteUrl}/api/auth/send-verification`, {
               method: 'POST',
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
@@ -72,32 +72,30 @@ export async function GET(request) {
                 email: user.email,
                 fullName: user.user_metadata?.full_name
               })
-            });
+            }).catch(e => console.error('Callback: Send verification failed:', e));
 
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
 
-          // Jika sudah ada tapi belum terverifikasi (baik Google lama atau Email)
+          // Jika belum terverifikasi atau tidak aktif
           if (!currentMember.is_verified_manual || currentMember.approval_status !== 'active') {
-            // Cek apakah perlu kirim ulang email jika token tidak ada? 
-            // (Opsional, tapi untuk keamanan kita arahkan saja ke notice)
+            console.log('Callback: Redirecting unverified user to notice:', user.email);
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           }
         }
       } catch (err) {
-        console.error('Callback Server Error:', err);
+        console.error('Callback Server-Side Error:', err);
       }
 
-      // Pastikan URL redirect bersih dan absolut
       const finalTarget = next.startsWith('/') ? next : `/${next}`;
-      const finalUrl = new URL(finalTarget, siteUrl);
-
-      return NextResponse.redirect(finalUrl.toString());
+      return NextResponse.redirect(`${siteUrl}${finalTarget}`);
+    } else {
+      console.error('Callback: Code exchange error:', error.message);
     }
   }
 
-  // Return the user to an error page with some instructions
-  const loginUrl = new URL('/login', siteUrl);
-  loginUrl.searchParams.set('message', 'Gagal menukar kode login. Silakan coba lagi.');
-  return NextResponse.redirect(loginUrl.toString());
+  // Final fallback to login with error message
+  const errorUrl = new URL('/login', siteUrl);
+  errorUrl.searchParams.set('message', 'Gagal menukar kode login. Silakan coba lagi.');
+  return NextResponse.redirect(errorUrl.toString());
 }
