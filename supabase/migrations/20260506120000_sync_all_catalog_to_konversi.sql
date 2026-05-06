@@ -1,0 +1,35 @@
+-- Migration: sync_all_catalog_to_konversi
+-- Tujuan: Memasukkan semua item dari master_harga_dasar ke master_konversi agar bisa dikelola di satu tempat.
+
+create or replace function public.sync_all_catalog_to_konversi()
+returns jsonb
+language plpgsql
+security definer
+as $$
+declare
+  v_count int := 0;
+begin
+  -- Masukkan semua item dari harga dasar yang belum ada di konversi
+  insert into public.master_konversi (uraian_ahsp, satuan_ahsp, item_dasar_id, faktor_konversi, kode_item_dasar)
+  select 
+    nama_item, 
+    satuan, 
+    id, 
+    1, 
+    kode_item
+  from public.master_harga_dasar
+  on conflict (uraian_ahsp, satuan_ahsp) 
+  do update set 
+    item_dasar_id = coalesce(master_konversi.item_dasar_id, EXCLUDED.item_dasar_id),
+    kode_item_dasar = coalesce(master_konversi.kode_item_dasar, EXCLUDED.kode_item_dasar);
+
+  get diagnostics v_count = row_count;
+
+  return jsonb_build_object(
+    'success', true,
+    'synced_count', v_count
+  );
+end;
+$$;
+
+grant execute on function public.sync_all_catalog_to_konversi() to authenticated;

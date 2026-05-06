@@ -15,7 +15,8 @@ import {
   ExternalLink,
   AlertCircle,
   CheckCircle2,
-  Database
+  Database,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from '@/lib/toast';
 
@@ -158,6 +159,7 @@ export default function KonversiPage() {
   const [konversiList, setKonversiList] = useState([]);
   const [loadingData, setLoadingData] = useState(false);
   const [savingRow, setSavingRow] = useState(null);
+  const [syncingAll, setSyncingAll] = useState(false);
 
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -214,6 +216,22 @@ export default function KonversiPage() {
   }, [searchAhsp, appliedSearch]);
 
   // fetchHargaDasar() dihapus karena SearchableSelect melakukan fetch secara server-side
+
+  async function handleSyncAllCatalog() {
+    setSyncingAll(true);
+    try {
+      const { data, error } = await supabase.rpc('sync_all_catalog_to_konversi');
+      if (error) throw error;
+      
+      toast.success(`Sinkronisasi berhasil! ${data?.synced_count || 0} item dari Katalog Harga kini siap dikelola.`);
+      fetchKonversiPage(1);
+    } catch (err) {
+      console.error('Sync failed:', err);
+      toast.error('Gagal sinkronisasi: ' + err.message);
+    } finally {
+      setSyncingAll(false);
+    }
+  }
 
   async function fetchKonversiPage(pageIndex, overrideSearch = appliedSearch) {
     setLoadingData(true);
@@ -388,15 +406,29 @@ export default function KonversiPage() {
  
         {/* Kotak Filter / Pencarian AHSP */}
         <div className="mb-6 bg-white dark:bg-slate-900 p-5 rounded-2xl border border-slate-200 dark:border-slate-800 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-6">
-          <div className="flex-1 max-w-xl relative">
-            <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
-            <input
-              type="text"
-              placeholder="Cari uraian pekerjaan AHSP..."
-              value={searchAhsp}
-              onChange={(e) => setSearchAhsp(e.target.value)}
-              className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
-            />
+          <div className="flex flex-col md:flex-row gap-4 items-end sm:items-center">
+            <button
+              onClick={handleSyncAllCatalog}
+              disabled={syncingAll}
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 px-6 py-3 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white font-black text-[11px] uppercase tracking-widest shadow-lg shadow-emerald-500/20 transition-all active:scale-95 disabled:opacity-50"
+            >
+              {syncingAll ? (
+                <RefreshCw className="w-4 h-4 animate-spin" />
+              ) : (
+                <RefreshCw className="w-4 h-4" />
+              )}
+              {syncingAll ? 'Proses...' : 'Tarik Semua Katalog Harga'}
+            </button>
+            <div className="flex-1 max-w-xl relative w-full">
+              <Search className="absolute inset-y-0 left-4 my-auto h-5 w-5 text-slate-400" />
+              <input
+                type="text"
+                placeholder="Cari uraian pekerjaan AHSP atau Barang..."
+                value={searchAhsp}
+                onChange={(e) => setSearchAhsp(e.target.value)}
+                className="w-full pl-12 pr-4 py-3 bg-slate-50 dark:bg-slate-800 border-0 rounded-2xl text-sm font-medium text-slate-900 dark:text-white focus:ring-2 focus:ring-indigo-500 transition-all outline-none"
+              />
+            </div>
           </div>
           {appliedSearch && (
             <div className="inline-flex items-center gap-3 bg-indigo-50 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-4 py-2 rounded-2xl text-sm font-bold border border-indigo-100 dark:border-indigo-800/50">
