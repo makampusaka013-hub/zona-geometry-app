@@ -43,9 +43,22 @@ function LoginContent() {
       return;
     }
 
+    // 1. Cek status di tabel members
+    const { data: member } = await authService.supabase
+      .from('members')
+      .select('approval_status, role')
+      .eq('user_id', data.user.id)
+      .maybeSingle();
+
+    // 2. Tentukan tujuan redirect
+    let target = '/dashboard';
+    if (!member || (member.approval_status !== 'active' && member.role !== 'admin')) {
+      target = '/verify-notice';
+    }
+
     // Success: Allow a tiny bit of time for cookies to sync then redirect
     setTimeout(() => {
-      window.location.href = '/dashboard';
+      window.location.href = target;
     }, 500);
   }
 

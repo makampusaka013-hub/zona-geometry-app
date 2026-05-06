@@ -33,10 +33,10 @@ export default function DashboardLayout({ children }) {
           .maybeSingle();
 
         if (data) {
-          const admin = data.role === 'admin';
-          const isVerified = data.is_verified_manual || data.approval_status === 'active';
+          const isActive = data.approval_status === 'active';
+          const isAdmin = data.role === 'admin';
           
-          if (!isVerified && !admin && !pathname.includes('verify')) {
+          if (!isActive && !isAdmin && !pathname.includes('verify')) {
             router.replace('/verify-notice');
             return;
           }
