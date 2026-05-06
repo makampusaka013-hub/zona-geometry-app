@@ -37,7 +37,8 @@ select
     mhd.harga_satuan as master_harga_satuan,
     mhd.kode_item as master_kode_item
 from public.master_konversi mk
-left join ahsp_usage u on u.uraian_ahsp = mk.uraian_ahsp and u.satuan_uraian = mk.satuan_ahsp
+left join ahsp_usage u on lower(trim(u.uraian_ahsp)) = lower(trim(mk.uraian_ahsp)) 
+                       and lower(trim(u.satuan_uraian)) = lower(trim(mk.satuan_ahsp))
 left join public.master_harga_dasar mhd on mhd.id = mk.item_dasar_id;
 
 grant select on public.view_konversi_lengkap to authenticated;
