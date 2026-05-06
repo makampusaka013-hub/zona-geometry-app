@@ -55,6 +55,8 @@ export async function GET(request) {
                  currentRole: 'normal'
                })
              });
+            // Setelah login Google sukses, arahkan SELALU ke halaman verifikasi/instruksi dulu
+            return NextResponse.redirect(`${siteUrl}/verify-notice`);
           } else if (!currentMember.is_verified_manual && currentMember.role !== 'admin') {
             return NextResponse.redirect(`${siteUrl}/verify-notice`);
           } else if (currentMember.approval_status !== 'active') {
