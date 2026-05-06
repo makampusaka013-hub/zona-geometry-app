@@ -247,8 +247,14 @@ export default function KonversiPage() {
         query = query.eq('is_beda_satuan_urgent', true);
       }
 
+      // Pencarian pintar: pecah kata kunci untuk menangani newline/karakter aneh
       if (overrideSearch.trim() !== '') {
-        query = query.or(`uraian_ahsp.ilike.%${overrideSearch.trim()}%,master_nama_item.ilike.%${overrideSearch.trim()}%`);
+        const keywords = overrideSearch.trim().split(/\s+/).filter(k => k.length > 0);
+        if (keywords.length > 0) {
+          // Buat filter ilike untuk setiap kata kunci
+          const filterStr = keywords.map(k => `uraian_ahsp.ilike.%${k}%,master_nama_item.ilike.%${k}%`).join(',');
+          query = query.or(filterStr);
+        }
       }
 
       const { data: konvData, error: konvErr, count } = await query
