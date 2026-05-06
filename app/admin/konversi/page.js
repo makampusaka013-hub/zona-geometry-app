@@ -247,13 +247,9 @@ export default function KonversiPage() {
         query = query.eq('is_beda_satuan_urgent', true);
       }
 
-      // Pencarian pintar: prioritaskan uraian_ahsp
+      // Pencarian sederhana tapi ampuh
       if (overrideSearch.trim() !== '') {
-        const keywords = overrideSearch.trim().split(/\s+/).filter(k => k.length > 0);
-        if (keywords.length > 0) {
-          const filterStr = keywords.map(k => `uraian_ahsp.ilike.%${k}%`).join(',');
-          query = query.or(filterStr);
-        }
+        query = query.ilike('uraian_ahsp', `%${overrideSearch.trim()}%`);
       }
 
       const { data: konvData, error: konvErr, count } = await query
