@@ -101,8 +101,9 @@ export default function UploadDataMasterPage() {
         return;
       }
 
-      // Fetch current global profit from setting
-      const { data: profitVal } = await supabase.rpc('get_global_profit');
+      // Fetch current global profit from setting via API
+      const response = await fetch('/api/admin?action=get_profit');
+      const { data: profitVal } = await response.json();
       if (profitVal) setGlobalProfit(profitVal);
 
       setLoadingAuth(false);
@@ -276,8 +277,13 @@ export default function UploadDataMasterPage() {
         
         for (let i = 0; i < rows.length; i += CHUNK_SIZE) {
           const chunk = rows.slice(i, i + CHUNK_SIZE);
-          const { data, error } = await supabase.rpc('upload_ahsp_csv', { p_rows: chunk });
-          if (error) throw error;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'upload_ahsp', payload: { rows: chunk } })
+          });
+          const { success, data, error } = await response.json();
+          if (error || !success) throw new Error(error || 'Gagal upload chunk');
           if (data) {
             totalInsertedHeaders += (data.inserted_headers || 0);
             totalInsertedDetails += (data.inserted_details || 0);
@@ -287,8 +293,13 @@ export default function UploadDataMasterPage() {
         let linked = 0;
         let syncWarning = null;
         try {
-          const { data: syncData, error: syncErr } = await supabase.rpc('sync_master_konversi');
-          if (syncErr) throw syncErr;
+          const response = await fetch('/api/admin', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ action: 'sync_master_konversi' })
+          });
+          const { success, data: syncData, error: syncErr } = await response.json();
+          if (syncErr || !success) throw new Error(syncErr || 'Gagal sync');
           linked = syncData?.inserted ?? 0;
         } catch (e) {
           syncWarning = e?.message || String(e);
@@ -303,8 +314,13 @@ export default function UploadDataMasterPage() {
         });
 
       } else {
-        const { data, error } = await supabase.rpc('upload_harga_dasar_csv', { p_rows: rows });
-        if (error) throw error;
+        const response = await fetch('/api/admin', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ action: 'upload_harga', payload: { rows: rows } })
+        });
+        const { success, data, error } = await response.json();
+        if (error || !success) throw new Error(error || 'Gagal upload harga');
         setUploadResult({
           message: `Berhasil upload Harga Dasar. Berhasil Insert: ${data?.inserted_rows || 0}, Update: ${data?.updated_rows || 0}`
         });
@@ -323,8 +339,13 @@ export default function UploadDataMasterPage() {
     setUploadError(null);
     setSyncing(true);
     try {
-       const { data, error } = await supabase.rpc('sync_master_konversi');
-       if (error) throw error;
+       const response = await fetch('/api/admin', {
+         method: 'POST',
+         headers: { 'Content-Type': 'application/json' },
+         body: JSON.stringify({ action: 'sync_master_konversi' })
+       });
+       const { success, data, error } = await response.json();
+       if (error || !success) throw new Error(error || 'Gagal sync');
        setUploadResult({
          message: `Sinkronisasi berhasil! ${data?.inserted || 0} Konversi baru ditambahkan.`
        });
@@ -339,21 +360,17 @@ export default function UploadDataMasterPage() {
   async function handleUpdateGlobalProfit() {
     setProfitUpdateResult(null);
     setUpdatingProfit(true);
-    try {
-      if (globalProfit < 0 || globalProfit > 100) {
-         throw new Error("Profit harus antara 0 dan 100");
-      }
-      let err;
-      const res = await supabase.rpc('update_global_profit', { p_profit: Number(globalProfit) });
-      if (res.error && (res.error.code === 'PGRST202' || res.error.message?.includes('schema cache') || res.error.message?.includes('function update_global_profit does not exist'))) {
-          // Fallback if RPC hasn't been created yet
-          const upd = await supabase.from('master_ahsp').update({ overhead_profit: Number(globalProfit) }).neq('id', '00000000-0000-0000-0000-000000000000');
-          err = upd.error;
-      } else {
-          err = res.error;
-      }
-      
-      if (err) throw err;
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'update_profit',
+          payload: { profit: Number(globalProfit) }
+        })
+      });
+
+      const { success, error: apiError } = await response.json();
+      if (apiError || !success) throw new Error(apiError || 'Gagal update');
       setProfitUpdateResult({ kind: 'success', message: `Berhasil mengubah profit default menjadi ${globalProfit}%.` });
     } catch (err) {
       setProfitUpdateResult({ kind: 'error', message: err?.message || 'Gagal mengubah profit. Pastikan Anda memiliki akses admin.'});

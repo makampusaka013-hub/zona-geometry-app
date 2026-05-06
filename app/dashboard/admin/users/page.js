@@ -26,9 +26,14 @@ export default function AdminUsersPage() {
     if (userError || !user) { router.replace('/login'); return; }
     const { data: memberData } = await supabase.from('members').select('role').eq('user_id', user.id).single();
     if (memberData?.role !== 'admin') { router.replace('/dashboard'); return; }
-    const { data: usersData, error: rpcError } = await supabase.rpc('get_all_users_admin');
-    if (rpcError) setError(`Gagal mengambil data user: ${rpcError.message}. Pastikan Anda telah menjalankan skrip SQL di Supabase.`);
-    else setUsers(usersData || []);
+    const response = await fetch('/api/admin');
+    const { data: usersData, error: apiError } = await response.json();
+    
+    if (apiError || !response.ok) {
+      setError(`Gagal mengambil data user: ${apiError || 'Server error'}.`);
+    } else {
+      setUsers(usersData || []);
+    }
     setLoading(false);
   }, [router]);
 
@@ -41,19 +46,21 @@ export default function AdminUsersPage() {
       if (!confirmed) return;
       setLoading(true);
       
-      const { data: wasUpdated, error } = await supabase.rpc('admin_set_user_status', {
-        target_id: id,
-        new_status: newStatus
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set_status',
+          payload: { userId: id, status: newStatus }
+        })
       });
 
-      if (error) throw error;
+      const { success, error } = await response.json();
+
+      if (error || !success) throw new Error(error || 'Gagal update');
       
-      if (!wasUpdated) {
-        toast.warning('Gagal: User tidak ditemukan di database.');
-      } else {
-        toast.success('Berhasil memperbarui status!');
-        await loadData();
-      }
+      toast.success('Berhasil memperbarui status!');
+      await loadData();
     } catch (err) {
       console.error('RPC Error:', err);
       toast.error(`Gagal Update Status: ${err.message || 'Cek koneksi'}`);
@@ -68,19 +75,21 @@ export default function AdminUsersPage() {
       if (!confirmed) return;
       setLoading(true);
 
-      const { data: wasUpdated, error } = await supabase.rpc('admin_set_user_role', {
-        target_id: id,
-        new_role: newRole
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set_role',
+          payload: { userId: id, role: newRole }
+        })
       });
 
-      if (error) throw error;
+      const { success, error } = await response.json();
 
-      if (!wasUpdated) {
-        toast.warning('Gagal: ID User tidak ditemukan.');
-      } else {
-        toast.success('Berhasil memperbarui role!');
-        await loadData();
-      }
+      if (error || !success) throw new Error(error || 'Gagal update');
+
+      toast.success('Berhasil memperbarui role!');
+      await loadData();
     } catch (err) {
       console.error('RPC Error:', err);
       toast.error(`Gagal Update Role: ${err.message}`);
@@ -92,12 +101,17 @@ export default function AdminUsersPage() {
   async function handleExpiredChange(id, newDate) {
     try {
       setLoading(true);
-      const { error } = await supabase.rpc('admin_set_user_expiry', {
-        target_id: id,
-        new_expiry: newDate ? new Date(newDate).toISOString() : null
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          action: 'set_expiry',
+          payload: { userId: id, expiry: newDate ? new Date(newDate).toISOString() : null }
+        })
       });
 
-      if (error) throw error;
+      const { success, error } = await response.json();
+      if (error || !success) throw new Error(error || 'Gagal update');
       
       await loadData();
     } catch (err) {
@@ -116,8 +130,16 @@ export default function AdminUsersPage() {
     // so we need to find the auth_user_id from the user data if needed.
     // For now, assuming it still uses the user_id returned by RPC.
     const target = users.find(u => u.user_id === id);
-    const { error } = await supabase.rpc('delete_user_entirely', { target_user_id: target?.auth_user_id || id });
-    if (error) toast.error(`Gagal menghapus user: ${error.message}`);
+    const response = await fetch('/api/admin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        action: 'delete_user',
+        payload: { userId: target?.auth_user_id || id }
+      })
+    });
+    const { success, error } = await response.json();
+    if (error || !success) toast.error(`Gagal menghapus user: ${error || 'Unknown error'}`);
     loadData();
     setLoading(false);
   }

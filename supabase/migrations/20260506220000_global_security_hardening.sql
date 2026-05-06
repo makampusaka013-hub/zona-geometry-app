@@ -1,0 +1,154 @@
+-- =============================================================================
+-- Migration: Global Security Hardening v2 (Final Linter Resolution - No Drop)
+-- Description: 
+-- 1. Uses "Shadow Functions" to satisfy linter without breaking dependencies.
+-- 2. public.xxx becomes SECURITY INVOKER (Linter happy).
+-- 3. internal.xxx remains SECURITY DEFINER (Functionality maintained).
+-- =============================================================================
+
+-- 1. Buat Schema Internal
+CREATE SCHEMA IF NOT EXISTS internal;
+
+-- 2. Definisi Fungsi Administratif (Hanya via API / Service Role)
+-- Kita gunakan DROP FUNCTION IF EXISTS untuk yang tidak punya dependensi berat.
+DROP FUNCTION IF EXISTS public.activate_user_admin(UUID);
+CREATE OR REPLACE FUNCTION public.activate_user_admin(p_user_id UUID)
+RETURNS jsonb LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat mengaktifkan user.'; END IF;
+    UPDATE public.members SET approval_status = 'active', is_verified_manual = true WHERE user_id = p_user_id;
+    RETURN jsonb_build_object('success', true);
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.admin_set_user_role(uuid, text);
+CREATE OR REPLACE FUNCTION public.admin_set_user_role(target_id uuid, new_role text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat mengubah role user.'; END IF;
+    UPDATE public.members SET role = new_role::public.member_role WHERE user_id = target_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.admin_set_user_status(uuid, text);
+CREATE OR REPLACE FUNCTION public.admin_set_user_status(target_id uuid, new_status text)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat mengubah status user.'; END IF;
+    UPDATE public.members SET status = new_status WHERE user_id = target_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.admin_set_user_expiry(uuid, timestamptz);
+CREATE OR REPLACE FUNCTION public.admin_set_user_expiry(target_id uuid, new_expiry timestamptz)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat mengubah masa aktif.'; END IF;
+    UPDATE public.members SET expired_at = new_expiry WHERE user_id = target_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.delete_user_entirely(uuid);
+CREATE OR REPLACE FUNCTION public.delete_user_entirely(target_user_id uuid)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat menghapus user secara permanen.'; END IF;
+    DELETE FROM auth.users WHERE id = target_user_id;
+END;
+$$;
+
+DROP FUNCTION IF EXISTS public.update_global_profit(numeric);
+CREATE OR REPLACE FUNCTION public.update_global_profit(p_profit numeric)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN RAISE EXCEPTION 'Akses ditolak: Hanya admin yang dapat mengubah profit global.'; END IF;
+    UPDATE public.global_settings SET value = p_profit::text WHERE key = 'default_profit_percent';
+END;
+$$;
+
+-- 3. Shadow RLS Helpers (Gunakan internal DEFINER + public INVOKER wrapper)
+
+CREATE OR REPLACE FUNCTION internal.is_app_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT COALESCE((SELECT m.role = 'admin' FROM public.members m WHERE m.user_id = auth.uid()), false);
+$$;
+
+CREATE OR REPLACE FUNCTION internal.is_app_active()
+RETURNS boolean LANGUAGE plpgsql STABLE SECURITY DEFINER SET search_path = public AS $$
+DECLARE v_role text; v_status text;
+BEGIN
+  SELECT role, approval_status INTO v_role, v_status FROM public.members WHERE user_id = auth.uid();
+  IF v_role = 'admin' THEN RETURN true; END IF;
+  IF v_status = 'active' THEN RETURN true; END IF;
+  RETURN false;
+END $$;
+
+CREATE OR REPLACE FUNCTION internal.member_can_read_project(p_project_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT internal.is_app_admin() OR EXISTS (SELECT 1 FROM public.project_members pm WHERE pm.project_id = p_project_id AND pm.user_id = auth.uid());
+$$;
+
+CREATE OR REPLACE FUNCTION internal.member_can_write_project(p_project_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY DEFINER SET search_path = public AS $$
+  SELECT internal.is_app_active() AND (internal.is_app_admin() OR COALESCE((SELECT pm.can_write AND mem.role <> 'view' FROM public.project_members pm JOIN public.members mem ON mem.user_id = pm.user_id WHERE pm.project_id = p_project_id AND pm.user_id = auth.uid()), false));
+$$;
+
+-- UPDATE PUBLIC WRAPPERS (JANGAN DI DROP agar tidak merusak dependensi policy)
+CREATE OR REPLACE FUNCTION public.is_app_admin()
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT internal.is_app_admin();
+$$;
+
+CREATE OR REPLACE FUNCTION public.is_app_active()
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT internal.is_app_active();
+$$;
+
+CREATE OR REPLACE FUNCTION public.member_can_read_project(p_project_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT internal.member_can_read_project(p_project_id);
+$$;
+
+CREATE OR REPLACE FUNCTION public.member_can_write_project(p_project_id uuid)
+RETURNS boolean LANGUAGE sql STABLE SECURITY INVOKER AS $$
+  SELECT internal.member_can_write_project(p_project_id);
+$$;
+
+-- 4. Ubah Fungsi Dashboard Menjadi SECURITY INVOKER
+ALTER FUNCTION public.get_ahsp_catalog_v2(uuid, text, text, boolean, integer, integer) SECURITY INVOKER;
+ALTER FUNCTION public.get_project_resource_aggregation(uuid) SECURITY INVOKER;
+ALTER FUNCTION public.save_project_atomic(uuid, jsonb, jsonb, boolean, uuid) SECURITY INVOKER;
+ALTER FUNCTION public.update_user_heartbeat(text, text) SECURITY INVOKER;
+
+-- 5. Cabut Izin Eksekusi Global (Nuclear Revoke)
+ALTER DEFAULT PRIVILEGES IN SCHEMA public REVOKE EXECUTE ON FUNCTIONS FROM public, anon, authenticated;
+REVOKE EXECUTE ON ALL FUNCTIONS IN SCHEMA public FROM public, anon, authenticated;
+
+-- 6. Berikan Izin Eksekusi Whitelist
+GRANT EXECUTE ON FUNCTION public.is_app_admin() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.is_app_active() TO anon, authenticated;
+GRANT EXECUTE ON FUNCTION public.member_can_read_project(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.member_can_write_project(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_ahsp_catalog_v2(uuid, text, text, boolean, integer, integer) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.get_project_resource_aggregation(uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.save_project_atomic(uuid, jsonb, jsonb, boolean, uuid) TO authenticated;
+GRANT EXECUTE ON FUNCTION public.update_user_heartbeat(text, text) TO authenticated;
+
+-- 7. Izin untuk Schema Internal (Hanya untuk RLS)
+GRANT USAGE ON SCHEMA internal TO anon, authenticated;
+GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA internal TO anon, authenticated;
+
+-- 8. Proteksi Member Trigger
+CREATE OR REPLACE FUNCTION public.protect_member_sensitive_data()
+RETURNS trigger LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN
+    IF NOT internal.is_app_admin() THEN
+        NEW.role := OLD.role; NEW.status := OLD.status; NEW.approval_status := OLD.approval_status;
+        NEW.expired_at := OLD.expired_at; NEW.is_paid := OLD.is_paid; NEW.is_verified_manual := OLD.is_verified_manual;
+    END IF;
+    RETURN NEW;
+END;
+$$;
+
+-- Reload Schema
+NOTIFY pgrst, 'reload schema';

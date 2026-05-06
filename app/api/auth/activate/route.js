@@ -47,9 +47,9 @@ export async function POST(request) {
 
       // KAKU: Tidak ada aktivasi otomatis, termasuk Google.
       // Semua user harus lewat alur klik link di email untuk menjadi 'active'
-      if (existingUser.approval_status === 'pending') {
-        // Jangan ubah status di sini, biarkan tetap pending
-        console.log(`[ACTIVATE] User ${userId} exists but is PENDING. Waiting for email verification.`);
+      if (!existingUser.is_verified_manual && existingUser.approval_status !== 'pending') {
+        updateData.approval_status = 'pending';
+        console.log(`[ACTIVATE] User ${userId} was not verified. Forcing back to PENDING.`);
       }
 
       // Safety net: Jika benar-benar belum punya masa aktif, berikan masa percobaan 8 hari

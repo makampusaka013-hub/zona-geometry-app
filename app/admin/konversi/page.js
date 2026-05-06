@@ -222,8 +222,13 @@ export default function KonversiPage() {
   async function handleSyncAllCatalog() {
     setSyncingAll(true);
     try {
-      const { data, error } = await supabase.rpc('sync_all_catalog_to_konversi');
-      if (error) throw error;
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'sync_catalog' })
+      });
+      const { success, data, error } = await response.json();
+      if (error || !success) throw new Error(error || 'Gagal sync');
 
       toast.success(`Berhasil menyinkronkan ${data?.synced_count || 0} item baru dari AHSP!`);
       fetchKonversiPage(1);
@@ -238,8 +243,13 @@ export default function KonversiPage() {
   async function handleAutoMapSameItems() {
     setAutoMapping(true);
     try {
-      const { data, error } = await supabase.rpc('auto_map_same_items');
-      if (error) throw error;
+      const response = await fetch('/api/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: 'auto_map' })
+      });
+      const { success, data, error } = await response.json();
+      if (error || !success) throw new Error(error || 'Gagal auto-map');
 
       showToast(`Berhasil memasangkan ${data?.affected_count || 0} item yang sama persis!`);
       fetchKonversiPage(currentPage);
