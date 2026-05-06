@@ -11,17 +11,24 @@ as $$
 declare
   v_count int := 0;
 begin
-  -- Masukkan semua item UNIK dari rincian AHSP yang pernah diupload
-  -- Gunakan DISTINCT ON agar (uraian_ahsp, satuan_uraian) yang sama tidak duplikat
-  insert into public.master_konversi (uraian_ahsp, satuan_ahsp, faktor_konversi)
-  select distinct on (uraian_ahsp, satuan_uraian)
-    uraian_ahsp, 
-    satuan_uraian, 
-    1
-  from public.master_ahsp_details
-  where uraian_ahsp is not null
+  -- 1. Tarik semua item UNIK dari AHSP
+  -- 2. Sekaligus hubungkan (Mapping) otomatis jika Nama & Satuan sama persis dengan Katalog
+  insert into public.master_konversi (uraian_ahsp, satuan_ahsp, item_dasar_id, faktor_konversi, kode_item_dasar)
+  select distinct on (mad.uraian_ahsp, mad.satuan_uraian)
+    mad.uraian_ahsp, 
+    mad.satuan_uraian, 
+    mhd.id, -- Hubungkan otomatis jika ketemu di katalog
+    1, 
+    mhd.kode_item
+  from public.master_ahsp_details mad
+  left join public.master_harga_dasar mhd on 
+    lower(trim(mhd.nama_item)) = lower(trim(mad.uraian_ahsp)) 
+    and lower(trim(mhd.satuan)) = lower(trim(mad.satuan_uraian))
+  where mad.uraian_ahsp is not null
   on conflict (uraian_ahsp, satuan_ahsp) 
-  do nothing; -- Jika sudah ada, biarkan saja (jangan timpa mapping yang sudah dibuat)
+  do update set 
+    item_dasar_id = coalesce(master_konversi.item_dasar_id, EXCLUDED.item_dasar_id),
+    kode_item_dasar = coalesce(master_konversi.kode_item_dasar, EXCLUDED.kode_item_dasar);
 
   get diagnostics v_count = row_count;
 
