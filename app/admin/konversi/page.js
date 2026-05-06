@@ -248,7 +248,7 @@ export default function KonversiPage() {
       if (activeFilter === 'terpakai') {
         query = query.eq('is_terpakai_ahsp', true);
       } else if (activeFilter === 'konversi') {
-        query = query.eq('is_mapped', true);
+        query = query.eq('is_konversi_done', true);
       } else if (activeFilter === 'beda_satuan') {
         query = query.eq('is_beda_satuan_urgent', true);
       }
@@ -439,8 +439,8 @@ export default function KonversiPage() {
             {[
               { id: 'all', label: 'Semua Item', icon: <Database className="w-4 h-4" /> },
               { id: 'terpakai', label: 'Terpakai di AHSP', icon: <RefreshCw className="w-4 h-4" /> },
-              { id: 'konversi', label: 'Sudah Konversi', icon: <CheckCircle2 className="w-4 h-4" /> },
-              { id: 'beda_satuan', label: 'Beda Satuan', icon: <AlertCircle className="w-4 h-4 text-orange-500" /> },
+              { id: 'konversi', label: 'Sudah Konversi (≠1)', icon: <CheckCircle2 className="w-4 h-4 text-emerald-500" /> },
+              { id: 'beda_satuan', label: 'Beda Satuan (Default 1)', icon: <AlertCircle className="w-4 h-4 text-rose-500" /> },
             ].map((f) => (
               <button
                 key={f.id}

@@ -1,10 +1,12 @@
--- Migration: sync_all_catalog_to_konversi
--- Tujuan: Memasukkan semua item dari master_harga_dasar ke master_konversi agar bisa dikelola di satu tempat.
+-- Migration: sync_all_catalog_to_konversi (Security Hardened)
+-- Tujuan: Memperbaiki peringatan linter terkait search_path dan hak eksekusi anonim.
 
+drop function if exists public.sync_all_catalog_to_konversi();
 create or replace function public.sync_all_catalog_to_konversi()
 returns jsonb
 language plpgsql
 security definer
+set search_path = public -- FIX: Search Path Security
 as $$
 declare
   v_count int := 0;
@@ -34,4 +36,6 @@ begin
 end;
 $$;
 
+-- FIX: Hak Eksekusi
+revoke execute on function public.sync_all_catalog_to_konversi() from public, anon;
 grant execute on function public.sync_all_catalog_to_konversi() to authenticated;
