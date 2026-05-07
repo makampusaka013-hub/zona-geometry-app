@@ -4,7 +4,7 @@ import React, { useState, useEffect, useMemo, useCallback, useRef, useLayoutEffe
 import { createPortal } from 'react-dom';
 import { useVirtualizer } from '@tanstack/react-virtual';
 import Spinner from '../Spinner';
-import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box } from 'lucide-react';
+import { ClipboardList, Save, CheckCircle2, ShieldAlert, XCircle, RotateCcw, ChevronDown, Plus, Trash2, AlertCircle, Edit3, Trash, LayoutGrid, Package, Info, Settings, Calculator, Check, MapPin, Calendar, Box, Sparkles } from 'lucide-react';
 import LocationSelect from '@/components/LocationSelect';
 import useProjectStore from '@/store/useProjectStore';
 import useRabStore from '@/store/useRabStore';
@@ -1092,10 +1092,28 @@ export default function RabEditorTab({
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-4 items-start">
           <div className="lg:col-span-3 space-y-6">
-            {error && (
-              <div className="p-4 bg-red-50 border border-red-200 rounded-2xl flex items-center gap-3 text-red-600 animate-in slide-in-from-top duration-300">
-                <AlertCircle className="w-5 h-5 flex-shrink-0" />
-                <div className="text-xs font-bold uppercase tracking-tight">{error}</div>
+            {/* ── Modern & Minimalist Instruction Card ── */}
+            {(!sections || sections.length === 0 || (sections.length === 1 && sections[0].lines.length === 0) || error) && (
+              <div className="relative overflow-hidden group">
+                <div className="absolute inset-0 bg-gradient-to-r from-indigo-500/10 to-purple-500/10 dark:from-orange-500/5 dark:to-amber-500/5 animate-pulse" />
+                <div className="relative p-8 bg-white/60 dark:bg-slate-800/60 backdrop-blur-md border border-indigo-100/50 dark:border-slate-700/50 rounded-[2rem] shadow-xl shadow-indigo-500/5 flex flex-col md:flex-row items-center gap-6 transition-all duration-500 hover:shadow-2xl hover:shadow-indigo-500/10">
+                  <div className="w-16 h-16 bg-white dark:bg-slate-900 rounded-2xl flex items-center justify-center shadow-indigo-200/50 dark:shadow-none shadow-lg group-hover:scale-110 transition-transform duration-500">
+                    <Sparkles className="w-8 h-8 text-indigo-600 dark:text-orange-500 animate-bounce" />
+                  </div>
+                  <div className="flex flex-col text-center md:text-left">
+                    <h3 className="text-sm font-black text-slate-900 dark:text-white uppercase tracking-[0.3em] mb-1">Inisialisasi Proyek</h3>
+                    <p className="text-xs font-bold text-slate-500 dark:text-slate-400 leading-relaxed max-w-md">
+                      {error && error.includes('resourceMap') 
+                        ? 'Siap untuk memulai? Tambahkan pekerjaan dulu di bawah lalu klik Save untuk melihat analisa harga.' 
+                        : error || 'Tambahkan pekerjaan dulu di bawah lalu klik Save untuk melihat analisa harga.'}
+                    </p>
+                  </div>
+                  <div className="md:ml-auto">
+                    <div className="px-4 py-2 bg-indigo-50 dark:bg-slate-900/50 rounded-full border border-indigo-100 dark:border-slate-700">
+                      <span className="text-[10px] font-black text-indigo-600 dark:text-orange-400 uppercase tracking-widest">Langkah Pertama</span>
+                    </div>
+                  </div>
+                </div>
               </div>
             )}
 
