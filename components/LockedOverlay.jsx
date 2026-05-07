@@ -8,27 +8,6 @@ import { supabase } from '@/lib/supabase';
 export function LockedOverlay() {
   const router = useRouter();
 
-  async function handleDevUnlock() {
-    try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session?.user) return;
-
-      const { error } = await supabase
-        .from('members')
-        .update({ 
-          role: 'advance', 
-          expired_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() 
-        })
-        .eq('user_id', session.user.id);
-
-      if (error) throw error;
-      
-      // Force reload to update layout state
-      window.location.href = '/dashboard';
-    } catch (err) {
-      alert('Gagal unlock: ' + err.message);
-    }
-  }
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-[#020617] flex items-center justify-center p-6 text-center transition-colors duration-200">
@@ -66,13 +45,6 @@ export function LockedOverlay() {
             Kembali ke Login
           </button>
 
-          <button
-            onClick={handleDevUnlock}
-            className="mt-4 flex items-center justify-center gap-2 text-[10px] font-black text-emerald-500 border border-emerald-500/30 bg-emerald-500/5 py-3 rounded-xl hover:bg-emerald-500/10 transition-all uppercase tracking-[0.2em]"
-          >
-            <Terminal className="w-3 h-3" />
-            Simulasi Advance Aktif (DEV MODE)
-          </button>
         </div>
 
         <div className="pt-8 border-t border-slate-200 dark:border-slate-800">
