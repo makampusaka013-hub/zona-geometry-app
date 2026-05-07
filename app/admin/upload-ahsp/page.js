@@ -9,11 +9,15 @@ import { supabase } from '@/lib/supabase';
 const REQUIRED_COLUMNS = [
   'jenis_pekerjaan',
   'kategori_pekerjaan',
+  'divisi',
   'kode_ahsp',
   'nama_pekerjaan',
+  'uraian_ahsp',
   'kode_item_dasar',
   'koefisien',
   'satuan_pekerjaan',
+  'satuan_uraian',
+  'konversi'
 ];
 
 function normalizeString(v) {
@@ -142,6 +146,7 @@ export default function UploadAhspPage() {
               const mappedRow = {
                 jenis_pekerjaan: normalizeString(r.jenis_pekerjaan),
                 kategori_pekerjaan: normalizeString(r.kategori_pekerjaan),
+                divisi: normalizeString(r.divisi),
                 kode_ahsp: normalizeString(r.kode_ahsp),
                 nama_pekerjaan: normalizeString(r.nama_pekerjaan),
                 kode_item_dasar: kodeItem,

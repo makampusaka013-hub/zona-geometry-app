@@ -22,7 +22,12 @@ const REQUIRED_AHSP_COLUMNS = [
 
 const REQUIRED_HARGA_KOLOM = [
   'kode_item',
+  'nama_item',
+  'satuan',
   'harga_satuan',
+  'sumber',
+  'kategori_utama',
+  'sub_kategori'
 ];
 
 function normalizeString(v) {
@@ -145,6 +150,60 @@ export default function UploadDataMasterPage() {
     }
   }
 
+  async function handleExportCsv() {
+    setLoadingAuth(true); // Reuse loading state for simplicity or use a dedicated one
+    try {
+      // Ambil data dari view katalog yang lengkap
+      const { data: ahspList, error } = await supabase
+        .from('view_katalog_ahsp_lengkap')
+        .select('*')
+        .order('kode_ahsp', { ascending: true });
+      
+      if (error) throw error;
+
+      const csvRows = [];
+      ahspList.forEach(ahsp => {
+        const details = Array.isArray(ahsp.details) ? ahsp.details : [];
+        details.forEach(det => {
+          csvRows.push({
+            jenis_pekerjaan: ahsp.jenis_pekerjaan || '',
+            kategori_pekerjaan: ahsp.kategori_pekerjaan || '',
+            divisi: ahsp.divisi || '',
+            kode_ahsp: ahsp.kode_ahsp || '',
+            nama_pekerjaan: ahsp.nama_pekerjaan || '',
+            uraian_ahsp: det.uraian || '',
+            kode_item_dasar: det.kode_item || '',
+            koefisien: det.koefisien || 0,
+            satuan_pekerjaan: ahsp.satuan_pekerjaan || '',
+            satuan_uraian: det.satuan || '',
+            konversi: det.faktor_konversi || 1
+          });
+        });
+      });
+
+      if (csvRows.length === 0) {
+        toast.warning('Tidak ada data AHSP untuk diekspor.');
+        return;
+      }
+
+      const csv = Papa.unparse(csvRows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `Master_AHSP_Katalog_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      setUploadResult({ message: 'Export CSV Katalog AHSP Berhasil Diunduh.' });
+    } catch (err) {
+      console.error('Export failed:', err);
+      setUploadError('Gagal export: ' + err.message);
+    } finally {
+      setLoadingAuth(false);
+    }
+  }
+
   function parseFile(targetFile, enc) {
     setRows([]);
     setUploadResult(null);
@@ -243,7 +302,11 @@ export default function UploadDataMasterPage() {
                   harga_satuan: hrg,
                   keterangan: normalizeString(r.keterangan),
                   tkdn_percent: normalizeNumber(r.tkdn_percent),
-                  status: normalizeString(r.status) || 'active'
+                  status: normalizeString(r.status) || 'active',
+                  // Hirarki Baru
+                  sumber: normalizeString(r.sumber) || 'Lokal',
+                  kategori_utama: normalizeString(r.kategori_utama) || 'Lainnya',
+                  sub_kategori: normalizeString(r.sub_kategori) || '-'
                 };
              }).filter(r => r !== null && r.kode_item);
 
@@ -447,6 +510,18 @@ export default function UploadDataMasterPage() {
             Upload AHSP
           </button>
         </div>
+
+        {activeTab === 'ahsp' && (
+          <div className="mb-6 flex justify-end">
+            <button
+              onClick={handleExportCsv}
+              className="inline-flex items-center gap-2 rounded-lg border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-700 px-4 py-2 text-sm font-medium text-slate-700 dark:text-slate-200 shadow-sm transition-colors hover:bg-slate-50 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              <span>Export Katalog AHSP (CSV)</span>
+            </button>
+          </div>
+        )}
 
         {/* SETTING PROFIT GLOBAL */}
         {userRole === 'admin' && (

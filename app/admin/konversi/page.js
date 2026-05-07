@@ -261,6 +261,64 @@ export default function KonversiPage() {
     }
   }
 
+  async function handleExportCsv() {
+    setLoadingData(true);
+    try {
+      // Ambil data dari view katalog yang lengkap
+      const { data: ahspList, error } = await supabase
+        .from('view_katalog_ahsp_lengkap')
+        .select('*')
+        .order('kode_ahsp', { ascending: true });
+      
+      if (error) throw error;
+
+      const csvRows = [];
+      ahspList.forEach(ahsp => {
+        const details = Array.isArray(ahsp.details) ? ahsp.details : [];
+        details.forEach(det => {
+          csvRows.push({
+            jenis_pekerjaan: ahsp.jenis_pekerjaan || '',
+            kategori_pekerjaan: ahsp.kategori_pekerjaan || '',
+            divisi: ahsp.divisi || '',
+            kode_ahsp: ahsp.kode_ahsp || '',
+            nama_pekerjaan: ahsp.nama_pekerjaan || '',
+            uraian_ahsp: det.uraian || '',
+            kode_item_dasar: det.kode_item || '',
+            koefisien: det.koefisien || 0,
+            satuan_pekerjaan: ahsp.satuan_pekerjaan || '',
+            satuan_uraian: det.satuan || '',
+            konversi: det.faktor_konversi || 1
+          });
+        });
+      });
+
+      if (csvRows.length === 0) {
+        showToast('Tidak ada data AHSP untuk diekspor.', 'error');
+        return;
+      }
+
+      // Gunakan PapaParse (tersedia via window atau import jika sudah ada di file lain)
+      // Karena file ini tidak import PapaParse, kita gunakan dynamic import atau asumsikan tersedia jika kita tambahkan import di atas.
+      // Mari tambahkan import PapaParse di atas.
+      const Papa = (await import('papaparse')).default;
+      const csv = Papa.unparse(csvRows);
+      const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      link.setAttribute('download', `Master_AHSP_Katalog_${new Date().toISOString().split('T')[0]}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      showToast('Export CSV Katalog AHSP Berhasil Diunduh.');
+    } catch (err) {
+      console.error('Export failed:', err);
+      showToast('Gagal export: ' + err.message, 'error');
+    } finally {
+      setLoadingData(false);
+    }
+  }
+
   async function fetchKonversiPage(pageIndex, overrideSearch = appliedSearch) {
     setLoadingData(true);
     setAppliedSearch(overrideSearch);
@@ -461,6 +519,14 @@ export default function KonversiPage() {
             >
               <Database className={`w-4 h-4 ${autoMapping ? 'animate-bounce' : ''}`} />
               {autoMapping ? 'Memasangkan...' : 'Auto-Map Item Sama'}
+            </button>
+            <button
+              onClick={handleExportCsv}
+              disabled={loadingData}
+              className="flex items-center gap-2 px-6 py-3 rounded-2xl text-[11px] font-black uppercase tracking-widest transition-all bg-slate-900 dark:bg-slate-800 hover:bg-slate-800 dark:hover:bg-slate-700 text-white shadow-lg"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+              Export CSV AHSP
             </button>
 
             <div className="flex-1 max-w-xl relative w-full">

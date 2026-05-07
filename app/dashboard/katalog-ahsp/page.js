@@ -1368,8 +1368,8 @@ export default function KatalogAhspPage() {
                   const isExpanded = expandedRows.has(rowKey);
                   const isIncomplete = row.is_lengkap === false;
 
-                  const profitAmt = row.total_subtotal * ((row.overhead_profit || 0) / 100);
-                  const totalHarga = row.total_subtotal + profitAmt;
+                  const profitAmt = Math.round(row.total_subtotal * ((row.overhead_profit || 0) / 100));
+                  const totalHarga = Math.round(row.total_subtotal + profitAmt);
 
                   // Sort details: Pekerja → Bahan → Alat
                   const sortedDetails = sortDetails(row.details);
