@@ -207,7 +207,6 @@ const useProjectStore = create((set, get) => ({
       const currentProj = get().projects[projectId];
       
       const finalPayload = { 
-        ...currentProj,
         ...payload, 
         version: payload.version || currentProj?.version || 1 
       };

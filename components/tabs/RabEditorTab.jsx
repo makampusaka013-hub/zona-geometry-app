@@ -892,8 +892,8 @@ export default function RabEditorTab({
         location_id: identity?.location_id || null,
         fiscal_year: identity?.fiscal_year || null,
         contract_number: identity?.contract_number || null,
-        hsp_value: parseNum(identity?.hsp_value || projectMeta.hsp_value),
-        ppn_percent: parseNum(projectMeta.ppn_percent),
+        hsp_value: parseNum(projectMeta.hsp_value ?? identity?.hsp_value ?? 0),
+        ppn_percent: parseNum(projectMeta.ppn_percent ?? identity?.ppn_percent ?? 12),
         overhead_percent: parseNum(globalOverhead),
         start_date: identity?.start_date || new Date().toISOString().split('T')[0],
         version: identity?.version || 1 // <-- WAJIB ADA: Kirim versi saat ini agar tidak dianggap konflik
