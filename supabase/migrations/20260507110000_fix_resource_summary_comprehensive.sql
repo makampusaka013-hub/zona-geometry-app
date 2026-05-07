@@ -9,26 +9,7 @@ DROP VIEW IF EXISTS public.view_project_resource_summary CASCADE;
 CREATE OR REPLACE VIEW public.view_project_resource_summary 
 WITH (security_invoker = true) AS
 WITH raw_resources AS (
-  -- A. Dari Snapshots (Standard & Custom AHSP yang sudah di-snapshot)
-  SELECT 
-    al.project_id,
-    p.location_id AS loc_id,
-    al.volume AS proj_volume,
-    s.uraian,
-    s.kode_item,
-    s.satuan,
-    s.koefisien,
-    s.jenis_komponen AS raw_jenis,
-    s.tkdn AS raw_tkdn_pct,
-    al.id AS line_id
-  FROM public.ahsp_lines al
-  JOIN public.projects p ON p.id = al.project_id
-  JOIN public.ahsp_line_snapshots s ON s.ahsp_line_id = al.id
-  WHERE al.deleted_at IS NULL
-
-  UNION ALL
-
-  -- B. Dari Analisa Custom (Jika snapshot tidak ada, misal item manual murni)
+  -- A. Dari Analisa Custom (Prioritas utama karena biasanya menyimpan detail atomik)
   SELECT
     al.project_id,
     p.location_id AS loc_id,
@@ -46,9 +27,28 @@ WITH raw_resources AS (
     uraian text, kode_item text, satuan text, koefisien numeric, tkdn numeric, jenis_komponen text
   )
   WHERE al.deleted_at IS NULL 
-    AND NOT EXISTS (SELECT 1 FROM public.ahsp_line_snapshots s WHERE s.ahsp_line_id = al.id)
     AND al.analisa_custom IS NOT NULL 
     AND jsonb_array_length(al.analisa_custom) > 0
+
+  UNION ALL
+
+  -- B. Dari Snapshots (Fallback jika analisa_custom kosong)
+  SELECT 
+    al.project_id,
+    p.location_id AS loc_id,
+    al.volume AS proj_volume,
+    s.uraian,
+    s.kode_item,
+    s.satuan,
+    s.koefisien,
+    s.jenis_komponen AS raw_jenis,
+    s.tkdn AS raw_tkdn_pct,
+    al.id AS line_id
+  FROM public.ahsp_lines al
+  JOIN public.projects p ON p.id = al.project_id
+  JOIN public.ahsp_line_snapshots s ON s.ahsp_line_id = al.id
+  WHERE al.deleted_at IS NULL
+    AND (al.analisa_custom IS NULL OR jsonb_array_length(al.analisa_custom) = 0)
 ),
 global_mapping AS (
   -- Tarik faktor konversi global jika ada mapping berdasarkan uraian & satuan

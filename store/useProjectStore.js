@@ -15,7 +15,8 @@ import {
   updateProjectStartDate as serviceUpdateProjectStartDate,
   fetchProjectMembers,
   fetchRabData,
-  fetchAllAhspCatalog
+  fetchAllAhspCatalog,
+  fetchAhspDetailsInBulk
 } from '@/lib/services/rabService';
 import { supabase } from '@/lib/supabase';
 
