@@ -178,3 +178,14 @@ EXCEPTION WHEN OTHERS THEN
     RAISE EXCEPTION '%', SQLERRM;
 END;
 $$;
+
+-- =============================================================================
+-- SECURITY HARDENING (Supabase Linter Fix)
+-- =============================================================================
+
+-- 1. Cabut akses dari publik dan anon agar tidak sembarang dipanggil
+REVOKE EXECUTE ON FUNCTION public.save_project_atomic(UUID, JSONB, JSONB, BOOLEAN, UUID) FROM PUBLIC;
+REVOKE EXECUTE ON FUNCTION public.save_project_atomic(UUID, JSONB, JSONB, BOOLEAN, UUID) FROM anon;
+
+-- 2. Berikan akses hanya kepada user yang sudah login (authenticated)
+GRANT EXECUTE ON FUNCTION public.save_project_atomic(UUID, JSONB, JSONB, BOOLEAN, UUID) TO authenticated;
