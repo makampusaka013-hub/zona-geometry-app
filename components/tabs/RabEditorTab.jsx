@@ -1273,6 +1273,11 @@ export default function RabEditorTab({
                           const val = parseNum(e.target.value);
                           setProjectMeta(prev => ({ ...prev, ppn_percent: val }));
                           setIdentity(prev => ({ ...prev, ppn_percent: val }));
+
+                          // Real-time sync for Header Total calculation
+                          if (projectId) {
+                            useProjectStore.getState().updateProjectLocal(projectId, { ppn_percent: val });
+                          }
                         }}
                         className="w-10 bg-slate-100 dark:bg-slate-900 border-none px-1 py-1 text-xs font-mono font-bold text-center text-slate-700 dark:text-white rounded focus:ring-1"
                       />
@@ -1306,6 +1311,11 @@ export default function RabEditorTab({
                         const val = parseNum(e.target.value);
                         setProjectMeta(prev => ({ ...prev, hsp_value: val }));
                         setIdentity(prev => ({ ...prev, hsp_value: val }));
+                        
+                        // Push change to Global Store for Header sync (Real-time)
+                        if (projectId) {
+                          useProjectStore.getState().updateProjectLocal(projectId, { hsp_value: val });
+                        }
                       }}
                       className="w-full bg-white dark:bg-slate-800 border border-indigo-200 dark:border-slate-700 text-xs font-mono p-2 rounded-lg focus:ring-1 text-slate-900 dark:text-white"
                     />

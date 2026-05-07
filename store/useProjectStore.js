@@ -37,6 +37,20 @@ const useProjectStore = create((set, get) => ({
 
   // --- ACTIONS ---
 
+  /**
+   * Update project metadata locally without database trip.
+   * Useful for real-time UI sync (e.g., Pagu display).
+   */
+  updateProjectLocal: (projectId, payload) => {
+    if (!projectId) return;
+    set((state) => ({
+      projects: {
+        ...state.projects,
+        [projectId]: { ...state.projects[projectId], ...payload }
+      }
+    }));
+  },
+
   initStore: async () => {
     set({ isLoading: true });
     try {
